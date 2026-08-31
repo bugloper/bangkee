@@ -3,7 +3,11 @@
 
 <%= form_with model: @transaction, url: account_credits_path(@account),
               class: "card card--pad form-stack",
-              data: { controller: "keypad line-items", keypad_preview_prefix_value: "" } do |form| %>
+              data: { controller: "keypad line-items queued-form",
+                      action: "submit->queued-form#submit",
+                      queued_form_account_id_value: @account.id,
+                      queued_form_redirect_value: account_path(@account),
+                      queued_form_label_value: "credit" } do |form| %>
   <%= render "shared/errors", record: @transaction %>
   <%= form.hidden_field :itemized, value: @itemized ? "1" : "0" %>
 

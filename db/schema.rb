@@ -202,6 +202,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_162410) do
     t.datetime "created_at", null: false
     t.bigint "created_by_id", null: false
     t.string "description"
+    t.string "idempotency_key"
     t.boolean "itemized", default: false, null: false
     t.integer "kind", default: 0, null: false
     t.text "notes"
@@ -214,6 +215,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_162410) do
     t.index ["account_id", "occurred_at"], name: "index_transactions_on_account_id_and_occurred_at"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["created_by_id"], name: "index_transactions_on_created_by_id"
+    t.index ["idempotency_key"], name: "index_transactions_on_idempotency_key", unique: true
     t.index ["voided_by_id"], name: "index_transactions_on_voided_by_id"
   end
 

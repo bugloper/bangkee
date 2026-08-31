@@ -1,6 +1,7 @@
 # Recording a credit: goods taken on tick. Simple by default, itemized when the
 # owner wants the shopping list on the record.
 class CreditsController < ApplicationController
+  include IdempotentWrites
   before_action :require_shop_owner
   before_action :require_writable_shop
   before_action :set_account
@@ -12,6 +13,10 @@ class CreditsController < ApplicationController
   end
 
   def create
+    if (existing = already_recorded)
+      return redirect_to existing.account, notice: "That entry was already recorded."
+    end
+
     @itemized = transaction_params[:itemized] == "1"
     @transaction = @account.transactions.new(transaction_params)
     @transaction.kind = :credit
@@ -35,7 +40,7 @@ class CreditsController < ApplicationController
 
     def transaction_params
       params.require(:transaction).permit(
-        :amount, :description, :notes, :occurred_at, :itemized,
+        :amount, :description, :notes, :occurred_at, :itemized, :idempotency_key,
         line_items_attributes: %i[ id name quantity unit_price _destroy ]
       )
     end

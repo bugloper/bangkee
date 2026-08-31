@@ -76,6 +76,8 @@
       </div>
     <% end %>
 
+    <%= render "shared/queued_writes", account: @account %>
+
     <div class="card card--flush">
       <div class="card__head">Transaction history</div>
       <% if @ledger.any? %>

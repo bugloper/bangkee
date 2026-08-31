@@ -1,5 +1,6 @@
 # Money received, recorded by the owner.
 class PaymentsController < ApplicationController
+  include IdempotentWrites
   before_action :require_shop_owner
   before_action :require_writable_shop
   before_action :set_account
@@ -11,6 +12,10 @@ class PaymentsController < ApplicationController
   end
 
   def create
+    if (existing = already_recorded)
+      return redirect_to existing.account, notice: "That payment was already recorded."
+    end
+
     @transaction = @account.transactions.new(transaction_params)
     @transaction.kind = :payment
     @transaction.created_by = current_user
@@ -31,6 +36,6 @@ class PaymentsController < ApplicationController
     end
 
     def transaction_params
-      params.require(:transaction).permit(:amount, :payment_method, :notes, :occurred_at)
+      params.require(:transaction).permit(:amount, :payment_method, :notes, :occurred_at, :idempotency_key)
     end
 end

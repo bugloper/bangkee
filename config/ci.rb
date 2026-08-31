@@ -9,10 +9,12 @@ CI.run do
   step "Security: Importmap vulnerability audit", "bin/importmap audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error"
   step "Tests: Rails", "bin/rails test"
+  step "Tests: JavaScript (offline queue)", "bin/rails test:javascript"
   step "Tests: Seeds", "env RAILS_ENV=test bin/rails db:seed:replant"
 
-  # Optional: Run system tests
-  # step "Tests: System", "bin/rails test:system"
+  # System tests need a headless Chrome; they skip themselves when there is
+  # none, so this is safe to leave on.
+  step "Tests: System", "bin/rails test:system"
 
   # Optional: set a green GitHub commit status to unblock PR merge.
   # Requires the `gh` CLI and `gh extension install basecamp/gh-signoff`.

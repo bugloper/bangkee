@@ -1,0 +1,17 @@
+<%# Entries recorded with no signal. They exist only in this browser's
+    IndexedDB until they send, so the list is rendered by the client. %>
+<div class="card card--flush" data-controller="queue-list"
+     data-queue-list-account-id-value="<%= account.id %>" hidden>
+  <div class="card__head">
+    Waiting to send
+    <span class="count" data-queue-list-target="count">0</span>
+  </div>
+  <div class="rows" data-queue-list-target="list"></div>
+  <div class="card__foot">
+    <div class="muted" style="font-size:13px">
+      These are on this phone only — they reach the book, and the customer, once
+      you are back online.
+    </div>
+    <button class="btn btn--quiet" data-action="queue-list#retry" style="margin-top:8px">Try sending now</button>
+  </div>
+</div>

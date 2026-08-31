@@ -9,7 +9,10 @@ One Rails 8 app, Hotwire only. No mobile client, no JSON API surface.
 ```bash
 bin/setup                       # or: bundle install && bin/rails db:prepare db:seed
 bin/rails server -b 0.0.0.0 -p 3007
-bin/rails test
+bin/rails test                 # Ruby: models, integration
+bin/rails test:javascript      # Node: the offline queue's own logic
+bin/rails test:system          # skips unless a headless Chrome is present
+bin/ci                         # everything, plus rubocop and brakeman
 ```
 
 Demo logins (from `db/seeds.rb`, password `password`):
@@ -64,6 +67,26 @@ mode there is no browser toolbar.
   install event, so Settings explains Share → Add to Home Screen.
 - The offline banner is driven by `offline_controller.js`.
 
+### Recording with no signal
+
+A shop owner *will* write in the book while the connection is gone, so credits
+and payments are queued on the device instead of failing:
+
+- `app/javascript/offline_queue.js` keeps entries in **IndexedDB** — they have
+  to survive a crash mid-write — and replays them oldest-first when the browser
+  says it is online again. A request that never leaves stops the run so entries
+  keep their order; a 4xx marks the entry for the owner instead of retrying it
+  forever.
+- The browser stamps each entry with an `idempotency_key`, and
+  `IdempotentWrites` makes the second arrival of a key a no-op. A replay can and
+  does happen twice.
+- Queued entries appear on the account under **Waiting to send**, rendered from
+  IndexedDB because they exist nowhere else yet.
+- Replays carry the CSRF token from the page they are sent from (the `csrf-token`
+  meta tag, not the per-form token, which would be stale).
+- Only credits and payments queue. Proof and subscription screenshots do not:
+  they are uploads, and a half-sent image is worse than an honest failure.
+
 ### Web Push
 
 ```bash
@@ -101,11 +124,23 @@ through `PushDeliveryJob` on Solid Queue: `bin/jobs`.
 - **Authentication** is the Rails 8 generator, not Devise. One `User` with a
   `role` enum plus a `platform_admin` flag.
 
+## Tests
+
+`test/javascript/` holds Node tests for the offline queue with a hand-rolled
+IndexedDB stub (`fake_browser.mjs`) — no npm dependencies. `test/system/` drives
+the queue in a real browser and needs a headless Chrome; it skips itself when
+there is none, so point it at one explicitly if your Chromium lives somewhere
+odd:
+
+```bash
+CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" bin/rails test:system
+```
+
 ## Not built yet
 
-- **Queued offline writes.** The design shows a credit recorded with no signal
-  sitting in a "queued" state. Reads work offline today; writes still need the
-  network. It wants IndexedDB plus Background Sync in the service worker.
+- **Background Sync.** The queue replays on the `online` event and on load,
+  which covers the app being open. A registered `sync` event would also replay
+  it after the browser has been closed.
 - Email notifications alongside in-app/push (§16.7 says SHOULD).
 - Dzongkha localisation. No string is baked into an image, so it is a matter of
   extracting them.

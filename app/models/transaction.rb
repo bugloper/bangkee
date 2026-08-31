@@ -22,6 +22,8 @@ class Transaction < ApplicationRecord
   before_validation :sync_itemized_total
 
   validates :amount_cents, numericality: { only_integer: true, greater_than: 0 }
+  # Stamped by the browser for entries recorded offline; see IdempotentWrites.
+  validates :idempotency_key, uniqueness: true, allow_nil: true
 
   after_save    -> { account.recompute_balance! }
   after_destroy -> { account.recompute_balance! }

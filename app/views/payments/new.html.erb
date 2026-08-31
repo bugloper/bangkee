@@ -2,7 +2,12 @@
 <% content_for :content_class, "content--narrow" %>
 
 <%= form_with model: @transaction, url: account_payments_path(@account),
-              class: "card card--pad form-stack", data: { controller: "keypad" } do |form| %>
+              class: "card card--pad form-stack",
+              data: { controller: "keypad queued-form",
+                      action: "submit->queued-form#submit",
+                      queued_form_account_id_value: @account.id,
+                      queued_form_redirect_value: account_path(@account),
+                      queued_form_label_value: "payment" } do |form| %>
   <%= render "shared/errors", record: @transaction %>
 
   <div>

@@ -59,8 +59,12 @@ class CreateInitialSchema < ActiveRecord::Migration[8.1]
       t.references :created_by, null: false, foreign_key: { to_table: :users }
       t.datetime :voided_at
       t.references :voided_by,  foreign_key: { to_table: :users }
+      # Set by the browser when an entry is recorded offline and replayed
+      # later, so a retried POST cannot enter the book twice.
+      t.string :idempotency_key
       t.timestamps
     end
+    add_index :transactions, :idempotency_key, unique: true
     add_index :transactions, [ :account_id, :occurred_at ]
     add_index :transactions, [ :account_id, :kind ]
 
