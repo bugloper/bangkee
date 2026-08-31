@@ -13,6 +13,7 @@ const DB_VERSION = 1
 const STORE = "queued_writes"
 
 export const QUEUE_CHANGED = "bangkee:queue-changed"
+export const SYNC_TAG = "bangkee-queued-writes"
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -49,6 +50,31 @@ export function newKey() {
 }
 
 export async function enqueue(entry) {
+  // The token travels with the entry: the service worker has no DOM to read it
+  // from when it drains the queue after the tab is gone.
+  const stored = { csrfToken: csrfToken(), ...entry }
+  await withStore("readwrite", (store) => store.put(stored))
+  announce()
+  await requestBackgroundSync()
+  return stored
+}
+
+// Background Sync lets the browser replay the queue once the connection is
+// back even if Bangkee has been closed since. Where it is unsupported (Safari,
+// and therefore every iPhone) the page-side replay on `online` is the fallback.
+export async function requestBackgroundSync() {
+  if (!("serviceWorker" in navigator) || !("SyncManager" in globalThis)) return false
+
+  try {
+    const registration = await navigator.serviceWorker.ready
+    await registration.sync.register(SYNC_TAG)
+    return true
+  } catch (error) {
+    return false   // permission denied, or too many pending registrations
+  }
+}
+
+async function put(entry) {
   await withStore("readwrite", (store) => store.put(entry))
   announce()
   return entry
@@ -109,7 +135,8 @@ export async function flush() {
     } else if (response.status >= 400 && response.status < 500) {
       // The server refused it (write-locked, the account is gone, the session
       // expired). Keep it for the owner to see rather than replaying forever.
-      await enqueue({ ...entry, rejected: response.status })
+      // This runs in a page, so the token was current — the refusal is real.
+      await put({ ...entry, rejected: response.status })
       failed++
     } else {
       break

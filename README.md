@@ -38,8 +38,10 @@ Demo logins (from `db/seeds.rb`, password `password`):
 - **§17 subscription billing** — Nu 200/month, manual: 14-day trial, 14-day
   grace, then owner **writes** are locked (reads never are, and customers are
   never affected). A platform admin approves payment screenshots.
-- **Notifications** — every event writes an in-app notification (the bell) and
-  a Web Push message to each device that opted in.
+- **Notifications** — every event writes an in-app notification (the bell), a
+  Web Push message to each device that opted in, and an email. All three are
+  queued, so a mail server that is down or a dead push endpoint can never stop
+  the ledger from being written.
 
 `bangkee-srs.docx` is the authoritative specification (convert it with
 `textutil -convert txt bangkee-srs.docx`). The UI is built from the Claude
@@ -66,6 +68,12 @@ mode there is no browser toolbar.
 - The install card appears when the browser offers installation. iOS gives no
   install event, so Settings explains Share → Add to Home Screen.
 - The offline banner is driven by `offline_controller.js`.
+- **Background Sync**: queuing an entry registers a `bangkee-queued-writes`
+  sync, so the browser drains the queue once there is signal even if Bangkee has
+  been closed. The service worker duplicates the replay (a worker cannot import
+  the page's module) and treats a 422 as "the stored token went stale" — it
+  leaves the entry for a page to retry with a fresh one. Safari has no
+  Background Sync, so on iPhones the page-side replay is the whole story.
 
 ### Recording with no signal
 
@@ -136,11 +144,15 @@ odd:
 CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" bin/rails test:system
 ```
 
+### Email
+
+`NotificationMailer` sends one email per notification — the in-app row already
+says what happened in the right words, so there is one template rather than six.
+Development writes them to `tmp/mails`; preview at
+`/rails/mailers/notification_mailer`. Production reads `SMTP_*` and
+`BANGKEE_HOST` from the environment (see `.env.example`).
+
 ## Not built yet
 
-- **Background Sync.** The queue replays on the `online` event and on load,
-  which covers the app being open. A registered `sync` event would also replay
-  it after the browser has been closed.
-- Email notifications alongside in-app/push (§16.7 says SHOULD).
 - Dzongkha localisation. No string is baked into an image, so it is a matter of
   extracting them.

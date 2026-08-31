@@ -70,6 +70,92 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+// ---------------------------------------------------- queued writes (sync)
+//
+// The page replays the queue whenever it is open and the connection returns.
+// This is the other half: the browser wakes the worker once there is a signal
+// even if Bangkee has been closed since, so a credit written in a shop with no
+// bars still reaches the book. The replay logic is deliberately duplicated
+// rather than shared — a service worker cannot import the page's module — and
+// kept to the minimum: read, POST, delete.
+
+const QUEUE_DB = "bangkee";
+const QUEUE_STORE = "queued_writes";
+const SYNC_TAG = "bangkee-queued-writes";
+
+function queueDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(QUEUE_DB, 1);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    // The page owns the schema; if this worker gets there first, match it.
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(QUEUE_STORE)) {
+        db.createObjectStore(QUEUE_STORE, { keyPath: "key" });
+      }
+    };
+  });
+}
+
+function queueEntries(db) {
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(QUEUE_STORE, "readonly").objectStore(QUEUE_STORE).getAll();
+    request.onsuccess = () => resolve((request.result || []).sort((a, b) => a.queuedAt - b.queuedAt));
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function forgetEntry(db, key) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(QUEUE_STORE, "readwrite");
+    transaction.objectStore(QUEUE_STORE).delete(key);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function drainQueue() {
+  const db = await queueDatabase();
+
+  for (const entry of await queueEntries(db)) {
+    if (entry.rejected) continue;   // already refused; the owner has to look at it
+
+    const body = new FormData();
+    Object.entries(entry.fields).forEach(([name, value]) => body.append(name, value));
+
+    let response;
+    try {
+      response = await fetch(entry.url, {
+        method: "POST",
+        body,
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": entry.csrfToken || "", "Accept": "text/html" },
+        redirect: "follow"
+      });
+    } catch (error) {
+      throw error;   // still no signal — let the browser retry the sync later
+    }
+
+    if (response.ok || response.redirected) {
+      await forgetEntry(db, entry.key);
+    } else if (response.status === 422) {
+      // Most likely the stored token went stale with the session. Leave it for
+      // a page to replay with a fresh one rather than declaring it refused.
+      break;
+    } else if (response.status >= 500) {
+      throw new Error(`server error ${response.status}`);
+    }
+    // 4xx other than 422: the server means it. Leave the entry; the page marks
+    // it so the owner sees what happened.
+  }
+}
+
+self.addEventListener("sync", (event) => {
+  if (event.tag !== SYNC_TAG) return;
+  event.waitUntil(drainQueue());
+});
+
 // ------------------------------------------------------------------- push
 self.addEventListener("push", (event) => {
   let payload = {};

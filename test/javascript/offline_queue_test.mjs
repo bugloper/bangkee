@@ -5,7 +5,7 @@ import assert from "node:assert/strict"
 import { installFakeBrowser, ok, refused, unreachable } from "./fake_browser.mjs"
 
 const browser = installFakeBrowser()
-const { enqueue, all, remove, flush, newKey } = await import("../../app/javascript/offline_queue.js")
+const { enqueue, all, remove, flush, newKey, SYNC_TAG } = await import("../../app/javascript/offline_queue.js")
 
 function entry(overrides = {}) {
   return {
@@ -24,6 +24,7 @@ function entry(overrides = {}) {
 async function reset() {
   for (const queued of await all()) await remove(queued.key)
   browser.calls.length = 0
+  browser.syncRegistrations.length = 0
   browser.setOnline(true)
 }
 
@@ -115,4 +116,40 @@ test("every replay carries the CSRF token from the page it is sent from", async 
 
   await flush()
   assert.equal(headers["X-CSRF-Token"], "csrf-token")
+})
+
+test("queuing asks the browser to drain us in the background", async () => {
+  await reset()
+  await enqueue(entry())
+
+  assert.deepEqual(browser.syncRegistrations, [ SYNC_TAG ])
+})
+
+test("queuing still works where Background Sync does not exist", async () => {
+  await reset()
+
+  await browser.withoutBackgroundSync(() => enqueue(entry()))
+
+  assert.equal((await all()).length, 1, "the entry is queued regardless")
+  assert.deepEqual(browser.syncRegistrations, [], "and nothing was registered")
+})
+
+test("a queued entry carries the CSRF token the worker will need", async () => {
+  await reset()
+  const [ stored ] = [ await enqueue(entry()) ]
+
+  assert.equal(stored.csrfToken, "csrf-token")
+  assert.equal((await all())[0].csrfToken, "csrf-token")
+})
+
+test("marking an entry refused does not ask for another sync", async () => {
+  await reset()
+  await enqueue(entry())
+  browser.syncRegistrations.length = 0
+  browser.stubFetch(() => refused(403))
+
+  await flush()
+
+  assert.deepEqual(browser.syncRegistrations, [], "a refusal is not a reason to retry")
+  assert.equal((await all())[0].rejected, 403)
 })

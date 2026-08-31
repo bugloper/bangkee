@@ -1,0 +1,21 @@
+<div style="font-family:Inter,system-ui,-apple-system,Helvetica,Arial,sans-serif;color:#041b3c;font-size:16px;line-height:1.5">
+  <div style="background:#003d9b;color:#ffffff;padding:20px 24px;border-radius:12px 12px 0 0">
+    <div style="font-size:20px;font-weight:800;letter-spacing:.3px">Bangkee</div>
+  </div>
+
+  <div style="border:1px solid #e0e4f0;border-top:0;border-radius:0 0 12px 12px;padding:24px">
+    <div style="font-size:18px;font-weight:700;margin-bottom:8px"><%= @notification.title %></div>
+
+    <% if @notification.body.present? %>
+      <p style="margin:0 0 20px;color:#434654"><%= @notification.body %></p>
+    <% end %>
+
+    <a href="<%= @url %>"
+       style="display:inline-block;background:#003d9b;color:#ffffff;text-decoration:none;
+              padding:14px 24px;border-radius:8px;font-weight:600">Open Bangkee</a>
+
+    <p style="margin:24px 0 0;color:#737685;font-size:13px">
+      You are getting this because you use Bangkee, the shared credit book.
+    </p>
+  </div>
+</div>

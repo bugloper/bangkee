@@ -53,10 +53,18 @@ export function installFakeBrowser({ online = true } = {}) {
   // Node 22+ defines navigator as a getter-only global, so it has to be
   // redefined rather than assigned.
   let isOnline = online
+  const syncRegistrations = []
+  const serviceWorker = {
+    ready: Promise.resolve({ sync: { register: (tag) => { syncRegistrations.push(tag) } } })
+  }
+
   Object.defineProperty(globalThis, "navigator", {
     configurable: true,
-    get: () => ({ onLine: isOnline })
+    get: () => ({ onLine: isOnline, serviceWorker })
   })
+  // The queue looks for SyncManager on the global to decide whether Background
+  // Sync exists at all (Safari has none).
+  globalThis.SyncManager = class {}
 
   globalThis.document = {
     dispatchEvent: () => true,
@@ -75,6 +83,12 @@ export function installFakeBrowser({ online = true } = {}) {
   return {
     database,
     calls,
+    syncRegistrations,
+    withoutBackgroundSync(work) {
+      const saved = globalThis.SyncManager
+      delete globalThis.SyncManager
+      return Promise.resolve(work()).finally(() => { globalThis.SyncManager = saved })
+    },
     setOnline(value) { isOnline = value },
     // `responder` decides what the server says for each replayed entry.
     stubFetch(responder) {

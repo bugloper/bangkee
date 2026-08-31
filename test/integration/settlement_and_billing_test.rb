@@ -11,6 +11,42 @@ class SettlementAndBillingTest < ActionDispatch::IntegrationTest
     @proof = build_proof
   end
 
+  test "every notified event also emails the person it concerns (§16.7)" do
+    sign_in_as @owner
+
+    # Confirming a proof concerns the customer.
+    assert_enqueued_emails 1 do
+      patch confirm_payment_proof_path(@proof)
+    end
+
+    perform_enqueued_jobs only: ActionMailer::MailDeliveryJob
+    email = ActionMailer::Base.deliveries.last
+    assert_equal [ @customer.email_address ], email.to
+    assert_match "confirmed", email.subject.downcase
+
+    # A credit concerns the customer too — and an unlinked account has nobody
+    # to email, which must not raise.
+    unlinked = create_account(@shop, name: "Not Yet Joined")
+    assert_enqueued_emails 0 do
+      record_credit(unlinked, amount_cents: 1_000, by: @owner)
+      Notifier.credit_recorded(unlinked.transactions.last)
+    end
+  end
+
+  test "notification delivery is out of band, so a mail server cannot block a write (§16.9)" do
+    sign_in_as @owner
+    ActionMailer::Base.deliveries.clear
+
+    assert_difference -> { @account.transactions.count }, 1 do
+      assert_enqueued_emails 1 do
+        post account_credits_path(@account), params: { transaction: { amount: "100" } }
+      end
+    end
+
+    assert_empty ActionMailer::Base.deliveries,
+      "the request must not wait on SMTP — the email is queued, not sent inline"
+  end
+
   test "the owner confirms a proof and the payment appears on the ledger (BR-30)" do
     sign_in_as @owner
 

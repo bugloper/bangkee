@@ -29,6 +29,16 @@ class PwaTest < ActionDispatch::IntegrationTest
     assert_match offline_path, response.body
   end
 
+  test "the service worker can drain the offline queue after the app is closed" do
+    get pwa_service_worker_path
+    assert_response :success
+
+    assert_match "addEventListener(\"sync\"", response.body
+    assert_match "bangkee-queued-writes", response.body, "must match the tag the page registers"
+    assert_match "queued_writes", response.body, "must read the store the page writes"
+    assert_match "X-CSRF-Token", response.body, "a replay is still a Rails write"
+  end
+
   test "the offline page renders without a session" do
     get offline_path
     assert_response :success

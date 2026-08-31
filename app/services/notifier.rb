@@ -92,11 +92,16 @@ class Notifier
     end
 
     private
+      # One event, three surfaces: the bell, the device, the inbox. The email
+      # and the push are queued, so a mail server that is down or a push
+      # endpoint that is gone can never stop the ledger from being written
+      # (§16.9, §17.9).
       def notify(user, kind:, title:, body: nil, path: nil)
         return if user.nil?   # an account with no customer linked yet
 
         notification = user.notifications.create!(kind: kind, title: title, body: body, path: path)
         PushDeliveryJob.perform_later(notification.id)
+        NotificationMailer.with(notification: notification).event.deliver_later
         notification
       end
 
