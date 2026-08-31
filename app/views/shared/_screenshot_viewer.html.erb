@@ -1,0 +1,6 @@
+<%# One overlay per page; the thumbnails fill it in. %>
+<div class="viewer" data-viewer-target="overlay" data-action="click->viewer#backdrop" hidden>
+  <button class="viewer__close" data-action="viewer#close" aria-label="Close">✕</button>
+  <img class="viewer__image" data-viewer-target="image" alt="">
+  <div class="viewer__caption" data-viewer-target="caption"></div>
+</div>

@@ -677,3 +677,65 @@ table.ledger-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .kv + .kv { border-top: 1px solid var(--line); }
 .kv__key { color: var(--muted); }
 .kv__val { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ------------------------------------------------------- progress & toasts */
+/* Turbo's progress bar is the loading state for a Hotwire app — no skeleton
+   can be more honest than the actual navigation. */
+.turbo-progress-bar { height: 3px; background: var(--brand); }
+
+.toast-stack {
+  position: fixed; left: 16px; right: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 95; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+@media (min-width: 768px) { .toast-stack { bottom: 24px; } }
+.toast {
+  position: static;
+  background: var(--ink); color: #fff;
+  border-radius: var(--r); padding: 14px 20px;
+  font-size: 14px; font-weight: 500; max-width: 480px;
+  box-shadow: 0 8px 24px rgba(4, 27, 60, .3);
+}
+
+/* --------------------------------------------------- full-screen image viewer */
+.viewer {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(4, 27, 60, .94);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.viewer__close {
+  position: absolute; top: 16px; right: 16px;
+  width: 48px; height: 48px; border: none; border-radius: 50%;
+  background: rgba(255, 255, 255, .15); color: #fff;
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.viewer__image {
+  max-width: 100%; max-height: 80vh;
+  border-radius: var(--r-lg); background: #fff;
+  object-fit: contain;
+}
+.viewer__caption { position: absolute; bottom: 24px; color: rgba(255, 255, 255, .7); font-size: 13px; }
+.thumb-button { border: none; background: none; padding: 0; cursor: zoom-in; }
+
+/* -------------------------------------------------------------- sheet steps */
+.steps { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+.step { display: flex; gap: 12px; align-items: center; }
+.step__number {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: var(--brand-tint); color: var(--brand);
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
+}
+.step__text { font-size: 15px; line-height: 22px; }
+.sheet__mark {
+  width: 56px; height: 56px; border-radius: var(--r-lg);
+  background: var(--brand-tint); color: var(--brand);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+}
+.install__link {
+  border: none; background: none; padding: 0;
+  color: var(--brand); font-size: 12px; font-weight: 600;
+  cursor: pointer; text-decoration: underline;
+}

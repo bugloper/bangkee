@@ -48,6 +48,10 @@ Demo logins (from `db/seeds.rb`, password `password`):
 Design canvas in `bangkee.html`; the brief that produced it is
 `design/PWA_DESIGN_PROMPT.md`.
 
+Seeds include two pending payment proofs and a subscription payment with a
+sample receipt image (`db/seed_assets/`), so the review queues and the
+screenshot viewer have something real in them.
+
 ## Design system
 
 Material 3 "Trust Blue", Inter, 8px baseline — the whole system is
@@ -66,7 +70,14 @@ mode there is no browser toolbar.
 - Navigations are network-first with a cache fallback, then `/offline`; assets
   are cache-first. Writes always go to the network.
 - The install card appears when the browser offers installation. iOS gives no
-  install event, so Settings explains Share → Add to Home Screen.
+  install event, so an "on iPhone?" sheet explains Share → Add to Home Screen.
+- Notification permission is asked for **after a write** (a credit, a payment, a
+  submitted proof) through a sheet that says what the notifications are for —
+  never on arrival, and "Not now" is remembered on the device. A browser refuses
+  a permission request that is not tied to a gesture, so the sheet's button is
+  what actually asks.
+- Loading state is Turbo's own progress bar, styled to the brand. A skeleton
+  would be a picture of a wait that a Hotwire navigation does not have.
 - The offline banner is driven by `offline_controller.js`.
 - **Background Sync**: queuing an entry registers a `bangkee-queued-writes`
   sync, so the browser drains the queue once there is signal even if Bangkee has

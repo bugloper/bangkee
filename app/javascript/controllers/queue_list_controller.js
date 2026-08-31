@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { forAccount, remove, flush, QUEUE_CHANGED } from "offline_queue"
+import { toast } from "toast"
 
 // Shows the entries still waiting to reach the shop's books. They live only on
 // this device until they send, so they are rendered here rather than fetched.
@@ -59,8 +60,18 @@ export default class extends Controller {
     await remove(event.currentTarget.dataset.key)
   }
 
-  retry(event) {
+  async retry(event) {
     event.preventDefault()
-    flush()
+    if (!navigator.onLine) return toast("Still offline — the entries stay safe on this phone.")
+
+    const { sent, failed } = await flush()
+    if (sent > 0) {
+      toast(`${sent} ${sent === 1 ? "entry" : "entries"} sent. Reloading the book.`)
+      Turbo.visit(window.location.href, { action: "replace" })
+    } else if (failed > 0) {
+      toast("The shop's server refused those entries — re-enter them to fix the details.")
+    } else {
+      toast("Nothing could be sent yet. Bangkee will keep trying.")
+    }
   }
 }

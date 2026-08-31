@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { enqueue, newKey, flush } from "offline_queue"
+import { toast } from "toast"
 
 // Wraps the credit and payment forms. Online, it does nothing and lets Turbo
 // submit normally. Offline, it keeps the entry on the device and takes the
@@ -40,5 +41,6 @@ export default class extends Controller {
 
     flush()   // in case the connection came back between the tap and here
     Turbo.visit(this.redirectValue, { action: "replace" })
+    toast(`Saved on this phone — it reaches the book when you are back online.`)
   }
 }

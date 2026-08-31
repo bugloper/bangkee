@@ -26,6 +26,7 @@ class CreditsController < ApplicationController
       @transaction.log_audit(:created, actor: current_user,
                              kind: "credit", amount_cents: @transaction.amount_cents)
       Notifier.credit_recorded(@transaction)
+      offer_notifications_next
       redirect_to @account, notice: "Credit of #{helpers.ngultrum(@transaction.amount_cents)} recorded."
     else
       @transaction.line_items.build if @itemized && @transaction.line_items.empty?

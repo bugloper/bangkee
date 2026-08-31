@@ -24,6 +24,7 @@ class PaymentsController < ApplicationController
       @transaction.log_audit(:created, actor: current_user,
                              kind: "payment", amount_cents: @transaction.amount_cents)
       Notifier.payment_recorded(@transaction)
+      offer_notifications_next
       redirect_to @account, notice: "Payment of #{helpers.ngultrum(@transaction.amount_cents)} recorded."
     else
       render :new, status: :unprocessable_entity

@@ -25,6 +25,7 @@ class PaymentProofsController < ApplicationController
 
     if @proof.save
       Notifier.proof_submitted(@proof)
+      offer_notifications_next
       redirect_to account_path(@account),
         notice: "Proof sent to #{@account.shop.name}. Your balance updates once they confirm it."
     else

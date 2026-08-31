@@ -71,6 +71,17 @@ class SettlementAndBillingTest < ActionDispatch::IntegrationTest
     assert_equal 100_000, @account.reload.balance_cents
   end
 
+  test "the review queue opens screenshots in place rather than a new tab" do
+    sign_in_as @owner
+
+    get payment_proofs_path
+    assert_response :success
+    assert_match "data-controller=\"viewer\"", response.body
+    assert_match "data-viewer-url", response.body
+    assert_no_match "target=\"_blank\"", response.body,
+      "the owner is working through a queue — do not send them away from it"
+  end
+
   test "another shop's owner cannot review the proof (BR-33)" do
     sign_in_as create_owner(email: "other@shop.bt")
 

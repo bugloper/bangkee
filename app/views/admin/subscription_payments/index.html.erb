@@ -5,14 +5,19 @@
   <% end %>
 </div>
 
-<div class="card card--flush">
+<div class="card card--flush" data-controller="viewer">
+  <%= render "shared/screenshot_viewer" %>
+
   <% if @payments.any? %>
     <% @payments.each do |payment| %>
       <div class="review">
         <% if payment.screenshot.attached? %>
-          <%= link_to url_for(payment.screenshot), target: "_blank", rel: "noopener" do %>
+          <button class="thumb-button" data-action="viewer#open"
+                  data-viewer-url="<%= url_for(payment.screenshot) %>"
+                  data-viewer-caption="<%= payment.shop.name %> · <%= ngultrum payment.amount_cents %>"
+                  aria-label="View the screenshot from <%= payment.shop.name %>">
             <%= image_tag payment.screenshot.variant(resize_to_limit: [ 200, 200 ]), class: "thumb", alt: "Transfer screenshot" %>
-          <% end %>
+          </button>
         <% end %>
 
         <div class="review__main">
@@ -41,7 +46,8 @@
                             class: "reject-form", data: { reveal_target: "panel" }, hidden: true do |form| %>
                 <div class="field">
                   <%= form.label :rejection_reason, "Why are you rejecting it?" %>
-                  <%= form.text_field :rejection_reason, required: true,
+                  <span class="field__hint">The owner will see this.</span>
+                  <%= form.text_area :rejection_reason, rows: 2, required: true,
                         placeholder: "e.g. no transfer received for this reference" %>
                 </div>
                 <%= form.submit "Reject payment", class: "btn btn--danger" %>

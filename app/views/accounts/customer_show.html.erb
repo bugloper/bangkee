@@ -56,11 +56,20 @@
 <% end %>
 
 <% if @proofs.any? %>
-  <div class="card card--flush">
+  <div class="card card--flush" data-controller="viewer">
+    <%= render "shared/screenshot_viewer" %>
     <div class="card__head">Your payment proofs</div>
     <div class="rows">
       <% @proofs.each do |proof| %>
         <div class="row row--static">
+          <% if proof.screenshot.attached? %>
+            <button class="thumb-button" data-action="viewer#open"
+                    data-viewer-url="<%= url_for(proof.screenshot) %>"
+                    data-viewer-caption="<%= ngultrum proof.amount_cents %> · <%= proof.created_at.strftime("%-d %b %Y") %>"
+                    aria-label="View your screenshot">
+              <%= image_tag proof.screenshot.variant(resize_to_limit: [ 128, 128 ]), class: "thumb", style: "width:44px;height:44px", alt: "" %>
+            </button>
+          <% end %>
           <div class="row__main">
             <div class="row__title"><%= ngultrum proof.amount_cents %></div>
             <div class="row__sub">

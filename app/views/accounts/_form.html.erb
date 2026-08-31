@@ -24,7 +24,10 @@
   <% unless account.new_record? %>
     <%= button_to "Remove this account…", account_path(account), method: :delete,
           class: "btn btn--quiet", style: "color:var(--red);border-color:var(--red-tint)",
-          form: { data: { turbo_confirm: "Remove #{account.display_name}?|The whole ledger for this customer is deleted. This cannot be undone.",
+          form: { data: { turbo_confirm: "Remove #{account.display_name}?|" \
+                            "This destroys the account with all its transactions, line items and audit events. " \
+                            "If they have only settled up, keep the account — it will simply show as Settled. " \
+                            "This cannot be undone.",
                           turbo_confirm_style: "danger" } } %>
   <% end %>
 <% end %>

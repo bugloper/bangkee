@@ -1,0 +1,29 @@
+<%# iOS never fires beforeinstallprompt, so the only install path on an iPhone
+    is Safari's Share menu — which has to be explained, not offered. %>
+<div class="sheet-backdrop" data-sheet-target="sheet" data-action="click->sheet#backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Add Bangkee to your iPhone">
+    <div class="sheet__title">Add Bangkee to your iPhone</div>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step__number">1</span>
+        <span class="step__text">
+          In Safari, tap the <strong>Share</strong> button <%= icon :share, size: 16 %>
+        </span>
+      </div>
+      <div class="step">
+        <span class="step__number">2</span>
+        <span class="step__text">Scroll down and choose <strong>Add to Home Screen</strong></span>
+      </div>
+      <div class="step">
+        <span class="step__number">3</span>
+        <span class="step__text">
+          Open <strong>Bangkee</strong> from your home screen — it runs full-screen, works
+          offline, and can send you notifications
+        </span>
+      </div>
+    </div>
+
+    <button class="btn" data-action="sheet#close">Got it</button>
+  </div>
+</div>

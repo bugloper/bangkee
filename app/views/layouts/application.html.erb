@@ -26,9 +26,12 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body data-controller="pwa offline"
-        <%= "data-pwa-vapid-key-value=#{WebPushConfig.public_key}" if authenticated? && WebPushConfig.configured? %>>
+  <body data-controller="pwa offline sheet"
+        <%= "data-pwa-vapid-key-value=#{WebPushConfig.public_key}" if authenticated? && WebPushConfig.configured? %>
+        <%= "data-pwa-ask-push-value=true" if authenticated? && WebPushConfig.configured? && flash[:ask_push] %>>
     <% if authenticated? %>
+      <%= render "shared/ios_install_sheet" %>
+
       <div class="shell">
         <%= render "shared/sidebar" %>
 
@@ -41,6 +44,7 @@
           </main>
 
           <%= render "shared/tabbar" %>
+          <%= render "shared/push_prompt" %>
         </div>
       </div>
     <% else %>

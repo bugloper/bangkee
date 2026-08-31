@@ -13,6 +13,15 @@ class ApplicationController < ActionController::Base
       @back_path = back
     end
 
+    # Notification permission is asked for after something worth being notified
+    # about — never on arrival (see the pwa Stimulus controller).
+    def offer_notifications_next
+      return unless WebPushConfig.configured?
+      return if current_user.nil? || current_user.push_subscriptions.exists?
+
+      flash[:ask_push] = true
+    end
+
     def current_user = Current.user
 
     def current_shop

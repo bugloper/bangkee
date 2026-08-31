@@ -1,13 +1,31 @@
 import { Controller } from "@hotwired/stimulus"
+import { toast } from "toast"
 
 // Registers the service worker, offers installation, and — only after the user
 // has done something meaningful — asks for notification permission.
 export default class extends Controller {
-  static values = { vapidKey: String }
+  static values = { vapidKey: String, askPush: Boolean }
 
   connect() {
     this.registerServiceWorker()
     this.watchInstallPrompt()
+    this.offerNotifications()
+  }
+
+  // The brief is explicit: ask in context, after something meaningful, never on
+  // first load. The server sets data-pwa-ask-push-value on the page that
+  // follows a write, and "Not now" is remembered on the device.
+  offerNotifications() {
+    if (!this.askPushValue) return
+    if (!("Notification" in window) || Notification.permission !== "default") return
+    if (!this.hasVapidKeyValue) return
+
+    let dismissed = false
+    try { dismissed = localStorage.getItem("bangkee.push.dismissed") === "1" } catch (_) {}
+    if (dismissed) return
+
+    const prompt = document.getElementById("push-prompt")
+    if (prompt) prompt.hidden = false
   }
 
   async registerServiceWorker() {
@@ -63,6 +81,8 @@ export default class extends Controller {
     event.preventDefault()
     if (!("Notification" in window)) return this.pushMessage("This browser cannot show notifications.")
 
+    document.getElementById("push-prompt")?.setAttribute("hidden", "")
+
     const permission = await Notification.requestPermission()
     if (permission !== "granted") return this.pushMessage("Notifications are blocked in your browser settings.")
 
@@ -97,6 +117,7 @@ export default class extends Controller {
   pushMessage(text) {
     const status = document.getElementById("push-status")
     if (status) status.textContent = text
+    toast(text)
   }
 
   urlBase64ToUint8Array(base64String) {

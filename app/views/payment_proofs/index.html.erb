@@ -7,14 +7,19 @@
   <% end %>
 </div>
 
-<div class="card card--flush">
+<div class="card card--flush" data-controller="viewer">
+  <%= render "shared/screenshot_viewer" %>
+
   <% if @proofs.any? %>
     <% @proofs.each do |proof| %>
       <div class="review">
         <% if proof.screenshot.attached? %>
-          <%= link_to url_for(proof.screenshot), target: "_blank", rel: "noopener" do %>
+          <button class="thumb-button" data-action="viewer#open"
+                  data-viewer-url="<%= url_for(proof.screenshot) %>"
+                  data-viewer-caption="<%= proof.account.display_name %> · <%= ngultrum proof.amount_cents %>"
+                  aria-label="View the screenshot from <%= proof.account.display_name %>">
             <%= image_tag proof.screenshot.variant(resize_to_limit: [ 200, 200 ]), class: "thumb", alt: "Transfer screenshot" %>
-          <% end %>
+          </button>
         <% end %>
 
         <div class="review__main">
@@ -41,7 +46,10 @@
                             class: "reject-form", data: { reveal_target: "panel" }, hidden: true do |form| %>
                 <div class="field">
                   <%= form.label :rejection_reason, "Why are you rejecting it?" %>
-                  <%= form.text_field :rejection_reason, required: true,
+                  <span class="field__hint">
+                    <%= proof.account.display_name %> will see this, so say what they should fix.
+                  </span>
+                  <%= form.text_area :rejection_reason, rows: 2, required: true,
                         placeholder: "e.g. amount does not match the transfer received" %>
                 </div>
                 <%= form.submit "Reject proof", class: "btn btn--danger" %>

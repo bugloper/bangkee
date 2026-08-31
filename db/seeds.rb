@@ -81,7 +81,47 @@ unless first.transactions.voided.exists?
   voided.void!(by: owner)
 end
 
-puts "Seeded: #{Shop.count} shop, #{Account.count} accounts, #{Transaction.count} transactions."
+# §16 — a queue with something in it, so the review screen and the screenshot
+# viewer have something real to show.
+SCREENSHOT = Rails.root.join("db/seed_assets/transfer_screenshot.png")
+
+def attach_screenshot(record)
+  record.screenshot.attach(io: File.open(SCREENSHOT), filename: "transfer.png", content_type: "image/png")
+end
+
+if PaymentProof.none?
+  pema = shop.accounts.find_by(customer_name: "Pema Choden")
+  kinley = shop.accounts.find_by(customer_name: "Kinley Zangmo")
+  ugyen = shop.accounts.find_by(customer_name: "Ugyen Penjor")
+  pema.update!(customer: customer) if pema.customer_id.nil? && customer.accounts.where(shop: shop).count < 2
+
+  pending = pema.payment_proofs.new(amount_cents: 50_000, submitted_by: pema.customer || customer,
+                                    reference: "BT26082911022", note: "Paid for last month's rice.",
+                                    created_at: 2.days.ago)
+  attach_screenshot(pending)
+  pending.save!
+
+  second = kinley.payment_proofs.new(amount_cents: 100_000, submitted_by: customer, created_at: 1.day.ago)
+  attach_screenshot(second)
+  second.save!
+
+  refused = ugyen.payment_proofs.new(amount_cents: 200_000, submitted_by: customer,
+                                     reference: "BT26081208887", created_at: 19.days.ago)
+  attach_screenshot(refused)
+  refused.save!
+  refused.reject!(by: owner, reason: "Amount does not match the transfer received")
+end
+
+# §17 — one payment waiting on the operator, so the admin queue is not empty.
+if SubscriptionPayment.none?
+  request = shop.subscription_payments.new(amount_cents: 20_000, months: 1, submitted_by: owner,
+                                           method: "Bank transfer", reference: "BT26081400431")
+  attach_screenshot(request)
+  request.save!
+end
+
+puts "Seeded: #{Shop.count} shop, #{Account.count} accounts, #{Transaction.count} transactions, " \
+     "#{PaymentProof.pending.count} pending proofs."
 puts "  owner    karma@shop.bt / #{PASSWORD}"
 puts "  customer dawa@example.bt / #{PASSWORD}"
 puts "  operator admin@bangkee.bt / #{PASSWORD}"

@@ -8,3 +8,4 @@ pin_all_from "app/javascript/controllers", under: "controllers"
 
 pin "confirm"
 pin "offline_queue"
+pin "toast"

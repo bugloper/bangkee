@@ -50,7 +50,10 @@
       <%= link_to "Edit", edit_transaction_path(transaction), class: "btn btn--tiny btn--row" %>
       <%= button_to "Void", void_transaction_path(transaction), method: :patch,
             class: "btn btn--tiny btn--row btn--void",
-            form: { data: { turbo_confirm: "Void this #{transaction.kind}?|It stays on the record and in the audit log, but stops counting toward the balance.",
+            form: { data: { turbo_confirm: "Void this #{transaction.kind}?|" \
+                              "#{transaction.description.presence || transaction.kind.titleize} · #{ngultrum transaction.amount_cents}. " \
+                              "It stays visible in the history, struck through, and no longer counts in the balance. " \
+                              "The void is written to the audit log, and cannot be undone.",
                             turbo_confirm_style: "danger" } } %>
     </div>
   <% end %>
