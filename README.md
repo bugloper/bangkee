@@ -145,6 +145,15 @@ through `PushDeliveryJob` on Solid Queue: `bin/jobs`.
 
 ## Tests
 
+`test/integration/stimulus_wiring_test.rb` walks every screen for all three
+roles and cross-checks the markup against the Stimulus controllers: each
+`data-action` names a controller and a method that exist, each `data-*-target`
+and `data-*-value` is declared, each of them sits inside its controller's scope
+(Stimulus resolves against the *nearest* enclosing controller, which is easy to
+get wrong), no Stimulus `<button>` inside a form can submit it by accident, and
+no icon-only control ships without a label. It exists because every client-side
+bug that reached a user in this project was one of those.
+
 `test/javascript/` holds Node tests for the offline queue with a hand-rolled
 IndexedDB stub (`fake_browser.mjs`) — no npm dependencies. `test/system/` drives
 the queue in a real browser and needs a headless Chrome; it skips itself when

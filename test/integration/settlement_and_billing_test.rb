@@ -139,6 +139,35 @@ class SettlementAndBillingTest < ActionDispatch::IntegrationTest
     assert @proof.reload.pending?
   end
 
+  test "a locked owner's write buttons lead to billing, not to a form that bounces them" do
+    lock_subscription
+    sign_in_as @owner
+
+    get account_path(@account)
+    assert_response :success
+
+    document = Nokogiri::HTML(response.body)
+    actions = document.css(".action-row a")
+    assert_predicate actions, :any?
+
+    actions.each do |action|
+      assert_equal subscription_path, action["href"],
+        "#{action.text.strip} should lead to Billing while writing is locked"
+      assert_includes action["class"], "is-locked"
+    end
+  end
+
+  test "an unlocked owner's write buttons lead to the forms" do
+    sign_in_as @owner
+
+    get account_path(@account)
+    hrefs = Nokogiri::HTML(response.body).css(".action-row a").map { |a| a["href"] }
+
+    assert_includes hrefs, new_account_credit_path(@account)
+    assert_includes hrefs, new_account_payment_path(@account)
+    assert_not_includes hrefs, subscription_path
+  end
+
   test "a locked shop never blocks its customers (BR-41)" do
     lock_subscription
     sign_in_as @customer

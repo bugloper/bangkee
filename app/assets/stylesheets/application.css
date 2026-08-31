@@ -339,6 +339,8 @@ p { margin: 0; }
 .btn--sm { min-height: 40px; padding: 0 14px; font-size: 14px; width: auto; }
 .btn--auto { width: auto; }
 .btn[disabled], .btn.is-disabled { opacity: .5; cursor: not-allowed; }
+/* Locked, not disabled: it still leads somewhere — to Billing. */
+.btn.is-locked { opacity: .6; }
 .btn-row { display: flex; gap: 12px; }
 .btn-row > * { flex: 1; }
 

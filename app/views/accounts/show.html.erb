@@ -50,13 +50,20 @@
         </div>
       <% end %>
 
+      <%# When writing is locked these lead to Billing, not to a form that would
+          only bounce the owner back with an alert. %>
       <div class="action-row">
-        <%= link_to "Add credit", new_account_credit_path(@account),
-              class: "btn btn--credit #{'is-disabled' if locked}", style: "min-height:52px;font-size:16px;font-weight:600" %>
-        <%= link_to "Record payment", new_account_payment_path(@account),
-              class: "btn btn--payment #{'is-disabled' if locked}", style: "min-height:52px;font-size:16px;font-weight:600" %>
-        <%= link_to "Itemized purchase", new_account_credit_path(@account, mode: "itemized"),
-              class: "btn btn--outline #{'is-disabled' if locked}", style: "border-color:var(--brand)" %>
+        <%= link_to "Add credit", locked ? subscription_path : new_account_credit_path(@account),
+              class: "btn btn--credit #{'is-locked' if locked}",
+              style: "min-height:52px;font-size:16px;font-weight:600",
+              title: locked ? "Renew the subscription to record credits" : nil %>
+        <%= link_to "Record payment", locked ? subscription_path : new_account_payment_path(@account),
+              class: "btn btn--payment #{'is-locked' if locked}",
+              style: "min-height:52px;font-size:16px;font-weight:600",
+              title: locked ? "Renew the subscription to record payments" : nil %>
+        <%= link_to "Itemized purchase", locked ? subscription_path : new_account_credit_path(@account, mode: "itemized"),
+              class: "btn btn--outline #{'is-locked' if locked}", style: "border-color:var(--brand)",
+              title: locked ? "Renew the subscription to record purchases" : nil %>
       </div>
     </div>
 
