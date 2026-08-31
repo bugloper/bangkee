@@ -43,7 +43,8 @@
               <button class="btn btn--quiet" data-action="reveal#toggle" style="width:auto">Reject…</button>
 
               <%= form_with url: reject_admin_subscription_payment_path(payment), method: :patch,
-                            class: "reject-form", data: { reveal_target: "panel" }, hidden: true do |form| %>
+                            class: "reject-form", data: { reveal_target: "panel" },
+                            html: { hidden: true } do |form| %>
                 <div class="field">
                   <%= form.label :rejection_reason, "Why are you rejecting it?" %>
                   <span class="field__hint">The owner will see this.</span>

@@ -48,6 +48,13 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* `hidden` is a UA rule, so ANY author `display` beats it — and most things
+   here that get hidden (sheets, the viewer, the install card, the offline
+   banner, the reject form) are display:flex. Without this, every one of them is
+   permanently on screen. Hide with the attribute (el.hidden = true), not by
+   toggling inline styles. */
+[hidden] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 
 body {

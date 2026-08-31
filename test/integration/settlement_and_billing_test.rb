@@ -82,6 +82,20 @@ class SettlementAndBillingTest < ActionDispatch::IntegrationTest
       "the owner is working through a queue — do not send them away from it"
   end
 
+  test "the reject form stays shut until the owner asks for it" do
+    sign_in_as @owner
+
+    get payment_proofs_path
+    assert_response :success
+
+    forms = Nokogiri::HTML(response.body).css("form.reject-form")
+    assert_predicate forms, :any?, "a pending proof must offer a rejection"
+    forms.each do |form|
+      assert form.key?("hidden"),
+        "form_with ignores a top-level hidden:, so this has to be html: { hidden: true }"
+    end
+  end
+
   test "another shop's owner cannot review the proof (BR-33)" do
     sign_in_as create_owner(email: "other@shop.bt")
 

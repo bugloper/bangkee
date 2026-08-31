@@ -1,24 +1,25 @@
 <%# Shown after a write, never on arrival, and only while the browser has not
     been asked yet. "Not now" is remembered on the device. %>
-<div class="sheet-backdrop" id="push-prompt" data-controller="sheet"
-     data-sheet-dismiss-key-value="bangkee.push.dismissed"
-     data-action="click->sheet#backdrop" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" aria-label="Turn on notifications">
-    <div class="sheet__mark"><%= icon :bell, size: 26 %></div>
-    <div class="sheet__title">
-      <%= current_user.shop_owner? ? "Know the moment a customer pays" : "Know when your balance changes" %>
-    </div>
-    <p class="sheet__body">
-      <% if current_user.shop_owner? %>
-        Bangkee can tell you about payments, uploaded proofs and overdue balances.
-      <% else %>
-        Bangkee can tell you when the shop adds something to your book or confirms a payment.
-      <% end %>
-      Your browser will ask for permission next.
-    </p>
-    <div class="sheet__actions">
-      <button class="btn" data-action="pwa#enablePush">Turn on notifications</button>
-      <button class="btn btn--quiet" data-action="sheet#dismiss">Not now</button>
+<div data-controller="sheet" data-sheet-dismiss-key-value="bangkee.push.dismissed">
+  <div class="sheet-backdrop" id="push-prompt" data-sheet-target="sheet"
+       data-action="click->sheet#backdrop" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Turn on notifications">
+      <div class="sheet__mark"><%= icon :bell, size: 26 %></div>
+      <div class="sheet__title">
+        <%= current_user.shop_owner? ? "Know the moment a customer pays" : "Know when your balance changes" %>
+      </div>
+      <p class="sheet__body">
+        <% if current_user.shop_owner? %>
+          Bangkee can tell you about payments, uploaded proofs and overdue balances.
+        <% else %>
+          Bangkee can tell you when the shop adds something to your book or confirms a payment.
+        <% end %>
+        Your browser will ask for permission next.
+      </p>
+      <div class="sheet__actions">
+        <button class="btn" data-action="pwa#enablePush">Turn on notifications</button>
+        <button class="btn btn--quiet" data-action="sheet#dismiss">Not now</button>
+      </div>
     </div>
   </div>
 </div>

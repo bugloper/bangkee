@@ -131,6 +131,36 @@ class PwaTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # This is here because it broke: `hidden` is a user-agent rule, so the
+  # author's `display: flex` on .sheet-backdrop / .viewer / .install won every
+  # time and those elements were permanently on screen with no way to close.
+  test "the stylesheet makes the hidden attribute actually hide things" do
+    css = Rails.root.join("app/assets/stylesheets/application.css").read
+
+    assert_match(/\[hidden\]\s*\{[^}]*display:\s*none\s*!important/, css,
+      "every overlay in this app is display:flex — hidden must be forced")
+  end
+
+  test "each sheet has a target inside the controller that has to close it" do
+    sign_in_as create_owner
+    get dashboard_path
+    assert_response :success
+
+    document = Nokogiri::HTML(response.body)
+
+    document.css("[data-controller~='sheet']").each do |scope|
+      # Stimulus scopes a target to the nearest enclosing controller, so a sheet
+      # whose target sits outside its own controller cannot be closed — the
+      # action throws on a missing target.
+      own_targets = scope.css("[data-sheet-target='sheet']").reject do |target|
+        target.ancestors("[data-controller~='sheet']").first != scope
+      end
+
+      assert_predicate own_targets, :any?,
+        "a sheet controller with no target of its own cannot close: #{scope.to_html.first(120)}"
+    end
+  end
+
   test "the prompt and the iPhone instructions are on the page for a signed-in user" do
     sign_in_as create_owner
 
