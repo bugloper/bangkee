@@ -1,0 +1,30 @@
+<% page_title "Sign in" %>
+
+<div class="auth">
+  <div class="auth__inner">
+    <div class="auth__brand">
+      <div class="auth__mark">B</div>
+      <div class="auth__name">Bangkee</div>
+      <div class="auth__tag">The shared credit book for your shop</div>
+    </div>
+
+    <%= form_with url: session_path, class: "card card--pad card--stack", style: "gap:16px" do |form| %>
+      <div class="field">
+        <%= form.label :email_address, "Email" %>
+        <%= form.email_field :email_address, value: params[:email_address], required: true,
+              autofocus: true, autocomplete: "username", placeholder: "karma@example.bt" %>
+      </div>
+      <div class="field">
+        <%= form.label :password, "Password" %>
+        <%= form.password_field :password, required: true, autocomplete: "current-password",
+              placeholder: "••••••••" %>
+      </div>
+      <%= form.submit "Sign in", class: "btn" %>
+      <%= link_to "Forgot password?", new_password_path, class: "auth__link" %>
+    <% end %>
+
+    <div class="auth__alt">
+      New shop? <%= link_to "Create your shop account", new_registration_path, style: "font-weight:600" %>
+    </div>
+  </div>
+</div>

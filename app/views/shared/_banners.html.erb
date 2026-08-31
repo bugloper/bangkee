@@ -1,0 +1,32 @@
+<%# Offline is detected client-side; the banner is in the DOM from the start so
+    it can appear the instant the connection drops. %>
+<div class="banner banner--offline no-print" data-offline-target="banner" hidden>
+  <%= icon :wifi_off, size: 18 %>
+  <span>You are offline — showing the last data this device loaded. Anything you save is queued.</span>
+</div>
+
+<% if authenticated? && current_subscription %>
+  <% case current_subscription.effective_status %>
+  <% when :past_due %>
+    <div class="banner banner--warn no-print">
+      <span>
+        Your subscription has lapsed —
+        <span class="banner__strong"><%= pluralize current_subscription.grace_days_remaining, "day" %></span>
+        left before writing is locked.
+      </span>
+      <%= link_to "Pay now", subscription_path %>
+    </div>
+  <% when :disabled %>
+    <div class="banner banner--alert no-print">
+      <span>Your subscription is inactive — recording credits and payments is locked.</span>
+      <%= link_to "Restore access", subscription_path %>
+    </div>
+  <% end %>
+<% end %>
+
+<% flash.each do |type, message| %>
+  <% next if message.blank? %>
+  <div class="banner banner--<%= type.to_s == "alert" ? "alert" : "ok" %> no-print" role="alert">
+    <span><%= message %></span>
+  </div>
+<% end %>

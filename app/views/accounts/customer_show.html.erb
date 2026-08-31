@@ -1,0 +1,92 @@
+<%# What the customer sees at one shop: read-only, plus the way to prove a
+    transfer they have already made. %>
+<div class="card card--pad">
+  <div class="acct-head">
+    <div class="avatar" style="width:48px;height:48px;font-size:20px"><%= @account.shop.name.first.upcase %></div>
+    <div class="acct-head__main">
+      <div class="acct-head__name"><%= @account.shop.name %></div>
+      <div class="acct-head__meta">Your credit account</div>
+    </div>
+    <%= link_to account_statement_path(@account), class: "btn btn--tiny", style: "color:var(--brand)" do %>
+      <%= icon :print, size: 16 %> Statement
+    <% end %>
+  </div>
+
+  <div class="big-balance__label">
+    <% if @account.balance_cents.positive? %>You owe this shop
+    <% elsif @account.in_credit? %>Paid in advance
+    <% else %>Settled — nothing owed<% end %>
+  </div>
+  <div class="big-balance__row">
+    <div class="big-balance__value <%= balance_state @account.balance_cents %>"><%= ngultrum @account.balance_cents %></div>
+    <% if @account.overdue? %>
+      <span class="badge badge--square badge--overdue" style="font-size:13px;padding:3px 10px">
+        <%= pluralize @account.days_overdue, "day" %> overdue
+      </span>
+    <% end %>
+  </div>
+
+  <% if @account.balance_cents.positive? %>
+    <div class="action-row">
+      <%= link_to "I've paid — upload proof", new_account_payment_proof_path(@account), class: "btn" %>
+    </div>
+  <% end %>
+</div>
+
+<% if @bank_accounts.any? %>
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px">How to pay <%= @account.shop.name %></div>
+    <% @bank_accounts.each do |bank| %>
+      <div style="padding:8px 0;border-top:1px solid var(--line)">
+        <div style="font-weight:600"><%= bank.bank_name %><%= " · primary" if bank.primary? %></div>
+        <div class="kv"><span class="kv__key">Account name</span><span class="kv__val"><%= bank.account_name %></span></div>
+        <div class="kv"><span class="kv__key">Account number</span><span class="kv__val"><%= bank.account_number %></span></div>
+        <% if bank.branch.present? %>
+          <div class="kv"><span class="kv__key">Branch</span><span class="kv__val"><%= bank.branch %></span></div>
+        <% end %>
+        <% if bank.mobile_wallet.present? %>
+          <div class="kv"><span class="kv__key">Mobile wallet</span><span class="kv__val"><%= bank.mobile_wallet %></span></div>
+        <% end %>
+        <% if bank.instructions.present? %>
+          <p class="muted" style="font-size:14px;margin-top:8px"><%= bank.instructions %></p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<% if @proofs.any? %>
+  <div class="card card--flush">
+    <div class="card__head">Your payment proofs</div>
+    <div class="rows">
+      <% @proofs.each do |proof| %>
+        <div class="row row--static">
+          <div class="row__main">
+            <div class="row__title"><%= ngultrum proof.amount_cents %></div>
+            <div class="row__sub">
+              <%= proof.created_at.strftime("%-d %b %Y") %><%
+              %><% if proof.rejected? && proof.rejection_reason.present? %> · <%= proof.rejection_reason %><% end %>
+            </div>
+          </div>
+          <span class="badge badge--<%= proof.confirmed? ? "payment" : (proof.rejected? ? "credit" : "pending") %>">
+            <%= proof.status_label %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="card card--flush">
+  <div class="card__head">Transaction history</div>
+  <% if @ledger.any? %>
+    <% @ledger.each do |transaction, running| %>
+      <%= render "transactions/row", transaction: transaction, running: running, owner: false, locked: false %>
+    <% end %>
+  <% else %>
+    <div class="empty" style="border-top:1px solid var(--line)">
+      <div class="empty__title">Nothing recorded yet</div>
+      When the shop adds something to your book it appears here.
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,94 @@
+<% content_for :content_class, "content--narrow" %>
+<% status = @subscription.effective_status %>
+
+<div class="card card--pad">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span class="badge <%= subscription_badge_class @subscription %>">
+      <%= @subscription.status_label %>
+    </span>
+    <span class="muted" style="font-size:14px"><%= subscription_summary @subscription %></span>
+  </div>
+
+  <div class="hero__value" style="color:var(--ink);font-size:32px;line-height:40px;margin-top:12px">
+    <%= ngultrum @subscription.price_cents %><span class="muted" style="font-size:16px;font-weight:600"> / month</span>
+  </div>
+  <div class="muted" style="font-size:14px">
+    Paid through <%= @subscription.current_period_end.to_date.strftime("%-d %b %Y") %>.
+    Your customers always keep read access, whatever happens here.
+  </div>
+</div>
+
+<div class="card card--pad">
+  <div style="font-size:16px;font-weight:700;margin-bottom:4px">How to pay</div>
+  <p class="muted" style="font-size:14px;margin-bottom:8px"><%= OperatorBilling.instructions %></p>
+  <div class="kv"><span class="kv__key">Bank</span><span class="kv__val"><%= OperatorBilling.bank_name %></span></div>
+  <div class="kv"><span class="kv__key">Account name</span><span class="kv__val"><%= OperatorBilling.account_name %></span></div>
+  <div class="kv"><span class="kv__key">Account number</span><span class="kv__val"><%= OperatorBilling.account_number %></span></div>
+  <div class="kv"><span class="kv__key">Branch</span><span class="kv__val"><%= OperatorBilling.branch %></span></div>
+  <div class="kv"><span class="kv__key">Mobile wallet</span><span class="kv__val"><%= OperatorBilling.mobile_wallet %></span></div>
+</div>
+
+<%= form_with model: @payment || current_shop.subscription_payments.new,
+              url: subscription_payments_path, class: "card card--pad form-stack",
+              data: { controller: "image-preview" } do |form| %>
+  <% if @payment %><%= render "shared/errors", record: @payment %><% end %>
+
+  <div style="font-size:16px;font-weight:700">Submit your payment</div>
+
+  <div class="field">
+    <%= form.label :amount, "Amount transferred" %>
+    <%= form.text_field :amount, inputmode: "decimal", required: true,
+          value: (@payment&.amount || @subscription.price / 1), class: "num" %>
+  </div>
+
+  <div class="field">
+    <%= form.label :months, "Months of cover" %>
+    <%= form.select :months, (1..12).map { |m| [ pluralize(m, "month"), m ] }, {}, required: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :method, "How you paid" %>
+    <%= form.select :method, [ "Bank transfer", "Mobile wallet", "Cash" ], { include_blank: "Choose" } %>
+  </div>
+
+  <div class="field">
+    <%= form.label :reference, "Reference number" %>
+    <span class="field__hint">Optional</span>
+    <%= form.text_field :reference, class: "num" %>
+  </div>
+
+  <div class="field">
+    <%= form.label :screenshot, "Transfer screenshot" %>
+    <span class="field__hint">Required</span>
+    <%= form.file_field :screenshot, accept: "image/*", required: true,
+          data: { image_preview_target: "input", action: "change->image-preview#show" } %>
+    <img class="shot shot-preview" data-image-preview-target="preview" hidden alt="Your screenshot">
+  </div>
+
+  <%= form.submit "Send to Bangkee", class: "btn" %>
+<% end %>
+
+<div class="card card--flush">
+  <div class="card__head">Payment history</div>
+  <% if @payments.any? %>
+    <div class="rows">
+      <% @payments.each do |payment| %>
+        <div class="row row--static">
+          <div class="row__main">
+            <div class="row__title"><%= ngultrum payment.amount_cents %> · <%= pluralize payment.months, "month" %></div>
+            <div class="row__sub">
+              <%= payment.created_at.strftime("%-d %b %Y") %>
+              <%= "· #{payment.payment_method}" if payment.payment_method.present? %>
+              <%= "· #{payment.rejection_reason}" if payment.rejected? && payment.rejection_reason.present? %>
+            </div>
+          </div>
+          <span class="badge badge--<%= payment.approved? ? "payment" : (payment.rejected? ? "credit" : "pending") %>">
+            <%= payment.status.titleize %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty">No payments submitted yet.</div>
+  <% end %>
+</div>

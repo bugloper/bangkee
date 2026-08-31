@@ -1,0 +1,67 @@
+<div class="pills">
+  <% [ [ "Pending", "pending" ], [ "Approved", "approved" ], [ "Rejected", "rejected" ], [ "All", "all" ] ].each do |label, value| %>
+    <%= link_to label, admin_subscription_payments_path(status: value),
+          class: "pill #{'is-active' if @status == value}" %>
+  <% end %>
+</div>
+
+<div class="card card--flush">
+  <% if @payments.any? %>
+    <% @payments.each do |payment| %>
+      <div class="review">
+        <% if payment.screenshot.attached? %>
+          <%= link_to url_for(payment.screenshot), target: "_blank", rel: "noopener" do %>
+            <%= image_tag payment.screenshot.variant(resize_to_limit: [ 200, 200 ]), class: "thumb", alt: "Transfer screenshot" %>
+          <% end %>
+        <% end %>
+
+        <div class="review__main">
+          <div class="review__amount"><%= ngultrum payment.amount_cents %> · <%= pluralize payment.months, "month" %></div>
+          <div class="review__meta">
+            <strong><%= payment.shop.name %></strong> · <%= payment.submitted_by.display_name %> ·
+            <%= payment.created_at.strftime("%-d %b, %-l:%M %p") %>
+          </div>
+          <div class="review__meta">
+            <%= payment.payment_method.presence || "Method not given" %>
+            <%= "· ref #{payment.reference}" if payment.reference.present? %>
+          </div>
+          <div class="review__meta">
+            Paid through <%= payment.shop.subscription.current_period_end.to_date.strftime("%-d %b %Y") %> ·
+            <%= payment.shop.subscription.status_label %>
+          </div>
+
+          <% if payment.pending? %>
+            <div class="review__actions" data-controller="reveal">
+              <%= button_to "Approve — extends #{pluralize(payment.months, 'month')}", approve_admin_subscription_payment_path(payment),
+                    method: :patch, class: "btn btn--payment",
+                    form: { data: { turbo_confirm: "Approve #{ngultrum(payment.amount_cents)}?|#{payment.shop.name} is extended by #{pluralize(payment.months, 'month')} and any lockout is cleared." } } %>
+              <button class="btn btn--quiet" data-action="reveal#toggle" style="width:auto">Reject…</button>
+
+              <%= form_with url: reject_admin_subscription_payment_path(payment), method: :patch,
+                            class: "reject-form", data: { reveal_target: "panel" }, hidden: true do |form| %>
+                <div class="field">
+                  <%= form.label :rejection_reason, "Why are you rejecting it?" %>
+                  <%= form.text_field :rejection_reason, required: true,
+                        placeholder: "e.g. no transfer received for this reference" %>
+                </div>
+                <%= form.submit "Reject payment", class: "btn btn--danger" %>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="review__meta" style="margin-top:8px">
+              <span class="badge badge--<%= payment.approved? ? "payment" : "credit" %>"><%= payment.status.titleize %></span>
+              <%= "by #{payment.reviewed_by.display_name}" if payment.reviewed_by %>
+              <%= payment.reviewed_at&.strftime("on %-d %b") %>
+              <%= "· #{payment.rejection_reason}" if payment.rejected? && payment.rejection_reason.present? %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="empty">
+      <div class="empty__title">Nothing <%= @status == "all" ? "here" : @status %></div>
+      Owners' payment requests land here for approval.
+    </div>
+  <% end %>
+</div>

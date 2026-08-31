@@ -1,0 +1,52 @@
+<% invited = session[:pending_invite_token].present? %>
+<% page_title invited ? "Create your account" : "Create your shop account" %>
+
+<div class="auth">
+  <div class="auth__inner">
+    <div class="auth__title"><%= invited ? "Create your account" : "Create your shop account" %></div>
+    <div class="auth__sub">
+      <%= invited ? "So you can see your balance whenever you want." : "Free for 14 days. No card needed." %>
+    </div>
+
+    <%= form_with model: @user, url: registration_path, class: "card card--pad card--stack", style: "gap:16px" do |form| %>
+      <%= render "shared/errors", record: @user %>
+
+      <div class="field">
+        <%= form.label :name, "Your name" %>
+        <%= form.text_field :name, required: true, autofocus: true, placeholder: "Karma Dorji" %>
+      </div>
+
+      <% unless invited %>
+        <div class="field">
+          <%= form.label :shop_name, "Shop name" %>
+          <%= form.text_field :shop_name, name: "user[shop_name]", value: params.dig(:user, :shop_name),
+                required: true, placeholder: "Karma General Shop" %>
+        </div>
+      <% end %>
+
+      <div class="field">
+        <%= form.label :email_address, "Email" %>
+        <%= form.email_field :email_address, required: true, autocomplete: "username",
+              placeholder: "karma@example.bt" %>
+      </div>
+
+      <div class="field">
+        <%= form.label :phone %>
+        <span class="field__hint">Optional</span>
+        <%= form.telephone_field :phone, placeholder: "17 00 00 00" %>
+      </div>
+
+      <div class="field">
+        <%= form.label :password %>
+        <%= form.password_field :password, required: true, autocomplete: "new-password",
+              placeholder: "At least 8 characters" %>
+      </div>
+
+      <%= form.submit invited ? "Create account" : "Create shop", class: "btn" %>
+    <% end %>
+
+    <div class="auth__alt">
+      Already have an account? <%= link_to "Sign in", new_session_path, style: "font-weight:600" %>
+    </div>
+  </div>
+</div>

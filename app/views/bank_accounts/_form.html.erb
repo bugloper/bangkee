@@ -1,0 +1,43 @@
+<%= form_with model: bank_account, class: "form-stack" do |form| %>
+  <%= render "shared/errors", record: bank_account %>
+
+  <div class="field">
+    <%= form.label :bank_name, "Bank" %>
+    <%= form.text_field :bank_name, required: true, placeholder: "Bank of Bhutan" %>
+  </div>
+  <div class="field">
+    <%= form.label :account_name, "Account name" %>
+    <%= form.text_field :account_name, required: true, placeholder: "Karma General Shop" %>
+  </div>
+  <div class="field">
+    <%= form.label :account_number, "Account number" %>
+    <%= form.text_field :account_number, required: true, placeholder: "1023 4567 8901", class: "num" %>
+  </div>
+  <div class="field">
+    <%= form.label :branch, "Branch" %>
+    <span class="field__hint">Optional</span>
+    <%= form.text_field :branch, placeholder: "Thimphu Main" %>
+  </div>
+  <div class="field">
+    <%= form.label :mobile_wallet, "Mobile wallet" %>
+    <span class="field__hint">Optional</span>
+    <%= form.text_field :mobile_wallet, placeholder: "mBoB 17 55 66 77" %>
+  </div>
+  <div class="field">
+    <%= form.label :instructions, "Payment instructions" %>
+    <span class="field__hint">Optional — shown to customers</span>
+    <%= form.text_area :instructions, rows: 2, placeholder: "Send the screenshot after transferring." %>
+  </div>
+
+  <label class="check">
+    <%= form.check_box :primary %>
+    Show this account first to customers
+  </label>
+  <label class="check">
+    <%= form.check_box :active %>
+    Visible to customers
+  </label>
+
+  <%= form.submit bank_account.new_record? ? "Save bank details" : "Save changes", class: "btn" %>
+  <%= link_to "Cancel", bank_accounts_path, class: "btn btn--quiet" %>
+<% end %>

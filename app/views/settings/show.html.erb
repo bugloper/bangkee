@@ -1,0 +1,111 @@
+<% content_for :content_class, "content--narrow" %>
+
+<div class="card card--pad">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div class="avatar" style="width:56px;height:56px;font-size:22px"><%= current_user.initial %></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:18px;font-weight:700"><%= current_user.display_name %></div>
+      <div class="muted" style="font-size:14px"><%= current_user.email_address %></div>
+      <div class="muted" style="font-size:13px">
+        <% if current_user.platform_admin? %>Bangkee operator
+        <% elsif @shop %><%= @shop.name %> · shop owner
+        <% else %>Customer<% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= render "shared/install_card" %>
+
+<% if @shop %>
+  <div class="card card--flush">
+    <div class="card__head">Shop</div>
+    <div class="rows">
+      <%= link_to subscription_path, class: "row" do %>
+        <div class="row__main">
+          <div class="row__title">Billing</div>
+          <div class="row__sub">
+            <%= @subscription.status_label %> · <%= subscription_summary @subscription %>
+          </div>
+        </div>
+        <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+      <% end %>
+
+      <%= link_to bank_accounts_path, class: "row" do %>
+        <div class="row__main">
+          <div class="row__title">Bank details</div>
+          <div class="row__sub"><%= pluralize @bank_accounts_count, "account" %> published</div>
+        </div>
+        <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+      <% end %>
+
+      <%= link_to payment_proofs_path, class: "row" do %>
+        <div class="row__main">
+          <div class="row__title">Payment proofs</div>
+          <div class="row__sub">Confirm transfers your customers have made</div>
+        </div>
+        <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="card card--flush">
+  <div class="card__head">Notifications</div>
+  <div class="rows">
+    <div class="row row--static">
+      <div class="row__main">
+        <div class="row__title">Push notifications</div>
+        <div class="row__sub" id="push-status">
+          <% if !@push_configured %>
+            Not configured on this server yet.
+          <% elsif @push_enabled %>
+            On for <%= pluralize current_user.push_subscriptions.count, "device" %>.
+          <% else %>
+            Get a note when a payment, credit or proof lands — even when Bangkee is closed.
+          <% end %>
+        </div>
+      </div>
+      <% if @push_configured %>
+        <button class="btn btn--tiny" data-action="pwa#enablePush">
+          <%= @push_enabled ? "Add this device" : "Turn on" %>
+        </button>
+      <% end %>
+    </div>
+
+    <%= link_to notifications_path, class: "row" do %>
+      <div class="row__main">
+        <div class="row__title">Notification centre</div>
+        <div class="row__sub">
+          <%= unread_notifications_count.positive? ? "#{unread_notifications_count} unread" : "Everything read" %>
+        </div>
+      </div>
+      <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+    <% end %>
+  </div>
+</div>
+
+<div class="card card--flush">
+  <div class="card__head">Installing Bangkee</div>
+  <div class="rows">
+    <div class="row row--static" style="align-items:flex-start">
+      <div class="row__main">
+        <div class="row__title">On Android</div>
+        <div class="row__sub">Chrome menu → “Install app” — or use the Install button when it appears.</div>
+      </div>
+    </div>
+    <div class="row row--static" style="align-items:flex-start">
+      <div class="row__main">
+        <div class="row__title">On iPhone</div>
+        <div class="row__sub">
+          Safari cannot install by itself: tap Share, then “Add to Home Screen”.
+          Notifications on iOS only work once Bangkee is on the home screen.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card card--pad">
+  <%= button_to "Sign out", session_path, method: :delete, class: "btn btn--quiet" %>
+</div>

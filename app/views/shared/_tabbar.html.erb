@@ -1,0 +1,12 @@
+<%# Mobile navigation. Hidden at 768px, where the sidebar takes over. %>
+<nav class="tabbar no-print" aria-label="Main">
+  <% nav_items.each do |item| %>
+    <%= link_to item[:path], class: "tabbar__item #{'is-active' if nav_root == item[:key]}" do %>
+      <%= icon item[:icon], size: 24 %>
+      <span><%= item[:label] %></span>
+      <% if item[:badge].to_i.positive? %>
+        <span class="tabbar__badge"><%= item[:badge] %></span>
+      <% end %>
+    <% end %>
+  <% end %>
+</nav>

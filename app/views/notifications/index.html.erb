@@ -1,0 +1,32 @@
+<div class="section-head">
+  <h1>Notifications</h1>
+  <% if @unread_count.positive? %>
+    <%= button_to "Mark all read", read_all_notifications_path, method: :patch, class: "btn btn--tiny" %>
+  <% end %>
+</div>
+
+<div class="card card--flush">
+  <% if @notifications.any? %>
+    <% @notifications.each do |notification| %>
+      <%= button_to read_notification_path(notification), method: :patch,
+            class: "notif #{'is-unread' unless notification.read?}",
+            form: { style: "display:contents" },
+            style: "border:0;background:none;padding:0;text-align:left;width:100%;cursor:pointer" do %>
+        <span class="notif__dot <%= "is-read" if notification.read? %>"
+              style="background:<%= { credit: "var(--brand)", payment: "var(--green)", void: "var(--muted)",
+                                      overdue: "var(--red)", proof: "var(--amber)", sub: "var(--green)" }[notification.kind.to_sym] %>"></span>
+        <span class="notif__main">
+          <span class="notif__title"><%= notification.title %></span>
+          <span class="notif__body"><%= notification.body %></span>
+          <span class="notif__time"><%= time_ago_in_words notification.created_at %> ago</span>
+        </span>
+      <% end %>
+    <% end %>
+  <% else %>
+    <div class="empty">
+      <span class="empty__icon">🔔</span>
+      <div class="empty__title">Nothing yet</div>
+      Credits, payments, proofs and reminders show up here.
+    </div>
+  <% end %>
+</div>

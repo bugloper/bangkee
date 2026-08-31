@@ -1,0 +1,23 @@
+<% page_title "Set a new password" %>
+
+<div class="auth">
+  <div class="auth__inner">
+    <div class="auth__title">Set a new password</div>
+    <div class="auth__sub">This signs out all other sessions.</div>
+
+    <%= form_with url: password_path(params[:token]), method: :put,
+                  class: "card card--pad card--stack", style: "gap:16px" do |form| %>
+      <div class="field">
+        <%= form.label :password, "New password" %>
+        <%= form.password_field :password, required: true, autofocus: true,
+              autocomplete: "new-password", placeholder: "At least 8 characters" %>
+      </div>
+      <div class="field">
+        <%= form.label :password_confirmation, "Repeat password" %>
+        <%= form.password_field :password_confirmation, required: true,
+              autocomplete: "new-password", placeholder: "Same again" %>
+      </div>
+      <%= form.submit "Save new password", class: "btn" %>
+    <% end %>
+  </div>
+</div>

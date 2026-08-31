@@ -1,0 +1,78 @@
+<% content_for :content_class, "content--narrow" %>
+
+<% if @bank_accounts.any? %>
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">Pay <%= @account.shop.name %></div>
+    <p class="muted" style="font-size:14px;margin-bottom:8px">Transfer the money first, then upload the screenshot below.</p>
+    <% @bank_accounts.each do |bank| %>
+      <div style="border-top:1px solid var(--line);padding-top:8px">
+        <div style="font-weight:600"><%= bank.bank_name %><%= " · primary" if bank.primary? %></div>
+        <div class="kv"><span class="kv__key">Account name</span><span class="kv__val"><%= bank.account_name %></span></div>
+        <div class="kv"><span class="kv__key">Account number</span><span class="kv__val"><%= bank.account_number %></span></div>
+        <% if bank.mobile_wallet.present? %>
+          <div class="kv"><span class="kv__key">Mobile wallet</span><span class="kv__val"><%= bank.mobile_wallet %></span></div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="banner banner--warn flash">
+    <span><%= @account.shop.name %> has not published bank details yet. Ask them where to transfer.</span>
+  </div>
+<% end %>
+
+<%= form_with model: @proof, url: account_payment_proofs_path(@account),
+              class: "card card--pad form-stack",
+              data: { controller: "keypad image-preview" } do |form| %>
+  <%= render "shared/errors", record: @proof %>
+
+  <div>
+    <div class="amount-field__label">How much did you transfer?</div>
+    <div class="amount-field amount-field--payment">
+      <div class="amount-field__box">
+        <span class="amount-field__unit">Nu.</span>
+        <%= form.text_field :amount, inputmode: "decimal", placeholder: "0", required: true,
+              "aria-label": "Amount in Ngultrum",
+              data: { keypad_target: "input", action: "input->keypad#refresh" } %>
+      </div>
+    </div>
+    <div class="muted" style="font-size:14px;margin-top:8px">
+      You owe <span class="num owed"><%= ngultrum @account.balance_cents %></span>
+    </div>
+  </div>
+
+  <div class="field">
+    <%= form.label :screenshot, "Transfer screenshot" %>
+    <span class="field__hint">Required — the shop checks this against their bank</span>
+    <%= form.file_field :screenshot, accept: "image/*", capture: "environment", required: true,
+          data: { image_preview_target: "input", action: "change->image-preview#show" } %>
+    <img class="shot shot-preview" data-image-preview-target="preview" hidden alt="Your screenshot">
+  </div>
+
+  <div class="field">
+    <%= form.label :reference, "Reference number" %>
+    <span class="field__hint">Optional — the journal or transaction number</span>
+    <%= form.text_field :reference, placeholder: "e.g. BT26082911022", class: "num" %>
+  </div>
+
+  <div class="field">
+    <%= form.label :note, "Note for the shop" %>
+    <span class="field__hint">Optional</span>
+    <%= form.text_area :note, rows: 2, placeholder: "e.g. paid for last month's rice" %>
+  </div>
+
+  <div class="keypad">
+    <% %w[1 2 3 4 5 6 7 8 9 . 0].each do |key| %>
+      <button type="button" data-key="<%= key %>" data-action="keypad#press"><%= key %></button>
+    <% end %>
+    <button type="button" data-key="back" data-action="keypad#press" aria-label="Delete">⌫</button>
+  </div>
+
+  <div class="hint">
+    Your balance does not change until <%= @account.shop.name %> confirms this — you will get
+    a notification either way.
+  </div>
+
+  <%= form.submit "Send proof", class: "btn" %>
+  <%= link_to "Cancel", account_path(@account), class: "btn btn--quiet" %>
+<% end %>

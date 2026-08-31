@@ -1,0 +1,21 @@
+<%# In standalone mode there is no browser toolbar, so every screen carries its
+    own back affordance. %>
+<header class="topbar no-print">
+  <% if @back_path %>
+    <%= link_to @back_path, class: "iconbtn", "aria-label": "Back" do %><%= icon :chev_left, size: 24 %><% end %>
+  <% end %>
+
+  <div class="topbar__title"><%= @page_title || "Bangkee" %></div>
+  <span class="topbar__spacer"></span>
+
+  <%= link_to notifications_path, class: "iconbtn", "aria-label": "Notifications" do %>
+    <%= icon :bell %>
+    <% if unread_notifications_count.positive? %>
+      <span class="iconbtn__badge"><%= unread_notifications_count %></span>
+    <% end %>
+  <% end %>
+
+  <%= link_to settings_path, class: "avatar-btn", "aria-label": "Your account", style: "margin-left:2px" do %>
+    <span class="avatar"><%= current_user.initial %></span>
+  <% end %>
+</header>

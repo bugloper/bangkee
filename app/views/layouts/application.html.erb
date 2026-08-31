@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || (@page_title ? "#{@page_title} · Bangkee" : "Bangkee — the shared credit book for your shop") %></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Bangkee">
+    <meta name="application-name" content="Bangkee">
+    <meta name="theme-color" content="#003d9b">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <link rel="manifest" href="<%= pwa_manifest_path %>">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icon-180.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+    <%= yield :head %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body data-controller="pwa offline"
+        <%= "data-pwa-vapid-key-value=#{WebPushConfig.public_key}" if authenticated? && WebPushConfig.configured? %>>
+    <% if authenticated? %>
+      <div class="shell">
+        <%= render "shared/sidebar" %>
+
+        <div class="pane">
+          <%= render "shared/topbar" %>
+          <%= render "shared/banners" %>
+
+          <main class="content <%= yield :content_class %>">
+            <%= yield %>
+          </main>
+
+          <%= render "shared/tabbar" %>
+        </div>
+      </div>
+    <% else %>
+      <%= render "shared/banners" %>
+      <main><%= yield %></main>
+    <% end %>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+<div class="item-fields" data-line-items-target="row" style="padding:8px 0">
+  <div class="field">
+    <%= form.label :name, "Item", class: "sr-only" %>
+    <%= form.text_field :name, placeholder: "Rice 25 kg" %>
+  </div>
+  <div class="field">
+    <%= form.label :quantity, "Qty", class: "sr-only" %>
+    <%= form.number_field :quantity, step: "0.01", value: form.object.quantity || 1,
+          placeholder: "1", inputmode: "decimal",
+          data: { role: "quantity", action: "input->line-items#recalculate" } %>
+  </div>
+  <div class="field">
+    <%= form.label :unit_price, "Price", class: "sr-only" %>
+    <%= form.text_field :unit_price, placeholder: "Nu.", inputmode: "decimal",
+          data: { role: "price", action: "input->line-items#recalculate" } %>
+  </div>
+  <% if form.object.persisted? %>
+    <%= form.hidden_field :_destroy, value: "0" %>
+  <% end %>
+  <button type="button" class="item-remove" data-action="line-items#remove" aria-label="Remove item">×</button>
+</div>

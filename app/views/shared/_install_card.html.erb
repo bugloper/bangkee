@@ -1,0 +1,11 @@
+<%# Revealed by the pwa controller when the browser offers installation.
+    iOS never fires that event, so it gets its own instruction instead. %>
+<div class="install" id="install-card" hidden>
+  <div class="avatar avatar--lg" style="border-radius:10px">B</div>
+  <div class="install__text">
+    <div class="install__title">Install Bangkee</div>
+    <div class="muted">Keep it on your home screen — it opens faster and works offline.</div>
+  </div>
+  <button class="btn btn--sm" data-action="pwa#install">Install</button>
+  <button class="iconbtn" data-action="pwa#dismissInstall" aria-label="Not now"><%= icon :close, size: 18 %></button>
+</div>

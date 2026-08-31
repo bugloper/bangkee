@@ -1,0 +1,18 @@
+<% page_title "Reset your password" %>
+
+<div class="auth">
+  <div class="auth__inner">
+    <div class="auth__title">Reset your password</div>
+    <div class="auth__sub">We will send a reset link to your email.</div>
+
+    <%= form_with url: passwords_path, class: "card card--pad card--stack", style: "gap:16px" do |form| %>
+      <div class="field">
+        <%= form.label :email_address, "Email" %>
+        <%= form.email_field :email_address, required: true, autofocus: true,
+              autocomplete: "username", placeholder: "karma@example.bt" %>
+      </div>
+      <%= form.submit "Send reset link", class: "btn" %>
+      <%= link_to "Back to sign in", new_session_path, class: "btn btn--quiet" %>
+    <% end %>
+  </div>
+</div>

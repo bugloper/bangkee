@@ -1,0 +1,30 @@
+<%= form_with model: account, class: "card card--pad card--stack", style: "gap:16px" do |form| %>
+  <%= render "shared/errors", record: account %>
+
+  <div class="field">
+    <%= form.label :customer_name, "Customer name" %>
+    <%= form.text_field :customer_name, required: true, autofocus: true, placeholder: "e.g. Tashi Wangmo" %>
+  </div>
+
+  <div class="field">
+    <%= form.label :customer_phone, "Phone" %>
+    <span class="field__hint">Optional — used for the invite</span>
+    <%= form.telephone_field :customer_phone, placeholder: "17 00 00 00", class: "num" %>
+  </div>
+
+  <% if account.new_record? %>
+    <div class="hint">
+      After saving you can share an invite link so this customer can watch their own balance.
+    </div>
+  <% end %>
+
+  <%= form.submit account.new_record? ? "Save customer" : "Save changes", class: "btn" %>
+  <%= link_to "Cancel", account.new_record? ? accounts_path : account_path(account), class: "btn btn--quiet" %>
+
+  <% unless account.new_record? %>
+    <%= button_to "Remove this account…", account_path(account), method: :delete,
+          class: "btn btn--quiet", style: "color:var(--red);border-color:var(--red-tint)",
+          form: { data: { turbo_confirm: "Remove #{account.display_name}?|The whole ledger for this customer is deleted. This cannot be undone.",
+                          turbo_confirm_style: "danger" } } %>
+  <% end %>
+<% end %>

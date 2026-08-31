@@ -1,0 +1,53 @@
+<% page_title "Customers" %>
+
+<div class="toolbar">
+  <%= form_with url: accounts_path, method: :get, class: "search", data: { turbo_action: "replace" } do |form| %>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6"></circle><path d="M15 15l6 6"></path>
+    </svg>
+    <%= form.search_field :q, value: @query, placeholder: "Search name or phone",
+          "aria-label": "Search customers", autocomplete: "off",
+          oninput: "this.form.requestSubmit()" %>
+    <%= form.hidden_field :filter, value: @filter %>
+  <% end %>
+
+  <%= link_to new_account_path, class: "btn btn--desktop" do %>
+    <%= icon :plus, size: 18, stroke: 2.4 %> Add customer
+  <% end %>
+</div>
+
+<div class="pills">
+  <% [ [ "All", nil ], [ "Outstanding", "outstanding" ], [ "Overdue", "overdue" ], [ "Settled", "settled" ] ].each do |label, value| %>
+    <%= link_to label, accounts_path(filter: value, q: @query),
+          class: "pill #{'is-active' if @filter == value}" %>
+  <% end %>
+</div>
+
+<div class="card card--flush">
+  <% if @accounts.any? %>
+    <div class="rows">
+      <% @accounts.each do |account| %>
+        <%= link_to account_path(account), class: "row", style: "min-height:64px" do %>
+          <div class="avatar avatar--lg" style="width:44px;height:44px;font-size:17px"><%= account.display_name.first.upcase %></div>
+          <div class="row__main">
+            <div class="row__title" style="font-size:16px"><%= account.display_name %></div>
+            <div class="row__sub"><%= account.customer_phone.presence || "No phone" %></div>
+          </div>
+          <div class="row__end">
+            <div class="row__amount <%= balance_state account.balance_cents %>"><%= ngultrum account.balance_cents %></div>
+            <span class="badge badge--square <%= balance_badge_class account %>" style="margin-top:4px"><%= balance_word account %></span>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty">
+      <div class="empty__title"><%= @query.present? || @filter ? "No customers match" : "No customers yet" %></div>
+      <%= @query.present? || @filter ? "Try a different name, or clear the filter." : "Add your first customer to start the book." %>
+    </div>
+  <% end %>
+</div>
+
+<%= link_to new_account_path, class: "fab", "aria-label": "Add customer" do %>
+  <%= icon :plus, size: 26, stroke: 2.4 %>
+<% end %>

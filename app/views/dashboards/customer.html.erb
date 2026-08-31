@@ -1,0 +1,75 @@
+<% page_title "My credit" %>
+
+<div class="hero <%= "hero--green" if @total_owed_cents.zero? %>">
+  <div class="hero__label">Your total balance</div>
+  <div class="hero__value"><%= ngultrum @total_owed_cents %></div>
+  <div class="hero__sub">
+    <% if @total_owed_cents.positive? %>
+      Outstanding across <%= pluralize @accounts.size, "shop" %>
+    <% else %>
+      You are all settled
+    <% end %>
+  </div>
+</div>
+
+<%= render "shared/install_card" %>
+
+<div class="stats" style="grid-template-columns:repeat(2,1fr)">
+  <div class="stat">
+    <div class="stat__value"><%= @accounts.size %></div>
+    <div class="stat__label">Shops</div>
+  </div>
+  <div class="stat">
+    <div class="stat__value"><%= ngultrum @spent_month_cents %></div>
+    <div class="stat__label">Taken this month</div>
+  </div>
+</div>
+
+<div class="card card--flush">
+  <div class="card__head">My accounts</div>
+  <% if @accounts.any? %>
+    <div class="rows">
+      <% @accounts.each do |account| %>
+        <%= link_to account_path(account), class: "row" do %>
+          <div class="avatar avatar--lg"><%= account.shop.name.first.upcase %></div>
+          <div class="row__main">
+            <div class="row__title"><%= account.shop.name %></div>
+            <div class="row__sub"><%= account.customer_phone.presence || "Credit account" %></div>
+          </div>
+          <div class="row__end">
+            <div class="row__amount <%= balance_state account.balance_cents %>"><%= ngultrum account.balance_cents %></div>
+            <span class="badge <%= balance_badge_class account %>" style="margin-top:4px"><%= balance_word account %></span>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty">
+      <span class="empty__icon">🛍️</span>
+      <div class="empty__title">No shops yet</div>
+      Ask your shopkeeper for their Bangkee invite link.
+    </div>
+  <% end %>
+</div>
+
+<% if @recent_transactions.any? %>
+  <div class="card card--flush">
+    <div class="card__head">Recent activity</div>
+    <div class="rows">
+      <% @recent_transactions.each do |transaction| %>
+        <div class="row row--static">
+          <div class="row__main">
+            <div class="row__title"><%= transaction.account.shop.name %></div>
+            <div class="row__sub"><%= transaction.description.presence || (transaction.payment? ? "Payment" : "Credit") %></div>
+          </div>
+          <div class="row__end">
+            <div class="row__amount <%= transaction.credit? ? "owed" : "paid" %>">
+              <%= ngultrum transaction.signed_amount_cents, signed: true %>
+            </div>
+            <div class="row__time"><%= transaction.occurred_at.strftime("%-d %b") %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

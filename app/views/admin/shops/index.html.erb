@@ -1,0 +1,26 @@
+<div class="card card--flush">
+  <div class="card__head">All shops <span class="count"><%= @shops.size %></span></div>
+  <div class="rows">
+    <% @shops.each do |shop| %>
+      <% subscription = shop.subscription %>
+      <div class="row row--static">
+        <div class="avatar avatar--lg"><%= shop.name.first.upcase %></div>
+        <div class="row__main">
+          <div class="row__title"><%= shop.name %></div>
+          <div class="row__sub">
+            <%= shop.owner.display_name %> · <%= shop.owner.email_address %>
+          </div>
+        </div>
+        <div class="row__end">
+          <span class="badge <%= subscription_badge_class subscription %>">
+            <%= subscription&.status_label || "No subscription" %>
+          </span>
+          <div class="row__time"><%= subscription_summary subscription %></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <% if @shops.empty? %>
+    <div class="empty"><div class="empty__title">No shops yet</div></div>
+  <% end %>
+</div>

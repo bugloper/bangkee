@@ -1,0 +1,25 @@
+<%# An itemized credit: the line items are the amount (BR-12), so there is no
+    amount field to get wrong. %>
+<div>
+  <div class="amount-field__label">Items taken by <%= account.display_name %></div>
+  <div class="rows" data-line-items-target="rows">
+    <% form.fields_for :line_items do |item_form| %>
+      <%= render "line_item_fields", form: item_form %>
+    <% end %>
+  </div>
+
+  <template data-line-items-target="template">
+    <%= form.fields_for :line_items, LineItem.new, child_index: "NEW_RECORD" do |item_form| %>
+      <%= render "line_item_fields", form: item_form %>
+    <% end %>
+  </template>
+
+  <button type="button" class="btn btn--quiet" data-action="line-items#add" style="margin-top:12px">
+    + Add another item
+  </button>
+
+  <div class="kv" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+    <span class="kv__key">Total</span>
+    <span class="kv__val owed" style="font-size:20px" data-line-items-target="total">Nu. 0</span>
+  </div>
+</div>

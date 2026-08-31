@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bangkee - Customer Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c3c6d6",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#851800",
+                    "primary-fixed": "#dae2ff",
+                    "secondary-fixed": "#8df7c1",
+                    "surface-container-highest": "#d7e2ff",
+                    "on-secondary-fixed": "#002113",
+                    "primary-fixed-dim": "#b2c5ff",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#ffdad2",
+                    "on-primary-fixed": "#001848",
+                    "surface": "#f9f9ff",
+                    "tertiary-container": "#b02300",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-surface": "#041b3c",
+                    "surface-container-high": "#e0e8ff",
+                    "on-background": "#041b3c",
+                    "on-secondary-fixed-variant": "#005235",
+                    "on-surface-variant": "#434654",
+                    "inverse-surface": "#1d3052",
+                    "on-primary-container": "#c4d2ff",
+                    "on-secondary-container": "#00714b",
+                    "tertiary-fixed-dim": "#ffb4a3",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#b2c5ff",
+                    "background": "#f9f9ff",
+                    "secondary-fixed-dim": "#71dba6",
+                    "secondary-container": "#8af5be",
+                    "surface-container-low": "#f1f3ff",
+                    "primary": "#003d9b",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#ffc6b9",
+                    "outline": "#737685",
+                    "on-tertiary-fixed": "#3d0600",
+                    "surface-bright": "#f9f9ff",
+                    "secondary": "#006c47",
+                    "surface-container": "#e8edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#0c56d0",
+                    "on-tertiary-fixed-variant": "#8b1a00",
+                    "surface-variant": "#d7e2ff",
+                    "primary-container": "#0052cc",
+                    "surface-dim": "#cadaff",
+                    "on-primary-fixed-variant": "#0040a2",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "12px",
+                    "base": "8px",
+                    "stack-sm": "4px",
+                    "gutter": "12px",
+                    "stack-lg": "24px",
+                    "container-padding": "16px",
+                    "touch-target-min": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-amount-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-amount": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-amount-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "display-amount": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #F4F5F7;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-card {
+            background: #FFFFFF;
+            box-shadow: 0px 2px 8px rgba(23, 43, 77, 0.08);
+            border: 1px solid #EBECF0;
+        }
+        .chart-bar {
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-header {
+            background: rgba(249, 249, 255, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="text-on-surface pb-24">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-40 glass-header border-b border-outline-variant">
+<div class="flex items-center justify-between px-container-padding h-touch-target-min w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A close-up portrait of a friendly Bhutanese man with a warm smile, wearing a traditional Gho, in a softly lit indoor environment with minimalist decor. The photography style is modern and professional, with a shallow depth of field and high clarity, reflecting a clean and trustworthy digital finance brand aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsyWF_WbpwgOTh4lWFBGDP9DKKbifLnoDFac-STaal6nje_leMdwzWlDqjm3HUdFvAZ6eccfqjhGUZQ2cw5x8Ld5RZxrDofPvpz0p12faeZJSH9BrufRS8kpmUNGf7T4rtfsVBigk7NpDkpOe-_3dwoEH84dG9t1VIIjonIqdZbWCOJM6d3LJNdU7HddwIavkJ0NGIeR4DpgpWmOmAQLLBTXDf74qFDX39oIM4gjagJL27QgC9hkOr6gneX1CLElO6IXp37RWsJBA"/>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Hello,</p>
+<p class="font-headline-md text-headline-md text-primary leading-tight">Pema!</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-container-padding pt-stack-lg space-y-stack-lg">
+<!-- Balance Card -->
+<section class="relative overflow-hidden rounded-xl bg-primary p-6 text-on-primary shadow-lg">
+<!-- Subtle Decorative WebGL Effect Placeholder -->
+<div class="absolute top-0 right-0 w-32 h-32 opacity-20 -mr-10 -mt-10">
+
+</div>
+<div class="relative z-10">
+<p class="font-label-md text-label-md opacity-80 mb-1">Your Total Balance at Dawa's General Store</p>
+<div class="flex items-baseline gap-2">
+<span class="font-display-amount-mobile text-display-amount-mobile md:text-display-amount">Nu. 1,800.00</span>
+<span class="bg-primary-container text-on-primary-fixed-variant px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Due</span>
+</div>
+<div class="mt-6 flex gap-3">
+<button class="flex-1 bg-surface text-primary font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+                        Pay Now
+                    </button>
+<button class="w-12 bg-white/10 hover:bg-white/20 transition-colors rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bento Grid: Stats & Spending -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Spending Summary -->
+<div class="md:col-span-2 tonal-card rounded-xl p-5 flex flex-col justify-between">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Recent Spending</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Last 7 Days activity</p>
+</div>
+<div class="flex items-end justify-between h-32 mt-6 px-2 gap-2">
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-secondary-container rounded-t-sm chart-bar" style="height: 40%"></div>
+<span class="text-[10px] text-on-surface-variant font-medium">Mon</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-secondary-container rounded-t-sm chart-bar" style="height: 65%"></div>
+<span class="text-[10px] text-on-surface-variant font-medium">Tue</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-secondary-container rounded-t-sm chart-bar" style="height: 30%"></div>
+<span class="text-[10px] text-on-surface-variant font-medium">Wed</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-primary rounded-t-sm chart-bar" style="height: 90%"></div>
+<span class="text-[10px] text-primary font-bold">Thu</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-secondary-container rounded-t-sm chart-bar" style="height: 50%"></div>
+<span class="text-[10px] text-on-surface-variant font-medium">Fri</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-secondary-container rounded-t-sm chart-bar" style="height: 20%"></div>
+<span class="text-[10px] text-on-surface-variant font-medium">Sat</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-2">
+<div class="w-full bg-secondary-container rounded-t-sm chart-bar" style="height: 10%"></div>
+<span class="text-[10px] text-on-surface-variant font-medium">Sun</span>
+</div>
+</div>
+</div>
+<!-- Quick Insight -->
+<div class="tonal-card rounded-xl p-5 bg-secondary-container/30 flex flex-col justify-center items-center text-center space-y-3">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div>
+<p class="font-headline-md text-headline-md text-on-secondary-container">Nu. 450</p>
+<p class="font-label-sm text-label-sm text-on-secondary-fixed-variant">Avg. Daily Credit</p>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant px-4">Your spending is 12% higher than last month.</p>
+</div>
+</section>
+<!-- Recent Activity -->
+<section class="space-y-stack-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface">Recent Activity</h3>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1">
+                    View All
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+<div class="space-y-base">
+<!-- Activity Item 1 -->
+<div class="tonal-card p-4 rounded-xl flex items-center justify-between group cursor-pointer active:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-error-container/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Grocery Purchase</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 24, 2023 • 10:45 AM</p>
+</div>
+</div>
+<p class="font-headline-md text-headline-md text-error">- Nu. 850</p>
+</div>
+<!-- Activity Item 2 -->
+<div class="tonal-card p-4 rounded-xl flex items-center justify-between group cursor-pointer active:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Partial Payment</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 22, 2023 • 04:20 PM</p>
+</div>
+</div>
+<p class="font-headline-md text-headline-md text-secondary">+ Nu. 500</p>
+</div>
+<!-- Activity Item 3 -->
+<div class="tonal-card p-4 rounded-xl flex items-center justify-between group cursor-pointer active:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-error-container/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Utility Bill (Electric)</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 20, 2023 • 09:15 AM</p>
+</div>
+</div>
+<p class="font-headline-md text-headline-md text-error">- Nu. 1,200</p>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-stack-lg">
+<button class="w-full tonal-card py-4 rounded-xl flex items-center justify-center gap-2 text-primary font-label-md text-label-md active:scale-[0.98] transition-transform">
+<span class="material-symbols-outlined">description</span>
+                View Full Statement
+            </button>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-2 h-16 bg-surface border-t border-outline-variant shadow-sm">
+<!-- Dashboard (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-sm text-label-sm">Dashboard</span>
+</a>
+<!-- History -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-95 transition-transform duration-100 hover:bg-surface-container-high rounded-full" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-sm text-label-sm">History</span>
+</a>
+<!-- Statements -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 active:scale-95 transition-transform duration-100 hover:bg-surface-container-high rounded-full" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-sm text-label-sm">Statements</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('.tonal-card').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.backgroundColor = '#F4F5F7';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.backgroundColor = '#FFFFFF';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.backgroundColor = '#FFFFFF';
+            });
+        });
+
+        // Simple Chart Animation Trigger
+        window.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.chart-bar');
+            bars.forEach((bar, index) => {
+                const finalHeight = bar.style.height;
+                bar.style.height = '0px';
+                setTimeout(() => {
+                    bar.style.height = finalHeight;
+                }, 100 * index);
+            });
+        });
+    </script>
+</body></html>

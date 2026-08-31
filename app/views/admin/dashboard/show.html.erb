@@ -1,0 +1,51 @@
+<div class="hero">
+  <div class="hero__label">Approved this month</div>
+  <div class="hero__value"><%= ngultrum @approved_month_cents %></div>
+  <div class="hero__sub"><%= pluralize @shops_count, "shop" %> on Bangkee</div>
+</div>
+
+<div class="stats">
+  <div class="stat stat--amber">
+    <div class="stat__value"><%= @pending_count %></div>
+    <div class="stat__label">Payments to review</div>
+  </div>
+  <div class="stat">
+    <div class="stat__value"><%= @shops_count %></div>
+    <div class="stat__label">Shops</div>
+  </div>
+  <div class="stat stat--red">
+    <div class="stat__value"><%= @locked_count %></div>
+    <div class="stat__label">Write-locked</div>
+  </div>
+</div>
+
+<div class="card card--flush">
+  <div class="card__head">
+    Waiting for review
+    <% if @pending_count.positive? %><span class="count"><%= @pending_count %></span><% end %>
+  </div>
+  <% if @pending.any? %>
+    <div class="rows">
+      <% @pending.each do |payment| %>
+        <%= link_to admin_subscription_payments_path, class: "row" do %>
+          <div class="row__main">
+            <div class="row__title"><%= payment.shop.name %></div>
+            <div class="row__sub">
+              <%= payment.submitted_by.display_name %> ·
+              <%= pluralize payment.months, "month" %> ·
+              <%= payment.created_at.strftime("%-d %b") %>
+            </div>
+          </div>
+          <div class="row__amount"><%= ngultrum payment.amount_cents %></div>
+          <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty">
+      <span class="empty__icon">✅</span>
+      <div class="empty__title">Queue is clear</div>
+      Nothing is waiting on Bangkee.
+    </div>
+  <% end %>
+</div>

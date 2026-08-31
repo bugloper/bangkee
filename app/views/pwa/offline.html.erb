@@ -1,0 +1,12 @@
+<% page_title "Offline" %>
+
+<div class="errpage">
+  <div>
+    <div style="color:var(--amber);margin-bottom:8px"><%= icon :wifi_off, size: 48 %></div>
+    <div class="errpage__title">You are offline</div>
+    <div class="errpage__sub">
+      Bangkee could not reach the shop's books. Pages you have already opened still work.
+    </div>
+    <%= link_to "Try again", root_path, class: "btn btn--auto", style: "margin:0 auto;padding:0 32px" %>
+  </div>
+</div>

@@ -1,0 +1,84 @@
+<% owner = current_user.shop_owner? %>
+
+<div class="statement-head" style="margin-bottom:16px">
+  <div style="font-size:20px;font-weight:800"><%= @account.shop.name %></div>
+  <div style="font-size:14px;color:#434654">
+    Statement for <%= @account.display_name %> · printed <%= Date.current.strftime("%-d %b %Y") %>
+  </div>
+</div>
+
+<div class="card card--pad no-print">
+  <div class="acct-head">
+    <div class="acct-head__main">
+      <div class="acct-head__name">Statement</div>
+      <div class="acct-head__meta"><%= @account.display_name %> · <%= @account.shop.name %></div>
+    </div>
+    <button class="btn btn--tiny" onclick="window.print()"><%= icon :print, size: 16 %> Print</button>
+  </div>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat stat--red">
+      <div class="stat__value"><%= ngultrum @debit_cents %></div>
+      <div class="stat__label">Total taken on credit</div>
+    </div>
+    <div class="stat stat--green">
+      <div class="stat__value"><%= ngultrum @credit_cents %></div>
+      <div class="stat__label">Total paid</div>
+    </div>
+    <div class="stat">
+      <div class="stat__value <%= balance_state @account.balance_cents %>"><%= ngultrum @account.balance_cents %></div>
+      <div class="stat__label">Balance</div>
+    </div>
+  </div>
+</div>
+
+<div class="card card--flush print-flat">
+  <div class="table-wrap">
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Recorded by</th>
+          <th class="n">Credit given</th>
+          <th class="n">Paid</th>
+          <th class="n">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each do |transaction, running| %>
+          <tr>
+            <td class="num"><%= transaction.occurred_at.strftime("%-d %b %Y") %></td>
+            <td>
+              <%= transaction.description.presence || (transaction.payment? ? "Payment" : "Goods on credit") %>
+              <% if transaction.payment_method.present? %>
+                <span class="muted">· <%= transaction.payment_method %></span>
+              <% end %>
+            </td>
+            <td class="muted"><%= transaction.created_by.display_name %></td>
+            <td class="n"><%= ngultrum transaction.amount_cents if transaction.credit? %></td>
+            <td class="n"><%= ngultrum transaction.amount_cents if transaction.payment? %></td>
+            <td class="n"><%= ngultrum running %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">Totals</td>
+          <td class="n owed"><%= ngultrum @debit_cents %></td>
+          <td class="n paid"><%= ngultrum @credit_cents %></td>
+          <td class="n <%= balance_state @account.balance_cents %>"><%= ngultrum @account.balance_cents %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <% if @rows.empty? %>
+    <div class="empty"><div class="empty__title">Nothing to show</div>This account has no active transactions.</div>
+  <% end %>
+</div>
+
+<p class="muted" style="font-size:13px">
+  Voided entries are excluded. Amounts in Ngultrum.
+  <% if owner %>Questions about this statement go to <%= @account.shop.name %>.<% end %>
+</p>

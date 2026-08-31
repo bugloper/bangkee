@@ -1,0 +1,39 @@
+<% page_title "Bank details", back: settings_path %>
+<% content_for :content_class, "content--narrow" %>
+
+<div class="hint">
+  These are the accounts your customers see when they want to pay you by transfer.
+  They upload the screenshot; you confirm it, and Bangkee records the payment.
+</div>
+
+<% if @bank_accounts.any? %>
+  <div class="card card--flush">
+    <div class="rows">
+      <% @bank_accounts.each do |bank| %>
+        <div class="row row--static">
+          <div class="avatar avatar--lg" style="border-radius:10px"><%= icon :bank, size: 20 %></div>
+          <div class="row__main">
+            <div class="row__title">
+              <%= bank.bank_name %>
+              <% if bank.primary? %><span class="badge badge--brand" style="margin-left:6px">Primary</span><% end %>
+              <% unless bank.active? %><span class="badge badge--settled" style="margin-left:6px">Hidden</span><% end %>
+            </div>
+            <div class="row__sub num"><%= bank.account_number %> · <%= bank.account_name %></div>
+          </div>
+          <%= link_to "Edit", edit_bank_account_path(bank), class: "btn btn--tiny" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="card empty">
+    <span class="empty__icon">🏦</span>
+    <div class="empty__title">No bank details yet</div>
+    Add one so customers can pay you by transfer.
+  </div>
+<% end %>
+
+<div class="card card--pad">
+  <div style="font-size:16px;font-weight:700;margin-bottom:12px">Add a bank account</div>
+  <%= render "form", bank_account: @bank_account %>
+</div>

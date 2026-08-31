@@ -1,0 +1,23 @@
+<% page_title "You're invited" %>
+
+<div class="auth">
+  <div class="auth__inner">
+    <div class="card card--pad" style="text-align:center">
+      <div class="avatar" style="width:64px;height:64px;font-size:28px;margin:0 auto 16px"><%= @shop.name.first.upcase %></div>
+      <div style="font-size:20px;font-weight:700;line-height:28px">
+        <%= @shop.name %><br>invites you to Bangkee
+      </div>
+      <p style="color:var(--ink-soft);font-size:15px;line-height:24px;margin:12px 0 24px">
+        See your credit balance at this shop any time, get a note when something is added,
+        and upload payment proofs — free.
+      </p>
+      <div class="sheet__actions">
+        <%= link_to "Create my account", new_registration_path, class: "btn" %>
+        <%= link_to "I already have one — sign in", new_session_path, class: "btn btn--quiet" %>
+      </div>
+      <div style="margin-top:20px;font-size:12px;color:var(--muted)">
+        <%= request.host %>/join/<%= @account.invite_token.first(6) %>…
+      </div>
+    </div>
+  </div>
+</div>

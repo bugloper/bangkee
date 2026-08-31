@@ -1,0 +1,46 @@
+<% page_title "Edit transaction", back: account_path(@transaction.account) %>
+<% content_for :content_class, "content--narrow" %>
+
+<%= form_with model: @transaction, class: "card card--pad form-stack" do |form| %>
+  <%= render "shared/errors", record: @transaction %>
+
+  <div class="hint">
+    Editing is recorded in the audit log. To remove an entry from the balance entirely,
+    void it instead — the record stays either way.
+  </div>
+
+  <div>
+    <div class="amount-field__label">Amount</div>
+    <div class="amount-field amount-field--<%= @transaction.kind %>">
+      <div class="amount-field__box">
+        <span class="amount-field__unit">Nu.</span>
+        <%= form.text_field :amount, inputmode: "decimal", required: true, "aria-label": "Amount in Ngultrum" %>
+      </div>
+    </div>
+  </div>
+
+  <% if @transaction.credit? %>
+    <div class="field">
+      <%= form.label :description, "What was taken" %>
+      <%= form.text_field :description %>
+    </div>
+  <% else %>
+    <div class="field">
+      <%= form.label :payment_method, "How they paid" %>
+      <%= form.select :payment_method, PaymentsController::METHODS %>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :notes, "Note" %>
+    <%= form.text_field :notes %>
+  </div>
+
+  <div class="field">
+    <%= form.label :occurred_at, "Date" %>
+    <%= form.datetime_field :occurred_at %>
+  </div>
+
+  <%= form.submit "Save changes", class: "btn" %>
+  <%= link_to "Cancel", account_path(@transaction.account), class: "btn btn--quiet" %>
+<% end %>

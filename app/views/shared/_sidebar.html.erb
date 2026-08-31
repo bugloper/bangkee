@@ -1,0 +1,35 @@
+<%# Desktop navigation. The same destinations as the bottom tab bar. %>
+<nav class="sidebar no-print" aria-label="Main">
+  <div class="sidebar__brand">
+    <div class="sidebar__mark">B</div>
+    <div>
+      <div class="sidebar__name">Bangkee</div>
+      <div class="sidebar__sub">
+        <% if current_user.platform_admin? %>Operator
+        <% elsif current_shop %><%= current_shop.name %>
+        <% else %>My credit<% end %>
+      </div>
+    </div>
+  </div>
+
+  <% nav_items.each do |item| %>
+    <%= link_to item[:path], class: "sidebar__item #{'is-active' if nav_root == item[:key]}" do %>
+      <%= icon item[:icon] %>
+      <span><%= item[:label] %></span>
+      <% if item[:badge].to_i.positive? %>
+        <span class="sidebar__badge"><%= item[:badge] %></span>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <div class="sidebar__foot">
+    <div class="avatar avatar--lg"><%= current_user.initial %></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><%= current_user.display_name %></div>
+      <%= button_to "Sign out", session_path, method: :delete,
+            class: "sidebar__signout",
+            form: { style: "display:inline" },
+            style: "border:none;background:none;padding:0;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline" %>
+    </div>
+  </div>
+</nav>

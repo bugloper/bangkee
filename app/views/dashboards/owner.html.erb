@@ -1,0 +1,109 @@
+<% page_title @shop.name %>
+
+<div class="hero">
+  <div class="hero__label">Total outstanding credit</div>
+  <div class="hero__value"><%= ngultrum @total_outstanding_cents %></div>
+  <div class="hero__sub"><%= pluralize @customers_count, "customer" %> · updated just now</div>
+</div>
+
+<%= link_to new_account_path, class: "btn" do %>
+  <%= icon :plus, size: 20, stroke: 2.4 %> Add customer
+<% end %>
+
+<%= render "shared/install_card" %>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat__value"><%= @customers_count %></div>
+    <div class="stat__label">Customers</div>
+  </div>
+  <div class="stat stat--green">
+    <div class="stat__value"><%= ngultrum @repaid_month_cents %></div>
+    <div class="stat__label">Repaid this month</div>
+  </div>
+  <div class="stat stat--red">
+    <div class="stat__value"><%= @overdue_count %></div>
+    <div class="stat__label">Overdue accounts</div>
+  </div>
+  <div class="stat stat--amber">
+    <div class="stat__value"><%= @pending_proofs %></div>
+    <div class="stat__label">Proofs pending</div>
+  </div>
+</div>
+
+<div class="card card--flush">
+  <div class="rows">
+    <%= link_to payment_proofs_path, class: "row" do %>
+      <div class="row__main">
+        <div class="row__title">Payment proofs</div>
+        <div class="row__sub">Transfers waiting for your confirmation</div>
+      </div>
+      <% if @pending_proofs.positive? %><span class="badge badge--pending"><%= @pending_proofs %> pending</span><% end %>
+      <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+    <% end %>
+    <%= link_to bank_accounts_path, class: "row" do %>
+      <div class="row__main">
+        <div class="row__title">Bank details</div>
+        <div class="row__sub">What customers see when they pay you</div>
+      </div>
+      <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+    <% end %>
+    <%= link_to subscription_path, class: "row" do %>
+      <div class="row__main">
+        <div class="row__title">Billing</div>
+        <div class="row__sub"><%= current_subscription.status_label %> · <%= subscription_summary current_subscription %></div>
+      </div>
+      <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+    <% end %>
+  </div>
+</div>
+
+<% if @overdue_accounts.any? %>
+  <div class="card card--flush">
+    <div class="card__head">Overdue balances <span class="count"><%= @overdue_count %></span></div>
+    <div class="rows">
+      <% @overdue_accounts.each do |account| %>
+        <%= link_to account_path(account), class: "row" do %>
+          <div class="avatar avatar--lg avatar--overdue"><%= account.display_name.first.upcase %></div>
+          <div class="row__main">
+            <div class="row__title"><%= account.display_name %></div>
+            <div class="row__sub row__sub--warn"><%= pluralize account.days_overdue, "day" %> overdue</div>
+          </div>
+          <div class="row__amount owed"><%= ngultrum account.balance_cents %></div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="card card--flush">
+  <div class="card__head">Recent activity</div>
+  <% if @recent_transactions.any? %>
+    <div class="rows">
+      <% @recent_transactions.each do |transaction| %>
+        <div class="row row--static">
+          <div class="row__main">
+            <div class="row__title">
+              <%= transaction.credit? ? "Credit" : "Payment" %> · <%= transaction.account.display_name %>
+            </div>
+            <div class="row__sub">
+              <%= transaction.description.presence || transaction.payment_method.presence || "—" %>
+            </div>
+          </div>
+          <div class="row__end">
+            <div class="row__amount <%= transaction.credit? ? "owed" : "paid" %>">
+              <%= ngultrum transaction.signed_amount_cents, signed: true %>
+            </div>
+            <div class="row__time"><%= time_ago_in_words transaction.occurred_at %> ago</div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="empty">
+      <span class="empty__icon">🧾</span>
+      <div class="empty__title">Nothing recorded yet</div>
+      Add a customer, then record their first credit.
+    </div>
+  <% end %>
+</div>

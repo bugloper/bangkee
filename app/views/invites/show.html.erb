@@ -1,0 +1,34 @@
+<% content_for :content_class, "content--narrow" %>
+
+<div class="card card--pad card--stack" data-controller="clipboard">
+  <div>
+    <div style="font-size:18px;font-weight:700"><%= @account.display_name %></div>
+    <p class="muted" style="font-size:15px;margin-top:4px">
+      <% if @account.joined? %>
+        This customer has already linked their own login. The link still works if they
+        sign in on another phone.
+      <% else %>
+        Share this link so <%= @account.customer_name %> can see their balance, get a note
+        when something is added, and upload payment proofs.
+      <% end %>
+    </p>
+  </div>
+
+  <div class="field">
+    <%= label_tag :invite, "Invite link" %>
+    <%= text_field_tag :invite, invitation_url(@account.invite_token), readonly: true,
+          data: { clipboard_target: "source" }, style: "font-size:14px" %>
+  </div>
+
+  <button class="btn" data-action="clipboard#share">
+    <%= icon :share, size: 20 %> Share link
+  </button>
+  <button class="btn btn--quiet" data-action="clipboard#copy" data-clipboard-target="button">
+    Copy link
+  </button>
+
+  <div class="hint">
+    Anyone with this link can claim the account, so send it straight to
+    <%= @account.customer_name %> — not to a group.
+  </div>
+</div>

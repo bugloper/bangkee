@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bangkee - Customers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c3c6d6",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#851800",
+                    "primary-fixed": "#dae2ff",
+                    "secondary-fixed": "#8df7c1",
+                    "surface-container-highest": "#d7e2ff",
+                    "on-secondary-fixed": "#002113",
+                    "primary-fixed-dim": "#b2c5ff",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#ffdad2",
+                    "on-primary-fixed": "#001848",
+                    "surface": "#f9f9ff",
+                    "tertiary-container": "#b02300",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-surface": "#041b3c",
+                    "surface-container-high": "#e0e8ff",
+                    "on-background": "#041b3c",
+                    "on-secondary-fixed-variant": "#005235",
+                    "on-surface-variant": "#434654",
+                    "inverse-surface": "#1d3052",
+                    "on-primary-container": "#c4d2ff",
+                    "on-secondary-container": "#00714b",
+                    "tertiary-fixed-dim": "#ffb4a3",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#b2c5ff",
+                    "background": "#f9f9ff",
+                    "secondary-fixed-dim": "#71dba6",
+                    "secondary-container": "#8af5be",
+                    "surface-container-low": "#f1f3ff",
+                    "primary": "#003d9b",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#ffc6b9",
+                    "outline": "#737685",
+                    "on-tertiary-fixed": "#3d0600",
+                    "surface-bright": "#f9f9ff",
+                    "secondary": "#006c47",
+                    "surface-container": "#e8edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#0c56d0",
+                    "on-tertiary-fixed-variant": "#8b1a00",
+                    "surface-variant": "#d7e2ff",
+                    "primary-container": "#0052cc",
+                    "surface-dim": "#cadaff",
+                    "on-primary-fixed-variant": "#0040a2",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "12px",
+                    "base": "8px",
+                    "stack-sm": "4px",
+                    "gutter": "12px",
+                    "stack-lg": "24px",
+                    "container-padding": "16px",
+                    "touch-target-min": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-amount-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-amount": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-amount-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "display-amount": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col">
+<!-- Top AppBar -->
+<header class="bg-surface dark:bg-surface w-full top-0 sticky border-b border-outline-variant dark:border-outline z-40">
+<div class="flex items-center justify-between px-container-padding h-touch-target-min w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly Bhutanese shop owner, smiling warmly. The lighting is natural and bright, suggesting a well-lit storefront environment. The image is crisp and clear, reflecting a modern and reliable brand identity for the Bangkee ledger system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-Y2ggFmKU9sKrOg1l1ffQCccB-qs_3ql3XD8EsQ6D1rvOsDmdc4jUW1fX10ouZ6wAtdlX1po3bhZBmIeQoNdo3TuSYhNsV59f4EZZfggnAU0aFfFiSqLHbHfoRXie8a-0QQc6BMkIYyXV1TeRHAdgS2R_gcurj88BHDEBDCBK-PPn1D5rZFXiWhfFYugTC-7fb7WRqSV_aBE3nYxWrK9aKTBSQKu0S_yjhQ1OH9LhjpeVms_Eg82VBHUXXN2vrILFj1S9NHxMyFQ"/>
+</div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed">Bangkee</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors duration-200">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">notifications</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 w-full max-w-4xl mx-auto px-container-padding pb-24">
+<!-- Search & Action Section -->
+<section class="py-stack-lg space-y-gutter">
+<div class="flex items-center gap-gutter">
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full h-touch-target-min pl-12 pr-4 bg-surface-container-lowest border-none rounded-xl shadow-sm focus:ring-2 focus:ring-primary text-body-md placeholder:text-on-surface-variant" placeholder="Search by name or phone..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary h-touch-target-min px-6 rounded-xl font-label-md flex items-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">person_add</span>
+<span class="hidden md:inline">Add Customer</span>
+</button>
+</div>
+<!-- Filter Chips -->
+<div class="flex gap-2 overflow-x-auto hide-scrollbar py-1">
+<button class="bg-primary-container text-on-primary-container px-5 py-2 rounded-full font-label-md whitespace-nowrap">All</button>
+<button class="bg-surface-container-high text-on-surface-variant px-5 py-2 rounded-full font-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">Outstanding</button>
+<button class="bg-surface-container-high text-on-surface-variant px-5 py-2 rounded-full font-label-md whitespace-nowrap hover:bg-surface-container-highest transition-colors">Overdue</button>
+</div>
+</section>
+<!-- Customer List Section -->
+<section class="space-y-stack-md">
+<!-- Header for List -->
+<div class="flex items-center justify-between px-2 opacity-70">
+<p class="font-label-sm text-on-surface-variant uppercase tracking-wider">Customer Details</p>
+<p class="font-label-sm text-on-surface-variant uppercase tracking-wider">Balance</p>
+</div>
+<div class="grid grid-cols-1 gap-base">
+<!-- Customer Item 1 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/30 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:bg-surface-container-low">
+<div class="flex items-center gap-gutter">
+<div class="w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-md">
+                            TD
+                        </div>
+<div>
+<h3 class="font-headline-md text-on-surface">Tashi Dorji</h3>
+<p class="font-body-md text-on-surface-variant text-sm">1712 3456</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-tertiary">Nu. 4,250</p>
+<span class="inline-flex items-center gap-1 bg-error-container text-on-error-container px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">error</span>
+                            Overdue
+                        </span>
+</div>
+</div>
+<!-- Customer Item 2 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/30 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:bg-surface-container-low">
+<div class="flex items-center gap-gutter">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline-md">
+                            PW
+                        </div>
+<div>
+<h3 class="font-headline-md text-on-surface">Pema Wangmo</h3>
+<p class="font-body-md text-on-surface-variant text-sm">1765 8901</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-secondary">Nu. 850</p>
+<span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                            Pending
+                        </span>
+</div>
+</div>
+<!-- Customer Item 3 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/30 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:bg-surface-container-low">
+<div class="flex items-center gap-gutter">
+<div class="w-12 h-12 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a senior customer with weathered, kind features, against a soft blurred background of a traditional Bhutanese village. The image highlights a sense of community trust and long-standing relationships in a retail context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDl0cu3U29pSacjw8RzuLUd5ruJx_lygWLFZDnUWh5Joi56nDnPQa5eawrWMWd5MLh51d-3iEHHritu76yHS_p9rwWfiE6aHS2evOiEp1Lj7mdFisc87Si68fmliguk2qJ822Xs7UAxHsJ3b-jUhpkfedxiLxczb3oane7DSPBF3_qVHlg7iZftY6dZ_E369Tw9Unk4CopFhEfXsg4YrF5agL_dNjEsqufchGp_3zzjqa-vW0ztKkwqXiffnuKr_V6BI4KuK5wmwhI"/>
+</div>
+<div>
+<h3 class="font-headline-md text-on-surface">Karma Thinley</h3>
+<p class="font-body-md text-on-surface-variant text-sm">7723 4455</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-tertiary">Nu. 12,400</p>
+<span class="inline-flex items-center gap-1 bg-error-container text-on-error-container px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">error</span>
+                            Overdue
+                        </span>
+</div>
+</div>
+<!-- Customer Item 4 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/30 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:bg-surface-container-low">
+<div class="flex items-center gap-gutter">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-headline-md">
+                            SY
+                        </div>
+<div>
+<h3 class="font-headline-md text-on-surface">Sonam Yangzom</h3>
+<p class="font-body-md text-on-surface-variant text-sm">1788 9900</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-on-surface">Nu. 0</p>
+<span class="inline-flex items-center gap-1 bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                            Settled
+                        </span>
+</div>
+</div>
+<!-- Customer Item 5 -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between border border-outline-variant/30 shadow-sm hover:shadow-md transition-shadow cursor-pointer active:bg-surface-container-low">
+<div class="flex items-center gap-gutter">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-headline-md">
+                            RN
+                        </div>
+<div>
+<h3 class="font-headline-md text-on-surface">Rinchen Namgay</h3>
+<p class="font-body-md text-on-surface-variant text-sm">7711 2233</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-tertiary">Nu. 3,120</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB (Mobile Only) -->
+<button class="fixed right-6 bottom-24 md:hidden w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-transform z-50">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-2 h-16 bg-surface dark:bg-surface border-t border-outline-variant dark:border-outline shadow-sm">
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm text-label-sm">Dashboard</span>
+</a>
+<!-- Customers (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-full px-4 py-1 active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-sm text-label-sm">Customers</span>
+</a>
+<!-- Search -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-sm text-label-sm">Search</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for list items
+        document.querySelectorAll('.bg-surface-container-lowest').forEach(item => {
+            item.addEventListener('mousedown', () => {
+                item.classList.add('bg-surface-container-low');
+            });
+            item.addEventListener('mouseup', () => {
+                item.classList.remove('bg-surface-container-low');
+            });
+            item.addEventListener('mouseleave', () => {
+                item.classList.remove('bg-surface-container-low');
+            });
+        });
+
+        // Filter chip selection logic
+        const chips = document.querySelectorAll('.rounded-full.font-label-md');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => {
+                    c.classList.remove('bg-primary-container', 'text-on-primary-container');
+                    c.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+                });
+                chip.classList.add('bg-primary-container', 'text-on-primary-container');
+                chip.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+            });
+        });
+    </script>
+</body></html>

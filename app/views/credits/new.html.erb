@@ -1,0 +1,49 @@
+<% page_title(@itemized ? "Itemized purchase" : "Add credit", back: account_path(@account)) %>
+<% content_for :content_class, "content--narrow" %>
+
+<%= form_with model: @transaction, url: account_credits_path(@account),
+              class: "card card--pad form-stack",
+              data: { controller: "keypad line-items", keypad_preview_prefix_value: "" } do |form| %>
+  <%= render "shared/errors", record: @transaction %>
+  <%= form.hidden_field :itemized, value: @itemized ? "1" : "0" %>
+
+  <% if @itemized %>
+    <%= render "line_items", form: form, account: @account %>
+  <% else %>
+    <div>
+      <div class="amount-field__label">Amount given on credit to <%= @account.display_name %></div>
+      <div class="amount-field amount-field--credit">
+        <div class="amount-field__box">
+          <span class="amount-field__unit">Nu.</span>
+          <%= form.text_field :amount, inputmode: "decimal", placeholder: "0", required: true,
+                autofocus: true, "aria-label": "Amount in Ngultrum",
+                data: { keypad_target: "input", action: "input->keypad#refresh" } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <%= form.label :description, "What was taken" %>
+      <span class="field__hint">Optional</span>
+      <%= form.text_field :description, placeholder: "e.g. Groceries, rice, oil" %>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :occurred_at, "Date" %>
+    <span class="field__hint">Optional — defaults to now</span>
+    <%= form.datetime_field :occurred_at %>
+  </div>
+
+  <% unless @itemized %>
+    <div class="keypad">
+      <% %w[1 2 3 4 5 6 7 8 9 . 0].each do |key| %>
+        <button type="button" data-key="<%= key %>" data-action="keypad#press"><%= key %></button>
+      <% end %>
+      <button type="button" data-key="back" data-action="keypad#press" aria-label="Delete">⌫</button>
+    </div>
+  <% end %>
+
+  <%= form.submit "Save credit", class: "btn btn--credit" %>
+  <%= link_to "Cancel", account_path(@account), class: "btn btn--quiet" %>
+<% end %>

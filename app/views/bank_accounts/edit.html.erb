@@ -1,0 +1,11 @@
+<% page_title "Edit bank account", back: bank_accounts_path %>
+<% content_for :content_class, "content--narrow" %>
+
+<div class="card card--pad"><%= render "form", bank_account: @bank_account %></div>
+
+<div class="card card--pad">
+  <%= button_to "Remove this account", bank_account_path(@bank_account), method: :delete,
+        class: "btn btn--quiet", style: "color:var(--red);border-color:var(--red-tint)",
+        form: { data: { turbo_confirm: "Remove these bank details?|Customers will no longer see this account.",
+                        turbo_confirm_style: "danger" } } %>
+</div>

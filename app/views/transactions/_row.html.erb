@@ -1,0 +1,57 @@
+<div class="ledger__row <%= "is-voided" if transaction.voided? %>">
+  <div class="ledger__top">
+    <span class="tag tag--<%= transaction.voided? ? "voided" : transaction.kind %>">
+      <%= transaction.voided? ? "VOIDED" : transaction.kind.upcase %>
+    </span>
+
+    <div class="ledger__main">
+      <div class="ledger__desc">
+        <%= transaction.description.presence || (transaction.payment? ? "Payment received" : "Goods on credit") %>
+      </div>
+      <div class="ledger__meta">
+        <%= transaction.occurred_at.strftime("%-d %b, %-l:%M %p") %> · by <%= transaction.created_by.display_name %><%
+        %><% if transaction.payment_method.present? %> · <%= transaction.payment_method %><% end %>
+      </div>
+      <% if transaction.notes.present? %>
+        <div class="ledger__meta"><%= transaction.notes %></div>
+      <% end %>
+
+      <% if transaction.itemized? && transaction.line_items.any? %>
+        <div data-controller="reveal">
+          <button class="ledger__action" data-action="reveal#toggle" style="padding-top:8px">
+            <%= pluralize transaction.line_items.size, "item" %>
+            <%= icon :chev_down, size: 14, stroke: 2.4 %>
+          </button>
+          <div class="items" data-reveal-target="panel" hidden>
+            <% transaction.line_items.each do |item| %>
+              <div class="items__row">
+                <span><%= item.name %></span>
+                <span class="muted num"><%= item.quantity.to_s.sub(/\.0+$/, "") %> × <%= ngultrum item.unit_price_cents %></span>
+                <span class="num" style="font-weight:600"><%= ngultrum item.total_cents %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div>
+      <div class="ledger__amount <%= transaction.voided? ? "settled" : (transaction.credit? ? "owed" : "paid") %>">
+        <%= ngultrum transaction.signed_amount_cents, signed: true %>
+      </div>
+      <% unless transaction.voided? %>
+        <div class="ledger__run">Bal <%= ngultrum running %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if owner && !transaction.voided? && !locked %>
+    <div class="ledger__actions">
+      <%= link_to "Edit", edit_transaction_path(transaction), class: "btn btn--tiny btn--row" %>
+      <%= button_to "Void", void_transaction_path(transaction), method: :patch,
+            class: "btn btn--tiny btn--row btn--void",
+            form: { data: { turbo_confirm: "Void this #{transaction.kind}?|It stays on the record and in the audit log, but stops counting toward the balance.",
+                            turbo_confirm_style: "danger" } } %>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,68 @@
+<% page_title "Payment proofs" %>
+
+<div class="pills">
+  <% [ [ "Pending", "pending" ], [ "Confirmed", "confirmed" ], [ "Rejected", "rejected" ], [ "All", "all" ] ].each do |label, value| %>
+    <%= link_to label, payment_proofs_path(status: value),
+          class: "pill #{'is-active' if @status == value}" %>
+  <% end %>
+</div>
+
+<div class="card card--flush">
+  <% if @proofs.any? %>
+    <% @proofs.each do |proof| %>
+      <div class="review">
+        <% if proof.screenshot.attached? %>
+          <%= link_to url_for(proof.screenshot), target: "_blank", rel: "noopener" do %>
+            <%= image_tag proof.screenshot.variant(resize_to_limit: [ 200, 200 ]), class: "thumb", alt: "Transfer screenshot" %>
+          <% end %>
+        <% end %>
+
+        <div class="review__main">
+          <div class="review__amount paid"><%= ngultrum proof.amount_cents %></div>
+          <div class="review__meta">
+            <%= link_to proof.account.display_name, account_path(proof.account) %> ·
+            <%= proof.created_at.strftime("%-d %b, %-l:%M %p") %>
+          </div>
+          <% if proof.reference.present? %>
+            <div class="review__meta num">Ref <%= proof.reference %></div>
+          <% end %>
+          <% if proof.note.present? %>
+            <div class="review__meta">“<%= proof.note %>”</div>
+          <% end %>
+
+          <% if proof.pending? %>
+            <div class="review__actions" data-controller="reveal">
+              <%= button_to "Confirm — records the payment", confirm_payment_proof_path(proof), method: :patch,
+                    class: "btn btn--payment",
+                    form: { data: { turbo_confirm: "Confirm #{ngultrum(proof.amount_cents)}?|This records a payment on #{proof.account.display_name}'s account and reduces what they owe." } } %>
+              <button class="btn btn--quiet" data-action="reveal#toggle" style="width:auto">Reject…</button>
+
+              <%= form_with url: reject_payment_proof_path(proof), method: :patch,
+                            class: "reject-form", data: { reveal_target: "panel" }, hidden: true do |form| %>
+                <div class="field">
+                  <%= form.label :rejection_reason, "Why are you rejecting it?" %>
+                  <%= form.text_field :rejection_reason, required: true,
+                        placeholder: "e.g. amount does not match the transfer received" %>
+                </div>
+                <%= form.submit "Reject proof", class: "btn btn--danger" %>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="review__meta" style="margin-top:8px">
+              <span class="badge badge--<%= proof.confirmed? ? "payment" : "credit" %>"><%= proof.status_label %></span>
+              <%= "by #{proof.reviewed_by.display_name}" if proof.reviewed_by %>
+              <%= proof.reviewed_at&.strftime("on %-d %b") %>
+              <%= "· #{proof.rejection_reason}" if proof.rejected? && proof.rejection_reason.present? %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="empty">
+      <span class="empty__icon">🧾</span>
+      <div class="empty__title">Nothing <%= @status == "all" ? "here" : @status %></div>
+      <%= @status == "pending" ? "When a customer uploads a transfer screenshot it lands here." : "Try another filter." %>
+    </div>
+  <% end %>
+</div>
