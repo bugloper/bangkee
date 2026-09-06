@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_31_162410) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_140757) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -155,6 +155,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_162410) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "shared_receipts", force: :cascade do |t|
+    t.bigint "amount_cents"
+    t.string "bank_name"
+    t.string "confidence"
+    t.datetime "created_at", null: false
+    t.jsonb "extraction", default: {}, null: false
+    t.string "failure_reason"
+    t.bigint "matched_account_id"
+    t.datetime "paid_at"
+    t.bigint "payment_proof_id"
+    t.string "recipient_account"
+    t.string "recipient_name"
+    t.string "reference"
+    t.string "sender_name"
+    t.text "shared_text"
+    t.string "shared_title"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["matched_account_id"], name: "index_shared_receipts_on_matched_account_id"
+    t.index ["payment_proof_id"], name: "index_shared_receipts_on_payment_proof_id"
+    t.index ["user_id", "created_at"], name: "index_shared_receipts_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_shared_receipts_on_user_id"
+  end
+
   create_table "shops", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "credit_due_days", default: 30, null: false
@@ -246,6 +271,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_31_162410) do
   add_foreign_key "payment_proofs", "users", column: "submitted_by_id"
   add_foreign_key "push_subscriptions", "users"
   add_foreign_key "sessions", "users"
+  add_foreign_key "shared_receipts", "accounts", column: "matched_account_id"
+  add_foreign_key "shared_receipts", "payment_proofs"
+  add_foreign_key "shared_receipts", "users"
   add_foreign_key "shops", "users", column: "owner_id"
   add_foreign_key "subscription_payments", "shops"
   add_foreign_key "subscription_payments", "users", column: "reviewed_by_id"

@@ -51,6 +51,16 @@ module ApplicationHelper
       past_due: "badge--pending", disabled: "badge--credit" }[subscription&.effective_status] || "badge--settled"
   end
 
+  # Naming a shop is enough to pick it, unless the customer somehow keeps two
+  # books at the same shop — then the name on the account is what tells them
+  # apart.
+  def account_choice_label(account, accounts)
+    duplicate_shop = accounts.count { |other| other.shop_id == account.shop_id } > 1
+    name = duplicate_shop ? "#{account.shop.name} · #{account.display_name}" : account.shop.name
+
+    "#{name} — #{ngultrum account.balance_cents} owed"
+  end
+
   def page_title(title, back: nil)
     @page_title = title
     @back_path = back

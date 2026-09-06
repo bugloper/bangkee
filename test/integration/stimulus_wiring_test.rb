@@ -187,10 +187,16 @@ class StimulusWiringTest < ActionDispatch::IntegrationTest
           settings_path, subscription_path, notifications_path
         ]
 
+        # Both states of a shared bank receipt: still being read, and read.
+        waiting = shared_receipt_for(customer)
+        read = shared_receipt_for(customer, status: :read, amount_cents: 50_000,
+                                  reference: "BT123", matched_account: customer_account)
+
         gather collected, customer, [
           dashboard_path, account_path(customer_account),
           new_account_payment_proof_path(customer_account),
-          account_statement_path(customer_account), notifications_path, settings_path
+          account_statement_path(customer_account), notifications_path, settings_path,
+          shared_receipt_path(waiting), shared_receipt_path(read)
         ]
 
         gather collected, create_admin, [
@@ -215,6 +221,13 @@ class StimulusWiringTest < ActionDispatch::IntegrationTest
         assert_response :success, "GET #{path} as #{user.role} failed — the wiring test needs every screen"
         collected["#{user.role}#{" (admin)" if user.platform_admin?} #{path}"] = Nokogiri::HTML(response.body)
       end
+    end
+
+    def shared_receipt_for(user, **attributes)
+      receipt = SharedReceipt.new(user: user, **attributes)
+      receipt.image.attach(io: File.open(screenshot_path), filename: "r.png", content_type: "image/png")
+      receipt.save!
+      receipt
     end
 
     def itemize(account, owner)

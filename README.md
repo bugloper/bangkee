@@ -35,6 +35,10 @@ Demo logins (from `db/seeds.rb`, password `password`):
 - **§16 bank-transfer settlement** — the owner publishes bank details, the
   customer uploads a transfer screenshot, and the owner's confirmation is what
   creates the payment. A pending proof never moves the balance.
+- **Share a receipt from your bank** — finish a transfer in BoB, mBoB, BNB or
+  PNB, tap Share, pick Bangkee. Claude reads the amount, reference, date and
+  beneficiary off the receipt, Bangkee matches the beneficiary to the shop that
+  published that account, and the customer confirms. See below.
 - **§17 subscription billing** — Nu 200/month, manual: 14-day trial, 14-day
   grace, then owner **writes** are locked (reads never are, and customers are
   never affected). A platform admin approves payment screenshots.
@@ -106,6 +110,37 @@ and payments are queued on the device instead of failing:
 - Only credits and payments queue. Proof and subscription screenshots do not:
   they are uploads, and a half-sent image is worse than an honest failure.
 
+### Sharing a receipt in
+
+Bhutanese banking apps end a transfer on a receipt screen with a Share button.
+Bangkee registers as a **Web Share Target** (`share_target` in the manifest), so
+it appears in that share sheet and the receipt arrives as a plain multipart POST
+to `SharedReceiptsController#create`.
+
+- **Android only, and only once installed.** Safari implements no share target
+  at all, so on an iPhone this route does not exist and payments are entered by
+  hand. Both screens say so rather than leaving people hunting for it.
+- The POST comes from the OS with no CSRF token, so `create` skips forgery
+  protection. What that allows is bounded: it stores a picture against the
+  signed-in user and moves no money. Which shop, and how much, are confirmed
+  afterwards on an ordinary protected form.
+- Sharing while signed out would lose the file on the redirect, so the image is
+  banked as a blob first and picked up after sign-in.
+- `ReceiptExtractor` reads it with **Claude (`claude-opus-5`), vision plus
+  structured outputs** — the JSON schema is the contract, so nothing parses
+  prose. Every field is nullable and the prompt says to leave a field null
+  rather than guess: a wrong amount on a payment claim is worse than a blank
+  one. Set `ANTHROPIC_API_KEY` to turn it on; **without a key the flow still
+  works**, the form is just empty.
+  A cheaper model is a one-line change in `ReceiptExtractor::MODEL` if the
+  volume ever justifies it.
+- `ReceiptAccountMatcher` picks the shop by comparing the beneficiary against
+  the bank details each shop published, over the customer's own accounts only.
+  Masked numbers (`····8901`) match on the visible tail. **Two possible shops
+  resolves to none** — that is a question for the customer, not a coin toss.
+- Reading a receipt creates nothing. The customer confirms, which makes an
+  ordinary pending `PaymentProof`; the shop still confirms after that (BR-30).
+
 ### Web Push
 
 ```bash
@@ -137,9 +172,11 @@ through `PushDeliveryJob` on Solid Queue: `bin/jobs`.
   `SubscriptionPayment#payment_method`.
 - **Subscription status is derived from server time** (`effective_status`), not
   the stored column. The column is a cache that `refresh_status!` corrects.
-- **The schema is one migration** (`db/migrate/*_create_initial_schema.rb`) by
-  choice while the app is pre-release. To rebuild: `rm db/schema.rb` first, then
-  `bin/rails db:drop db:create db:migrate db:seed`.
+- **The schema started as one migration** (`*_create_initial_schema.rb`) while
+  the app was pre-release and rebuilding was free. There is real shop data in
+  development now, so that convention has ended — every change since
+  `create_shared_receipts` is an ordinary migration, and `db:drop` is no longer
+  something to reach for.
 - **Authentication** is the Rails 8 generator, not Devise. One `User` with a
   `role` enum plus a `platform_admin` flag.
 

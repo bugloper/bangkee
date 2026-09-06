@@ -50,6 +50,12 @@ Rails.application.routes.draw do
     resources :shops, only: :index
   end
 
+  # Receipts shared in from a bank's own app (Web Share Target). The manifest
+  # points the share sheet at #create; nothing else posts here.
+  resources :shared_receipts, only: %i[ create show ] do
+    member { post :confirm }
+  end
+
   # --------------------------------------------------------- notifications
   resources :notifications, only: :index do
     member     { patch :read }

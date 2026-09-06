@@ -1,0 +1,126 @@
+<% content_for :content_class, "content--narrow" %>
+
+<%# While Bangkee is reading, the page re-checks itself. Once it is read the
+    poll attributes go away entirely — a value with no controller is drift. %>
+<% polling = @receipt.pending_read? ? {
+     controller: "poll",
+     poll_url_value: shared_receipt_path(@receipt),
+     poll_interval_value: 1500
+   } : {} %>
+
+<div id="receipt" <%= tag.attributes(data: polling) %>>
+
+  <% if @receipt.pending_read? %>
+    <div class="card card--pad" style="text-align:center">
+      <div class="skeleton" style="height:120px;margin-bottom:16px"></div>
+      <div style="font-size:18px;font-weight:700">Reading your receipt…</div>
+      <p class="muted" style="font-size:15px;margin-top:6px">
+        Bangkee is picking out the amount, the reference and who you paid.
+      </p>
+      <%= link_to "Refresh", shared_receipt_path(@receipt), class: "btn btn--quiet", style: "margin-top:16px" %>
+    </div>
+
+  <% else %>
+    <% if @errors.present? %>
+      <div class="form-error" role="alert">
+        <strong>That could not be sent:</strong>
+        <ul><% @errors.full_messages.each do |message| %><li><%= message %></li><% end %></ul>
+      </div>
+    <% end %>
+
+    <% if @receipt.unreadable? %>
+      <div class="banner banner--warn flash">
+        <span>
+          <%= @receipt.failure_reason.presence || "Bangkee could not read this receipt." %>
+          Fill in the details yourself — the picture is already attached.
+        </span>
+      </div>
+    <% else %>
+      <div class="banner banner--ok flash">
+        <span>
+          Read from your <%= @receipt.bank_name.presence || "bank" %> receipt ·
+          <%= @receipt.confidence_label %>
+        </span>
+      </div>
+    <% end %>
+
+    <div class="card card--pad">
+      <div style="display:flex;gap:16px;align-items:flex-start" data-controller="viewer">
+        <%= render "shared/screenshot_viewer" %>
+        <button class="thumb-button" data-action="viewer#open"
+                data-viewer-url="<%= url_for(@receipt.image) %>"
+                data-viewer-caption="Shared receipt"
+                aria-label="View the receipt you shared">
+          <%= image_tag @receipt.image.variant(resize_to_limit: [ 240, 240 ]), class: "thumb",
+                style: "width:76px;height:76px", alt: "" %>
+        </button>
+
+        <div style="flex:1;min-width:0">
+          <div style="font-size:18px;font-weight:700">
+            <%= @receipt.amount_cents ? ngultrum(@receipt.amount_cents) : "Amount not read" %>
+          </div>
+          <div class="muted" style="font-size:14px">
+            <% if @receipt.recipient_name.present? %>To <%= @receipt.recipient_name %><% end %>
+            <% if @receipt.recipient_account.present? %>· <span class="num"><%= @receipt.recipient_account %></span><% end %>
+          </div>
+          <div class="muted" style="font-size:13px">
+            <% if @receipt.paid_at %><%= @receipt.paid_at.strftime("%-d %b %Y, %-l:%M %p") %><% end %>
+            <% if @receipt.reference.present? %>· ref <span class="num"><%= @receipt.reference %></span><% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <% if @accounts.any? %>
+      <%= form_with url: confirm_shared_receipt_path(@receipt), class: "card card--pad form-stack" do |form| %>
+        <div style="font-size:16px;font-weight:700">Which shop did you pay?</div>
+
+        <div class="field">
+          <%= form.label :account_id, "Shop", class: "sr-only" %>
+          <%= form.select :account_id,
+                @accounts.map { |account| [ account_choice_label(account, @accounts), account.id ] },
+                { selected: @receipt.matched_account_id, include_blank: "Choose the shop" },
+                required: true %>
+          <% if @receipt.matched_account %>
+            <span class="field__hint">
+              Matched to <%= @receipt.matched_account.shop.name %> from the account number on the receipt.
+            </span>
+          <% end %>
+        </div>
+
+        <div>
+          <div class="amount-field__label">Amount you transferred</div>
+          <div class="amount-field amount-field--payment">
+            <div class="amount-field__box">
+              <span class="amount-field__unit">Nu.</span>
+              <%= form.text_field :amount, inputmode: "decimal", required: true,
+                    value: @receipt.amount&.to_s&.sub(/\.0+$/, ""), placeholder: "0",
+                    "aria-label": "Amount in Ngultrum" %>
+            </div>
+          </div>
+          <div class="muted" style="font-size:13px;margin-top:6px">Check this against the receipt before sending.</div>
+        </div>
+
+        <div class="field">
+          <%= form.label :reference, "Reference number" %>
+          <%= form.text_field :reference, value: @receipt.reference, class: "num" %>
+        </div>
+
+        <div class="field">
+          <%= form.label :note, "Note for the shop" %>
+          <span class="field__hint">Optional</span>
+          <%= form.text_area :note, rows: 2, placeholder: "e.g. paid for last month's rice" %>
+        </div>
+
+        <%= form.submit "Send proof to the shop", class: "btn" %>
+      <% end %>
+    <% else %>
+      <div class="card empty">
+        <span class="empty__icon">🛍️</span>
+        <div class="empty__title">You have no credit accounts yet</div>
+        A receipt becomes a payment proof once a shop has given you an account in Bangkee.
+        Ask your shopkeeper for their invite link.
+      </div>
+    <% end %>
+  <% end %>
+</div>

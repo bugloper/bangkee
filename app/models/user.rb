@@ -3,6 +3,7 @@ class User < ApplicationRecord
   has_many :sessions, dependent: :destroy
   has_many :notifications, dependent: :destroy
   has_many :push_subscriptions, dependent: :destroy
+  has_many :shared_receipts, dependent: :destroy
 
   # A shop owner owns one shop in this version; the plural association keeps
   # multi-shop ownership open without a migration (§18).

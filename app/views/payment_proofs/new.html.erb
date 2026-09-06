@@ -21,6 +21,12 @@
   </div>
 <% end %>
 
+<div class="hint">
+  <strong>Quicker:</strong> finish the transfer in your bank's app, tap <strong>Share</strong>
+  on the receipt and choose <strong>Bangkee</strong> — the amount and reference are filled in
+  for you. Needs Bangkee installed on an Android phone.
+</div>
+
 <%= form_with model: @proof, url: account_payment_proofs_path(@account),
               class: "card card--pad form-stack",
               data: { controller: "keypad image-preview" } do |form| %>

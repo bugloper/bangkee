@@ -17,6 +17,22 @@
     { "src": "/icon-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" },
     { "src": "/icon.svg",     "type": "image/svg+xml", "sizes": "any" }
   ],
+  "share_target": {
+    "action": "/shared_receipts",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "receipt",
+          "accept": ["image/png", "image/jpeg", "image/webp", "image/heic", "image/heif"]
+        }
+      ]
+    }
+  },
   "shortcuts": [
     { "name": "Customers", "url": "/accounts", "description": "Your customer list" },
     { "name": "Payment proofs", "url": "/payment_proofs", "description": "Review pending proofs" }
