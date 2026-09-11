@@ -3,6 +3,11 @@
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
+  # Solid Cache/Queue/Cable ship schemas, not migrations, and db:prepare only
+  # loads a schema for a database it just created. Where all four configurations
+  # share one database — a managed Postgres — the other three would never get
+  # their tables. This is a no-op once they exist.
+  ./bin/rails db:prepare_solid
 fi
 
 exec "${@}"

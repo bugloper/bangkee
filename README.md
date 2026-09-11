@@ -274,6 +274,44 @@ moment the app can learn a device is gone.
 - **Authentication** is the Rails 8 generator, not Devise. One `User` with a
   `role` enum plus a `platform_admin` flag.
 
+## Deploying
+
+`render.yaml` is a Render blueprint: a web service, a Postgres database, and an
+optional worker for push delivery. Apply it with **Blueprints → New Blueprint
+Instance**; Render prompts for every secret, and none of them are in the repo.
+
+Three things decide whether a deploy is sound:
+
+1. **`RAILS_MASTER_KEY`** — the contents of `config/master.key`, which is not in
+   git. Without it the app cannot read its credentials and will not boot.
+2. **Object storage.** `ACTIVE_STORAGE_SERVICE=s3` plus `S3_BUCKET`,
+   `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION` — and `S3_ENDPOINT`
+   for Cloudflare R2 or Backblaze B2. **Leaving this on the local disk loses
+   every payment proof, subscription screenshot and shared receipt on the next
+   deploy**, because the rows survive and the images do not. The app logs a
+   loud warning at boot if you do. §16.9 calls a confirmed proof's screenshot an
+   audit record; treat it like one.
+3. **`BANGKEE_HOST`** — the domain, used for links in notification emails.
+
+Everything else degrades on its own: no `ANTHROPIC_API_KEY` means receipts are
+not read, no VAPID keys mean no push, no `SMTP_*` means no email. The app runs.
+
+### One database, four schemas
+
+Managed Postgres gives you a single database, so `config/database.yml` points
+primary, cache, queue and cable at the same `DATABASE_URL`. Their tables do not
+collide. There is one trap: `db:prepare` loads a schema only for a database it
+has just created, so cache, queue and cable — arriving second — would never get
+their tables, and every background job would fail on the first deploy. That is
+what `db:prepare_solid` is for, and `bin/docker-entrypoint` runs it after
+`db:prepare` on every boot. It does nothing once the tables exist.
+
+Background work runs inside Puma (`SOLID_QUEUE_IN_PUMA=true`) rather than as its
+own service — this app's background work is a few emails and one API call. Push
+delivery is the exception: rpush needs its own process, which is the worker in
+the blueprint. Delete that service and everything still works; the notifications
+simply sit undelivered.
+
 ## The manual
 
 `doc/` builds **Bangkee — How the app works**, a PDF written for somebody who

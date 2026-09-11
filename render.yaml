@@ -1,0 +1,92 @@
+# Bangkee on Render. Apply with Blueprints → New Blueprint Instance.
+#
+# Secrets are deliberately marked sync:false — Render prompts for them on first
+# apply and never stores them in this file. The three that are not optional are
+# RAILS_MASTER_KEY and the S3 credentials; everything else degrades.
+
+databases:
+  - name: bangkee-db
+    databaseName: bangkee_production
+    user: bangkee
+    plan: basic-256mb           # the smallest paid tier; free expires after 30 days
+
+services:
+  # ------------------------------------------------------------------- the app
+  - type: web
+    name: bangkee
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bangkee-db
+          property: connectionString
+      - key: RAILS_MASTER_KEY        # config/master.key — not in git
+        sync: false
+      - key: BANGKEE_HOST            # e.g. bangkee.onrender.com; used in emails
+        sync: false
+
+      # Solid Queue runs inside Puma rather than as its own service: this app's
+      # background work is a few emails and one API call, not a fleet.
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "true"
+
+      # Uploads. Render's disk is rebuilt on every deploy, so payment proofs and
+      # receipts must live in object storage — S3, Cloudflare R2, Backblaze B2.
+      - key: ACTIVE_STORAGE_SERVICE
+        value: s3
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_ENDPOINT             # only for R2/B2; leave unset for AWS
+        sync: false
+
+      # Optional. Each of these is a no-op when unset.
+      - key: ANTHROPIC_API_KEY       # reading shared bank receipts
+        sync: false
+      - key: VAPID_PUBLIC_KEY        # web push
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: SMTP_ADDRESS            # notification email
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER_NAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+  # ------------------------------------------------- push delivery (optional)
+  # rpush writes notifications to the database; this process is what actually
+  # sends them. Delete this service if you are not using push — the app runs
+  # fine without it, the rows simply sit undelivered.
+  - type: worker
+    name: bangkee-push
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    dockerCommand: bundle exec rpush start --foreground
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bangkee-db
+          property: connectionString
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false

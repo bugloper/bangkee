@@ -22,13 +22,14 @@ Rails.application.configure do
   # config.asset_host = "http://assets.example.com"
 
   # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Set ACTIVE_STORAGE_SERVICE=s3 anywhere the disk does not survive a deploy.
+  # Payment proofs and subscription screenshots are audit records (SRS §16.9):
+  # losing them quietly is worse than failing loudly, hence the warning below.
+  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "local").to_sym
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
-
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  # Render, and every other managed host, terminates TLS at its own proxy.
+  config.assume_ssl = true
+  config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }

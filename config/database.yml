@@ -84,21 +84,22 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+# Managed Postgres gives you one database and one URL, so cache, queue and
+# cable live inside it alongside the app's own tables. They do not collide:
+# solid_cache_entries, solid_queue_*, and solid_cable_messages are all distinct,
+# and each keeps its own migrations_paths so `db:prepare` loads every schema.
+#
+# Point DATABASE_URL at the database and nothing else needs setting.
 production:
   primary: &primary_production
     <<: *default
-    database: bangkee_production
-    username: bangkee
-    password: <%= ENV["BANGKEE_DATABASE_PASSWORD"] %>
+    url: <%= ENV["DATABASE_URL"] %>
   cache:
     <<: *primary_production
-    database: bangkee_production_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: bangkee_production_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: bangkee_production_cable
     migrations_paths: db/cable_migrate
