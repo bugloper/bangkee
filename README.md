@@ -282,8 +282,14 @@ Instance**; Render prompts for every secret, and none of them are in the repo.
 
 Three things decide whether a deploy is sound:
 
-1. **`RAILS_MASTER_KEY`** — the contents of `config/master.key`, which is not in
-   git. Without it the app cannot read its credentials and will not boot.
+1. **A `secret_key_base`.** `config/master.key` is deliberately excluded from
+   the image (`.dockerignore`), so Rails cannot decrypt `credentials.yml.enc`
+   and needs the secret from the environment instead. Without it the app aborts
+   on boot with *Missing `secret_key_base` for 'production'*. The blueprint has
+   Render generate a `SECRET_KEY_BASE`, so there is nothing to paste; setting
+   `RAILS_MASTER_KEY` to the contents of `config/master.key` works equally well
+   and is what you want if you start keeping other secrets in credentials.
+   `SECRET_KEY_BASE` wins if both are set, and changing it signs everyone out.
 2. **Object storage.** `ACTIVE_STORAGE_SERVICE=s3` plus `S3_BUCKET`,
    `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION` — and `S3_ENDPOINT`
    for Cloudflare R2 or Backblaze B2. **Leaving this on the local disk loses

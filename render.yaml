@@ -24,7 +24,18 @@ services:
         fromDatabase:
           name: bangkee-db
           property: connectionString
-      - key: RAILS_MASTER_KEY        # config/master.key — not in git
+      # Rails needs a secret_key_base to boot. config/master.key is kept out of
+      # the image on purpose (.dockerignore), so it has to come from the
+      # environment — and Render can generate one, which is why nothing here
+      # needs pasting. It is generated once and kept; changing it later signs
+      # everyone out.
+      - key: SECRET_KEY_BASE
+        generateValue: true
+
+      # Only needed to read config/credentials.yml.enc, which this app uses for
+      # nothing but secret_key_base. Set it (to the contents of
+      # config/master.key) if you start putting secrets in credentials.
+      - key: RAILS_MASTER_KEY
         sync: false
       - key: BANGKEE_HOST            # e.g. bangkee.onrender.com; used in emails
         sync: false
@@ -82,6 +93,13 @@ services:
         fromDatabase:
           name: bangkee-db
           property: connectionString
+      # The same value as the web service — not a second generated one, or the
+      # two processes would disagree about every signed id between them.
+      - key: SECRET_KEY_BASE
+        fromService:
+          type: web
+          name: bangkee
+          envVarKey: SECRET_KEY_BASE
       - key: RAILS_MASTER_KEY
         sync: false
       - key: VAPID_PUBLIC_KEY

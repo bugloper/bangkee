@@ -5,6 +5,9 @@
 Rails.application.config.after_initialize do
   next unless Rails.env.production?
   next unless Rails.application.config.active_storage.service.to_s == "local"
+  # Asset precompilation during a Docker build boots the app with a dummy key
+  # and no env; nothing is being stored, so there is nothing to warn about.
+  next if ENV["SECRET_KEY_BASE_DUMMY"].present?
 
   Rails.logger.warn <<~WARNING
     [storage] Active Storage is writing to the local filesystem in production.
