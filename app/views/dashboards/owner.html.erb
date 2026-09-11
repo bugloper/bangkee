@@ -33,6 +33,20 @@
 
 <div class="card card--flush">
   <div class="rows">
+    <%= link_to tabs_path, class: "row" do %>
+      <div class="row__main">
+        <div class="row__title">Tabs</div>
+        <div class="row__sub">
+          <% if @open_tabs.positive? %>
+            <%= pluralize @open_tabs, "table" %> running · <%= ngultrum @open_tabs_cents %> on the tables
+          <% else %>
+            Running bills for tables that pay at the end
+          <% end %>
+        </div>
+      </div>
+      <% if @open_tabs.positive? %><span class="badge badge--brand"><%= @open_tabs %> open</span><% end %>
+      <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+    <% end %>
     <%= link_to payment_proofs_path, class: "row" do %>
       <div class="row__main">
         <div class="row__title">Payment proofs</div>

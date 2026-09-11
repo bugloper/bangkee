@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_140757) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -221,6 +221,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_140757) do
     t.index ["shop_id"], name: "index_subscriptions_on_shop_id", unique: true
   end
 
+  create_table "tab_items", force: :cascade do |t|
+    t.bigint "added_by_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0", null: false
+    t.bigint "tab_id", null: false
+    t.bigint "unit_price_cents", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["added_by_id"], name: "index_tab_items_on_added_by_id"
+    t.index ["name"], name: "index_tab_items_on_name"
+    t.index ["tab_id"], name: "index_tab_items_on_tab_id"
+  end
+
+  create_table "tabs", force: :cascade do |t|
+    t.bigint "account_id"
+    t.datetime "created_at", null: false
+    t.string "label", null: false
+    t.text "note"
+    t.datetime "opened_at", null: false
+    t.bigint "opened_by_id", null: false
+    t.string "payment_method"
+    t.datetime "settled_at"
+    t.bigint "settled_by_id"
+    t.integer "settlement"
+    t.bigint "shop_id", null: false
+    t.integer "status", default: 0, null: false
+    t.bigint "total_cents", default: 0, null: false
+    t.bigint "transaction_id"
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_tabs_on_account_id"
+    t.index ["opened_by_id"], name: "index_tabs_on_opened_by_id"
+    t.index ["settled_by_id"], name: "index_tabs_on_settled_by_id"
+    t.index ["shop_id", "status"], name: "index_tabs_on_shop_id_and_status"
+    t.index ["shop_id"], name: "index_tabs_on_shop_id"
+    t.index ["transaction_id"], name: "index_tabs_on_transaction_id"
+  end
+
   create_table "transactions", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "amount_cents", default: 0, null: false
@@ -279,6 +316,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_140757) do
   add_foreign_key "subscription_payments", "users", column: "reviewed_by_id"
   add_foreign_key "subscription_payments", "users", column: "submitted_by_id"
   add_foreign_key "subscriptions", "shops"
+  add_foreign_key "tab_items", "tabs"
+  add_foreign_key "tab_items", "users", column: "added_by_id"
+  add_foreign_key "tabs", "accounts"
+  add_foreign_key "tabs", "shops"
+  add_foreign_key "tabs", "transactions", on_delete: :nullify
+  add_foreign_key "tabs", "users", column: "opened_by_id"
+  add_foreign_key "tabs", "users", column: "settled_by_id"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "users", column: "created_by_id"
   add_foreign_key "transactions", "users", column: "voided_by_id"

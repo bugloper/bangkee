@@ -1,0 +1,172 @@
+<% content_for :content_class, "content--narrow" %>
+<% open = @tab.open? %>
+
+<div class="card card--pad">
+  <div class="acct-head">
+    <div class="avatar" style="width:48px;height:48px;font-size:20px"><%= @tab.label.first.upcase %></div>
+    <div class="acct-head__main">
+      <div class="acct-head__name"><%= @tab.label %></div>
+      <div class="acct-head__meta">
+        <% if open %>
+          Open <%= time_ago_in_words @tab.opened_at %> · by <%= @tab.opened_by.display_name %>
+        <% elsif @tab.voided? %>
+          Closed without charging
+        <% else %>
+          <%= @tab.settlement_label %> · <%= @tab.settled_at.strftime("%-d %b, %-l:%M %p") %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-balance__label">Running total</div>
+  <div class="big-balance__row">
+    <div class="big-balance__value"><%= ngultrum @tab.total_cents %></div>
+    <% if @tab.account %>
+      <span class="badge badge--brand"><%= @tab.account.display_name %></span>
+    <% end %>
+  </div>
+</div>
+
+<%# ---------------------------------------------------------------- the bill %>
+<div class="card card--flush">
+  <div class="card__head">Ordered</div>
+  <% if @items.any? %>
+    <div class="rows">
+      <% @items.each do |item| %>
+        <div class="row row--static">
+          <div class="row__main">
+            <div class="row__title"><%= item.name %></div>
+            <div class="row__sub num">
+              <%= item.quantity_label %> × <%= ngultrum item.unit_price_cents %>
+              · <%= item.created_at.strftime("%-l:%M %p") %>
+            </div>
+          </div>
+          <div class="row__amount num"><%= ngultrum item.total_cents %></div>
+          <% if open %>
+            <%= button_to tab_item_path(@tab, item), method: :delete,
+                  class: "btn btn--tiny btn--row btn--void", form: { style: "width:auto" },
+                  form_class: "button_to",
+                  data: { turbo_confirm: "Take #{item.name} off the tab?|It has not gone on anyone's book yet, so it simply disappears." } do %>
+              Remove
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <div class="card__foot">
+      <div class="kv">
+        <span class="kv__key">Total</span>
+        <span class="kv__val" style="font-size:18px"><%= ngultrum @tab.total_cents %></span>
+      </div>
+    </div>
+  <% else %>
+    <div class="empty">
+      <div class="empty__title">Nothing ordered yet</div>
+      Add the first item below.
+    </div>
+  <% end %>
+</div>
+
+<% if open %>
+  <%# ------------------------------------------------------------ quick add %>
+  <% if @suggestions.any? %>
+    <div class="card">
+      <div style="font-size:14px;font-weight:700;margin-bottom:10px">Usual orders</div>
+      <div class="chips">
+        <% @suggestions.each do |suggestion| %>
+          <%= button_to tab_items_path(@tab), class: "chip chip--action",
+                form: { style: "display:inline" },
+                params: { tab_item: { name: suggestion.name, quantity: 1,
+                                      unit_price: suggestion.unit_price } } do %>
+            <span><%= suggestion.name %></span>
+            <span class="num muted"><%= ngultrum suggestion.unit_price_cents %></span>
+          <% end %>
+        <% end %>
+      </div>
+      <div class="muted" style="font-size:13px;margin-top:8px">
+        One tap adds one. Tap again for a second.
+      </div>
+    </div>
+  <% end %>
+
+  <%= form_with url: tab_items_path(@tab), scope: :tab_item, class: "card card--pad form-stack" do |form| %>
+    <div style="font-size:16px;font-weight:700">Add an item</div>
+
+    <div class="item-fields">
+      <div class="field">
+        <%= form.label :name, "Item", class: "sr-only" %>
+        <%= form.text_field :name, placeholder: "Beer, fried rice, 1 hour snooker", required: true %>
+      </div>
+      <div class="field">
+        <%= form.label :quantity, "Qty", class: "sr-only" %>
+        <%= form.number_field :quantity, value: 1, step: "0.01", inputmode: "decimal", required: true %>
+      </div>
+      <div class="field">
+        <%= form.label :unit_price, "Price", class: "sr-only" %>
+        <%= form.text_field :unit_price, placeholder: "Nu.", inputmode: "decimal", required: true %>
+      </div>
+      <%= form.submit "+", class: "item-remove", style: "color:var(--brand);font-weight:700" %>
+    </div>
+  <% end %>
+
+  <%# -------------------------------------------------------------- settle %>
+  <div class="card card--pad card--stack" data-controller="reveal">
+    <div style="font-size:16px;font-weight:700">Settle this tab</div>
+
+    <% if @tab.empty? %>
+      <p class="muted" style="font-size:15px;margin:0">Nothing has been ordered yet.</p>
+    <% else %>
+      <%= form_with url: settle_tab_path(@tab), class: "form-stack" do |form| %>
+        <%= form.hidden_field :settlement, value: "paid" %>
+        <div class="field">
+          <span>Paid now — how?</span>
+          <div class="segmented">
+            <% [ "Cash", "Mobile transfer", "Bank transfer" ].each do |method| %>
+              <label>
+                <%= form.radio_button :payment_method, method, checked: method == "Cash" %>
+                <span><%= method %></span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+        <%= form.submit "Paid — #{ngultrum @tab.total_cents}", class: "btn btn--payment" %>
+      <% end %>
+
+      <button class="btn btn--quiet" data-action="reveal#toggle">Put it on a customer's book…</button>
+
+      <%= form_with url: settle_tab_path(@tab), class: "form-stack",
+                    data: { reveal_target: "panel" }, html: { hidden: true } do |form| %>
+        <%= form.hidden_field :settlement, value: "credited" %>
+        <div class="field">
+          <%= form.label :account_id, "Whose book?" %>
+          <%= form.select :account_id,
+                @accounts.map { |account| [ "#{account.display_name} — #{ngultrum account.balance_cents} owed", account.id ] },
+                { selected: @tab.account_id, include_blank: "Choose the customer" }, required: true %>
+          <span class="field__hint">
+            This adds <%= ngultrum @tab.total_cents %> to what they owe, itemised, and tells them.
+          </span>
+        </div>
+        <%= form.submit "Put on the book — #{ngultrum @tab.total_cents}", class: "btn btn--credit" %>
+      <% end %>
+    <% end %>
+
+    <%= button_to "Close without charging", void_tab_path(@tab), method: :delete,
+          class: "btn btn--quiet", style: "color:var(--red);border-color:var(--red-tint)",
+          form: { data: { turbo_confirm: "Close #{@tab.label} without charging?|" \
+                            "Nothing is billed and nothing goes on anyone's book. The tab stays on record as closed.",
+                          turbo_confirm_style: "danger" } } %>
+  </div>
+
+<% elsif @tab.settlement_transaction %>
+  <div class="card card--flush">
+    <div class="rows">
+      <%= link_to account_path(@tab.account), class: "row" do %>
+        <div class="row__main">
+          <div class="row__title">On <%= @tab.account.display_name %>'s book</div>
+          <div class="row__sub">See it in their ledger</div>
+        </div>
+        <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+      <% end %>
+    </div>
+  </div>
+<% end %>

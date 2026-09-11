@@ -5,6 +5,7 @@ class Account < ApplicationRecord
   belongs_to :customer, class_name: "User", optional: true
   has_many :transactions, dependent: :destroy
   has_many :payment_proofs, dependent: :destroy
+  has_many :tabs, dependent: :nullify
 
   has_secure_token :invite_token
 
@@ -39,7 +40,7 @@ class Account < ApplicationRecord
   def recompute_balance!
     active = transactions.active
     update_columns(
-      balance_cents: active.sum("CASE WHEN kind = 0 THEN amount_cents ELSE -amount_cents END"),
+      balance_cents: active.credit.sum(:amount_cents) - active.payment.sum(:amount_cents),
       last_activity_at: active.maximum(:occurred_at),
       updated_at: Time.current
     )

@@ -11,6 +11,8 @@ class DashboardsController < ApplicationController
       @overdue_accounts  = @shop.overdue_accounts.limit(5)
       @overdue_count     = @shop.overdue_accounts.count
       @pending_proofs    = @shop.payment_proofs.pending.count
+      @open_tabs         = @shop.tabs.open.count
+      @open_tabs_cents   = @shop.open_tabs_total_cents
       @repaid_month_cents = @shop.transactions.active.payment
                                  .where(occurred_at: Time.current.all_month).sum(:amount_cents)
       @recent_transactions = @shop.transactions.active.includes(:account).recent.limit(6)

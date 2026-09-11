@@ -1,0 +1,22 @@
+<% content_for :content_class, "content--narrow" %>
+
+<%= form_with model: @tab, class: "card card--pad card--stack", style: "gap:16px" do |form| %>
+  <%= render "shared/errors", record: @tab %>
+
+  <div class="field">
+    <%= form.label :label, "Table or name" %>
+    <%= form.text_field :label, required: true, autofocus: true, placeholder: "Table 4" %>
+    <span class="field__hint">Whatever you would write at the top of the page — a table, a room, a name.</span>
+  </div>
+
+  <div class="field">
+    <%= form.label :account_id, "Whose tab is it?" %>
+    <span class="field__hint">Optional — you can pick at the end instead</span>
+    <%= form.select :account_id,
+          @accounts.map { |account| [ account.display_name, account.id ] },
+          { include_blank: "A walk-in customer" } %>
+  </div>
+
+  <%= form.submit "Open the tab", class: "btn" %>
+  <%= link_to "Cancel", tabs_path, class: "btn btn--quiet" %>
+<% end %>

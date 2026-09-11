@@ -1,0 +1,75 @@
+<div class="section-head">
+  <h1>Tabs</h1>
+  <%= link_to new_tab_path, class: "btn btn--sm btn--desktop" do %>
+    <%= icon :plus, size: 18, stroke: 2.4 %> Open a tab
+  <% end %>
+</div>
+
+<% if @open_tabs.any? %>
+  <div class="stats" style="grid-template-columns:repeat(2,1fr)">
+    <div class="stat">
+      <div class="stat__value"><%= @open_tabs.size %></div>
+      <div class="stat__label">Open now</div>
+    </div>
+    <div class="stat stat--amber">
+      <div class="stat__value"><%= ngultrum current_shop.open_tabs_total_cents %></div>
+      <div class="stat__label">On the tables</div>
+    </div>
+  </div>
+
+  <div class="card card--flush">
+    <div class="rows">
+      <% @open_tabs.each do |tab| %>
+        <%= link_to tab_path(tab), class: "row" do %>
+          <div class="avatar avatar--lg"><%= tab.label.first.upcase %></div>
+          <div class="row__main">
+            <div class="row__title"><%= tab.label %></div>
+            <div class="row__sub">
+              <%= tab.tab_items.size.zero? ? "Nothing ordered yet" : pluralize(tab.tab_items.size, "item") %>
+              · open <%= time_ago_in_words tab.opened_at %>
+              <%= "· #{tab.account.display_name}" if tab.account %>
+            </div>
+          </div>
+          <div class="row__amount"><%= ngultrum tab.total_cents %></div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="card empty">
+    <span class="empty__icon">🍽️</span>
+    <div class="empty__title">No tabs open</div>
+    Open one for a table and add what they order. When they leave, settle it —
+    paid there and then, or onto their page in the book.
+  </div>
+<% end %>
+
+<% if @recent.any? %>
+  <div class="card card--flush">
+    <div class="card__head">Settled today and before</div>
+    <div class="rows">
+      <% @recent.each do |tab| %>
+        <%= link_to tab_path(tab), class: "row" do %>
+          <div class="row__main">
+            <div class="row__title"><%= tab.label %></div>
+            <div class="row__sub">
+              <% if tab.voided? %>
+                Closed without charging
+              <% else %>
+                <%= tab.settlement_label %><%= " · #{tab.account.display_name}" if tab.account %>
+              <% end %>
+            </div>
+          </div>
+          <div class="row__end">
+            <div class="row__amount <%= "settled" if tab.voided? %>"><%= ngultrum tab.total_cents %></div>
+            <div class="row__time"><%= tab.settled_at&.strftime("%-d %b, %-l:%M %p") %></div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%= link_to new_tab_path, class: "fab", "aria-label": "Open a tab" do %>
+  <%= icon :plus, size: 26, stroke: 2.4 %>
+<% end %>

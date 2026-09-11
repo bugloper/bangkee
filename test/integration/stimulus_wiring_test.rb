@@ -177,7 +177,14 @@ class StimulusWiringTest < ActionDispatch::IntegrationTest
         proof = build_proof(customer_account, customer)
         payment = build_subscription_payment(shop, owner)
 
+        tab = shop.tabs.create!(label: "Table 4", opened_by: owner)
+        tab.tab_items.create!(name: "Beer", quantity: 2, unit_price_cents: 12_000, added_by: owner)
+        settled = shop.tabs.create!(label: "Table 5", opened_by: owner)
+        settled.tab_items.create!(name: "Momo", unit_price_cents: 8_000, added_by: owner)
+        settled.settle_paid!(by: owner, method: "Cash")
+
         gather collected, owner, [
+          tabs_path, new_tab_path, tab_path(tab), tab_path(settled),
           dashboard_path, accounts_path, new_account_path, edit_account_path(account),
           account_path(account), new_account_credit_path(account),
           new_account_credit_path(account, mode: "itemized"), new_account_payment_path(account),

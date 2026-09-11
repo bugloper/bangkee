@@ -88,6 +88,7 @@ module ApplicationHelper
     print:   [ "M6 9V3h12v6", "M6 18H4v-7h16v7h-2", "M8 14h8v7H8z" ],
     camera:  [ "M4 8h3l2-2h6l2 2h3v12H4z", "M12 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" ],
     bank:    [ "M3 10l9-6 9 6", "M5 10v10h14V10", "M9 20v-6h6v6" ],
+    table:   [ "M3 9h18", "M5 9V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3", "M7 9v10", "M17 9v10", "M3 14h18" ],
     logout:  [ "M15 4h4v16h-4", "M11 8l-4 4 4 4", "M7 12h8" ]
   }.freeze
 
@@ -111,6 +112,8 @@ module ApplicationHelper
         { label: "Shops",    icon: :home,    path: admin_shops_path, key: "admin_shops" } ]
     elsif current_user.shop_owner?
       [ { label: "Home",      icon: :home,    path: dashboard_path, key: "dashboard" },
+        { label: "Tabs",      icon: :table,   path: tabs_path, key: "tabs",
+          badge: current_shop&.tabs&.open&.count.to_i },
         { label: "Customers", icon: :users,   path: accounts_path,  key: "accounts" },
         { label: "Proofs",    icon: :receipt, path: payment_proofs_path, key: "payment_proofs",
           badge: current_shop&.payment_proofs&.pending&.count.to_i },
@@ -126,6 +129,7 @@ module ApplicationHelper
   # up its parent tab.
   NAV_ROOTS = {
     "dashboards" => "dashboard", "accounts" => "accounts", "credits" => "accounts",
+    "tabs" => "tabs", "tab_items" => "tabs",
     "payments" => "accounts", "transactions" => "accounts", "statements" => "accounts",
     "invites" => "accounts", "payment_proofs" => "payment_proofs",
     "settings" => "settings", "bank_accounts" => "settings", "subscriptions" => "settings",

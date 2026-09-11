@@ -17,6 +17,15 @@ Rails.application.routes.draw do
     resources :payment_proofs, only: %i[ new create ]
   end
 
+  # Running bills — a restaurant table, a snooker table, a round at the bar.
+  resources :tabs, only: %i[ index show new create ] do
+    resources :items, only: %i[ create destroy ], controller: "tab_items"
+    member do
+      post   :settle
+      delete :void
+    end
+  end
+
   resources :transactions, only: %i[ edit update ] do
     member { patch :void }
   end

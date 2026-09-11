@@ -32,6 +32,15 @@ Demo logins (from `db/seeds.rb`, password `password`):
   out of the balance, and in an append-only `audit_events` log.
 - **Invitations** — the owner shares `/join/:token`; the customer signs up and
   from then on watches their own balance.
+- **Tabs (running bills)** — restaurants, bars and snooker halls note down what
+  a table orders and settle at the end. Open a tab per table, add items as they
+  are ordered, then settle it exactly one of two ways: **paid** there and then
+  (nothing is owed, so nothing reaches the credit book — the tab is the record
+  of the sale), or **on the book** (one itemised credit on that customer's
+  page, from then on an ordinary ledger entry they can see and the owner can
+  void). An open tab is never a balance: the customer is still ordering, and
+  half of them pay cash. The quick-add chips are learned from what the shop has
+  actually sold — no price list to maintain.
 - **§16 bank-transfer settlement** — the owner publishes bank details, the
   customer uploads a transfer screenshot, and the owner's confirmation is what
   creates the payment. A pending proof never moves the balance.
@@ -210,6 +219,14 @@ Development writes them to `tmp/mails`; preview at
 `BANGKEE_HOST` from the environment (see `.env.example`).
 
 ## Not built yet
+
+- **Tabs offline.** Credits and payments queue on the device when the signal
+  drops; tabs do not. A tab is a multi-step object with a server-generated id,
+  so queuing it is a different problem from replaying one POST — and a bar with
+  no bars of signal is exactly where it would be wanted.
+- **Customers cannot see their own open tab.** They see it once it is settled
+  onto their page. Showing a live tab to the person running it up is a nice
+  idea and a bigger one (who may see what, and when).
 
 - Dzongkha localisation. No string is baked into an image, so it is a matter of
   extracting them.

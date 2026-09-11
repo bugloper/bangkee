@@ -666,6 +666,11 @@ table.ledger-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   padding: 6px 12px; font-variant-numeric: tabular-nums;
   background: var(--neutral-tint); color: var(--neutral-ink);
 }
+.chip--action {
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  cursor: pointer; min-height: var(--tap); gap: 10px;
+}
+.chip--action:hover { background: var(--brand-wash); border-color: var(--brand-tint); }
 .chip--pending   { background: var(--amber-tint); color: var(--amber-ink); }
 .chip--confirmed { background: var(--green-tint); color: var(--green-ink); }
 .chip--rejected  { background: var(--red-tint);   color: var(--red-ink); }

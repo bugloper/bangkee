@@ -120,8 +120,27 @@ if SubscriptionPayment.none?
   request.save!
 end
 
+# Running bills — an open table mid-service, and a couple already settled so
+# the "usual orders" suggestions have something to learn from.
+if shop.tabs.none?
+  running = shop.tabs.create!(label: "Table 4", opened_by: owner, opened_at: 40.minutes.ago)
+  [ [ "Beer", 2, 120 ], [ "Chicken fried rice", 1, 250 ], [ "Ema datshi", 1, 180 ] ].each do |name, qty, price|
+    running.tab_items.create!(name: name, quantity: qty, unit_price_cents: price * 100, added_by: owner)
+  end
+
+  paid = shop.tabs.create!(label: "Table 2", opened_by: owner, opened_at: 3.hours.ago)
+  [ [ "Beer", 4, 120 ], [ "Momo", 2, 80 ] ].each do |name, qty, price|
+    paid.tab_items.create!(name: name, quantity: qty, unit_price_cents: price * 100, added_by: owner)
+  end
+  paid.settle_paid!(by: owner, method: "Cash")
+
+  on_book = shop.tabs.create!(label: "Snooker 1", opened_by: owner, opened_at: 5.hours.ago)
+  on_book.tab_items.create!(name: "1 hour snooker", quantity: 2, unit_price_cents: 15_000, added_by: owner)
+  on_book.settle_on_credit!(by: owner, account: shop.accounts.find_by(customer_name: "Sonam Tobgay"))
+end
+
 puts "Seeded: #{Shop.count} shop, #{Account.count} accounts, #{Transaction.count} transactions, " \
-     "#{PaymentProof.pending.count} pending proofs."
+     "#{PaymentProof.pending.count} pending proofs, #{Tab.open.count} open tab."
 puts "  owner    karma@shop.bt / #{PASSWORD}"
 puts "  customer dawa@example.bt / #{PASSWORD}"
 puts "  operator admin@bangkee.bt / #{PASSWORD}"
