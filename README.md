@@ -261,6 +261,33 @@ moment the app can learn a device is gone.
 - **Authentication** is the Rails 8 generator, not Devise. One `User` with a
   `role` enum plus a `platform_admin` flag.
 
+## The manual
+
+`doc/` builds **Bangkee — How the app works**, a PDF written for somebody who
+has to explain the app rather than read its code: what it is for, the three
+roles, the rules that govern money, a chapter per feature, three role
+walkthroughs, the permission matrix, and the limits.
+
+```bash
+bin/rails doc:manual        # -> tmp/Bangkee-How-The-App-Works.pdf
+```
+
+Rebuild it when a feature lands. The figures in it — trial length, grace period,
+overdue window, price, accepted image types — are read out of the code at build
+time by `doc/dump_facts.rb`, so they cannot drift; the cover cites the commit it
+was built from. Chapters number themselves from `DocKit::CHAPTERS`, so inserting
+one in the middle renumbers the rest and the contents page.
+
+Prawn is **not in the Gemfile** — the manual is documentation tooling, not part
+of the app — so the build runs outside the bundle and needs it installed once:
+
+```bash
+gem install prawn prawn-table
+```
+
+The PDF itself is not committed. It goes stale the moment the app changes, and
+one command rebuilds it.
+
 ## Tests
 
 `test/integration/stimulus_wiring_test.rb` walks every screen for all three

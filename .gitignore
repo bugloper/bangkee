@@ -38,3 +38,7 @@
 .env
 .env.*
 !.env.example
+
+# Built documentation (see doc/ for the generator)
+/tmp/manual_facts.json
+/tmp/*.pdf
