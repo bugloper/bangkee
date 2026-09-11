@@ -17,6 +17,25 @@ Rails.application.routes.draw do
     resources :payment_proofs, only: %i[ new create ]
   end
 
+  # Scan-to-order. Public: the only thing identifying the customer is the token
+  # printed on the table's card, so these routes are deliberately narrow.
+  get  "t/:token",        to: "menus#show",         as: :table_menu
+  post "t/:token/orders", to: "table_orders#create", as: :table_menu_orders
+  get  "t/:token/orders/:id", to: "table_orders#show", as: :table_menu_order
+
+  # The counter: what customers have sent in and nobody has picked up yet.
+  resources :orders, only: :index, controller: "counter_orders" do
+    member do
+      post :accept
+      post :reject
+    end
+  end
+
+  resources :menu_items, except: :show
+  resources :shop_tables, except: :show do
+    collection { get :cards }
+  end
+
   # Running bills — a restaurant table, a snooker table, a round at the bar.
   resources :tabs, only: %i[ index show new create ] do
     resources :items, only: %i[ create destroy ], controller: "tab_items"

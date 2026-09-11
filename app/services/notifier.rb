@@ -45,6 +45,15 @@ class Notifier
         path: Rails.application.routes.url_helpers.account_path(account))
     end
 
+    # Scan-to-order: the counter screen makes a sound, but whoever is running
+    # the shop may be nowhere near it.
+    def table_order_placed(order)
+      notify(order.shop.owner, kind: "credit",
+        title: "New order — #{order.shop_table.name}",
+        body: "#{order.table_order_items.size} #{"item".pluralize(order.table_order_items.size)} · #{money(order.total_cents)}",
+        path: Rails.application.routes.url_helpers.orders_path)
+    end
+
     # §16
     def proof_submitted(proof)
       notify(proof.account.shop.owner, kind: "proof",

@@ -21,6 +21,16 @@ class TabTest < ActiveSupport::TestCase
     assert_equal 24_000, @tab.reload.total_cents
   end
 
+  test "the total counts every line, including ones added in the same breath" do
+    # Adding several items in one go is the normal case when an order is
+    # accepted onto a tab, and a cached association can miss the last one.
+    [ [ "Beer", 12_000 ], [ "Momo", 8_000 ], [ "Ema datshi", 18_000 ] ].each do |name, price|
+      @tab.tab_items.create!(name: name, quantity: 1, unit_price_cents: price, added_by: @owner)
+    end
+
+    assert_equal 38_000, @tab.reload.total_cents
+  end
+
   test "a fractional quantity is rounded the way a line item is" do
     add "Snooker", quantity: 1.5, unit_price_cents: 20_000
     assert_equal 30_000, @tab.reload.total_cents

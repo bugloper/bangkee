@@ -1,0 +1,23 @@
+<%# A printable sheet: cut these up and put one on each table. %>
+<div class="no-print" style="margin-bottom:16px">
+  <div class="card card--pad">
+    <div style="font-size:16px;font-weight:700">Table cards</div>
+    <p class="muted" style="font-size:14px;margin:6px 0 12px">
+      Print this, cut along the cards, and put one on each table. Anyone who can
+      see a card can order from that table, so take it in at closing time if the
+      shop is not secure.
+    </p>
+    <button class="btn btn--tiny" onclick="window.print()"><%= icon :print, size: 16 %> Print</button>
+  </div>
+</div>
+
+<div class="cards-sheet">
+  <% @tables.each do |table| %>
+    <div class="table-card">
+      <div class="table-card__shop"><%= current_shop.name %></div>
+      <div class="table-card__name"><%= table.name %></div>
+      <%= qr_svg(table_menu_url(table.token), size: 132) %>
+      <div class="table-card__hint">Scan to see the menu and order</div>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,25 @@
+<%= form_with model: item, class: "form-stack" do |form| %>
+  <%= render "shared/errors", record: item %>
+
+  <div class="item-fields" style="grid-template-columns:1fr 110px 96px">
+    <div class="field">
+      <%= form.label :name, "Item", class: "sr-only" %>
+      <%= form.text_field :name, placeholder: "Ema datshi", required: true %>
+    </div>
+    <div class="field">
+      <%= form.label :category, "Group", class: "sr-only" %>
+      <%= form.text_field :category, placeholder: "Food" %>
+    </div>
+    <div class="field">
+      <%= form.label :price, "Price", class: "sr-only" %>
+      <%= form.text_field :price, placeholder: "Nu.", inputmode: "decimal", required: true %>
+    </div>
+  </div>
+
+  <label class="check">
+    <%= form.check_box :available %>
+    On the menu today
+  </label>
+
+  <%= form.submit item.new_record? ? "Add to the menu" : "Save changes", class: "btn" %>
+<% end %>

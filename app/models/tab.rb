@@ -17,6 +17,7 @@ class Tab < ApplicationRecord
 
   belongs_to :shop
   belongs_to :account, optional: true
+  belongs_to :shop_table, optional: true
   belongs_to :opened_by,  class_name: "User"
   belongs_to :settled_by, class_name: "User", optional: true
   # NOT `transaction` — that name collides with ActiveRecord's own method.
@@ -24,6 +25,7 @@ class Tab < ApplicationRecord
              foreign_key: :transaction_id, optional: true
 
   has_many :tab_items, dependent: :destroy
+  has_many :table_orders, dependent: :nullify
 
   enum :status, { open: 0, settled: 1, voided: 2 }, validate: true
   enum :settlement, { paid: 0, credited: 1 }, prefix: true
@@ -46,9 +48,12 @@ class Tab < ApplicationRecord
   # Cached on the row so the tab list can show every running total without
   # summing line items per tab.
   def recompute_total!
-    # Summed in Ruby so the rounding rule lives in one place (TabItem#total_cents)
-    # rather than being restated in SQL. A tab is a handful of lines.
-    update_columns(total_cents: tab_items.sum(&:total_cents), updated_at: Time.current)
+    # Queried afresh rather than through `tab_items`: this runs from an item's
+    # after_save, so the cached collection may not hold the row that triggered
+    # it — and reloading the collection mid-create appends it twice. Summed in
+    # Ruby so the rounding rule lives only in TabItem#total_cents.
+    update_columns(total_cents: TabItem.where(tab_id: id).sum(&:total_cents),
+                   updated_at: Time.current)
   end
 
   # Paid at the table. No credit, no payment transaction: nothing was ever

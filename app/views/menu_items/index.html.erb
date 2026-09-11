@@ -1,0 +1,55 @@
+<% content_for :content_class, "content--narrow" %>
+
+<div class="hint">
+  This is what customers read when they scan a table card. Only items marked
+  <b>on the menu today</b> can be ordered.
+</div>
+
+<% if @items.any? %>
+  <div class="card card--flush">
+    <div class="rows">
+      <% @items.each do |item| %>
+        <div class="row row--static">
+          <div class="row__main">
+            <div class="row__title">
+              <%= item.name %>
+              <% unless item.available? %><span class="badge badge--settled" style="margin-left:6px">Off today</span><% end %>
+            </div>
+            <div class="row__sub"><%= item.category.presence || "Ungrouped" %></div>
+          </div>
+          <div class="row__amount num"><%= ngultrum item.price_cents %></div>
+          <%= link_to "Edit", edit_menu_item_path(item), class: "btn btn--tiny" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% else %>
+  <div class="card empty">
+    <span class="empty__icon">📋</span>
+    <div class="empty__title">No menu yet</div>
+    Add what you sell, and customers can order it from their table.
+  </div>
+<% end %>
+
+<% if @suggestions.any? %>
+  <div class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px">From what you have been selling</div>
+    <p class="muted" style="font-size:13px;margin-bottom:10px">
+      These came off your tabs. One tap puts them on the menu at the price they last went out at.
+    </p>
+    <div class="chips">
+      <% @suggestions.each do |sold| %>
+        <%= button_to menu_items_path, class: "chip chip--action", form: { style: "display:inline" },
+              params: { menu_item: { name: sold.name, price: sold.unit_price, available: true } } do %>
+          <span><%= sold.name %></span>
+          <span class="num muted"><%= ngultrum sold.unit_price_cents %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<div class="card card--pad">
+  <div style="font-size:16px;font-weight:700;margin-bottom:12px">Add an item</div>
+  <%= render "form", item: @item %>
+</div>

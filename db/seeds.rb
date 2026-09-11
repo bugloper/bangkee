@@ -120,10 +120,26 @@ if SubscriptionPayment.none?
   request.save!
 end
 
+# A menu and table cards, so scan-to-order has something to show.
+if shop.menu_items.none?
+  [ [ "Beer", "Drinks", 120 ], [ "Sweet tea", "Drinks", 30 ], [ "Chicken fried rice", "Food", 250 ],
+    [ "Ema datshi", "Food", 180 ], [ "Momo (10)", "Food", 80 ], [ "1 hour snooker", "Snooker", 150 ]
+  ].each_with_index do |(name, category, price), index|
+    shop.menu_items.create!(name: name, category: category, price_cents: price * 100, position: index)
+  end
+end
+
+if shop.shop_tables.none?
+  [ "Table 1", "Table 2", "Table 4", "Snooker 1" ].each_with_index do |name, index|
+    shop.shop_tables.create!(name: name, position: index)
+  end
+end
+
 # Running bills — an open table mid-service, and a couple already settled so
 # the "usual orders" suggestions have something to learn from.
 if shop.tabs.none?
-  running = shop.tabs.create!(label: "Table 4", opened_by: owner, opened_at: 40.minutes.ago)
+  running = shop.tabs.create!(label: "Table 4", opened_by: owner, opened_at: 40.minutes.ago,
+                              shop_table: shop.shop_tables.find_by(name: "Table 4"))
   [ [ "Beer", 2, 120 ], [ "Chicken fried rice", 1, 250 ], [ "Ema datshi", 1, 180 ] ].each do |name, qty, price|
     running.tab_items.create!(name: name, quantity: qty, unit_price_cents: price * 100, added_by: owner)
   end
@@ -139,8 +155,20 @@ if shop.tabs.none?
   on_book.settle_on_credit!(by: owner, account: shop.accounts.find_by(customer_name: "Sonam Tobgay"))
 end
 
+# One order waiting at the counter, as if a customer had just scanned.
+if shop.table_orders.none?
+  waiting = shop.table_orders.create!(shop_table: shop.shop_tables.find_by(name: "Table 1"),
+                                      placed_at: 2.minutes.ago, note: "No chilli please")
+  [ [ "Beer", 2 ], [ "Momo (10)", 1 ] ].each do |name, quantity|
+    item = shop.menu_items.find_by(name: name)
+    waiting.table_order_items.create!(menu_item: item, name: item.name,
+                                      quantity: quantity, unit_price_cents: item.price_cents)
+  end
+end
+
 puts "Seeded: #{Shop.count} shop, #{Account.count} accounts, #{Transaction.count} transactions, " \
-     "#{PaymentProof.pending.count} pending proofs, #{Tab.open.count} open tab."
+     "#{PaymentProof.pending.count} pending proofs, #{Tab.open.count} open tab, " \
+     "#{MenuItem.count} menu items, #{TableOrder.pending.count} order waiting."
 puts "  owner    karma@shop.bt / #{PASSWORD}"
 puts "  customer dawa@example.bt / #{PASSWORD}"
 puts "  operator admin@bangkee.bt / #{PASSWORD}"

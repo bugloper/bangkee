@@ -1,0 +1,98 @@
+<%# The counter display. It refreshes itself and chimes, because whoever is
+    running the shop has their hands full and is not watching a screen. %>
+<div data-controller="counter"
+     data-counter-url-value="<%= orders_path %>"
+     data-counter-latest-value="<%= @latest_id %>"
+     data-counter-interval-value="5000">
+
+  <div class="section-head">
+    <h1>Orders</h1>
+    <button class="btn btn--tiny" data-action="counter#toggleSound" data-counter-target="soundButton">
+      Sound off
+    </button>
+  </div>
+
+  <div class="muted" style="font-size:13px;margin-top:-6px">
+    New orders appear here on their own<span data-counter-target="status"></span>.
+  </div>
+
+  <% if @pending.any? %>
+    <% @pending.each do |order| %>
+      <div class="card card--pad" style="border-left:3px solid var(--brand)">
+        <div class="acct-head">
+          <div class="acct-head__main">
+            <div class="acct-head__name"><%= order.shop_table.name %></div>
+            <div class="acct-head__meta">
+              Sent <%= time_ago_in_words order.placed_at %> ago ·
+              <%= pluralize order.table_order_items.size, "item" %>
+            </div>
+          </div>
+          <div class="row__amount" style="font-size:20px"><%= ngultrum order.total_cents %></div>
+        </div>
+
+        <div class="rows" style="border-top:1px solid var(--line);margin-top:8px">
+          <% order.table_order_items.each do |item| %>
+            <div class="row row--static" style="min-height:40px;padding-left:0;padding-right:0">
+              <div class="row__main">
+                <div class="row__title"><%= item.quantity_label %> × <%= item.name %></div>
+              </div>
+              <div class="row__amount num"><%= ngultrum item.total_cents %></div>
+            </div>
+          <% end %>
+        </div>
+
+        <% if order.note.present? %>
+          <div class="banner banner--warn flash" style="margin-top:10px">
+            <span><b>Note:</b> <%= order.note %></span>
+          </div>
+        <% end %>
+
+        <div class="review__actions" data-controller="reveal" style="margin-top:12px">
+          <%= button_to "Accept — add to #{order.shop_table.name}", accept_order_path(order),
+                class: "btn btn--payment" %>
+          <button class="btn btn--quiet" data-action="reveal#toggle" style="width:auto">Turn down…</button>
+
+          <%= form_with url: reject_order_path(order), class: "reject-form",
+                        data: { reveal_target: "panel" }, html: { hidden: true } do |form| %>
+            <div class="field">
+              <%= form.label :rejection_reason, "Why? The customer will see this." %>
+              <%= form.text_field :rejection_reason, placeholder: "e.g. kitchen is closed" %>
+            </div>
+            <%= form.submit "Turn down the order", class: "btn btn--danger" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="card empty">
+      <span class="empty__icon">✓</span>
+      <div class="empty__title">Nothing waiting</div>
+      Orders customers send by scanning a table card land here.
+    </div>
+  <% end %>
+
+  <% if @recent.any? %>
+    <div class="card card--flush">
+      <div class="card__head">Dealt with</div>
+      <div class="rows">
+        <% @recent.each do |order| %>
+          <div class="row row--static">
+            <div class="row__main">
+              <div class="row__title"><%= order.shop_table.name %></div>
+              <div class="row__sub">
+                <%= order.reviewed_at&.strftime("%-l:%M %p") %>
+                <%= "· #{order.rejection_reason}" if order.rejected? && order.rejection_reason.present? %>
+              </div>
+            </div>
+            <div class="row__end">
+              <div class="row__amount num"><%= ngultrum order.total_cents %></div>
+              <span class="badge badge--<%= order.accepted? ? "payment" : "credit" %>">
+                <%= order.accepted? ? "Accepted" : "Turned down" %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

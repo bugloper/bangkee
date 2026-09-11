@@ -1,0 +1,84 @@
+<% content_for(:title) { "#{@shop.name} · Order" } %>
+
+<div class="card card--pad">
+  <div style="font-size:20px;font-weight:700"><%= @shop.name %></div>
+  <div class="muted" style="font-size:15px">
+    You are at <b><%= @table.name %></b>. Choose what you want and send it to the counter.
+  </div>
+  <% if @tab && @tab.total_cents.positive? %>
+    <div class="kv" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
+      <span class="kv__key">Already on this table</span>
+      <span class="kv__val"><%= ngultrum @tab.total_cents %></span>
+    </div>
+  <% end %>
+</div>
+
+<% if @recent_orders.any? %>
+  <div class="card card--flush">
+    <div class="card__head">Your recent orders</div>
+    <div class="rows">
+      <% @recent_orders.each do |order| %>
+        <%= link_to table_menu_order_path(@table.token, order), class: "row" do %>
+          <div class="row__main">
+            <div class="row__title"><%= ngultrum order.total_cents %></div>
+            <div class="row__sub"><%= order.placed_at.strftime("%-l:%M %p") %></div>
+          </div>
+          <span class="badge badge--<%= order.accepted? ? "payment" : (order.rejected? ? "credit" : "pending") %>">
+            <%= order.accepted? ? "Accepted" : (order.rejected? ? "Turned down" : "Sent") %>
+          </span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<% if @menu.any? %>
+  <%= form_with url: table_menu_orders_path(@table.token), data: { controller: "order-cart" } do |form| %>
+    <% @menu.each do |category, items| %>
+      <div class="card card--flush">
+        <div class="card__head"><%= category %></div>
+        <div class="rows">
+          <% items.each do |item| %>
+            <div class="row row--static">
+              <div class="row__main">
+                <div class="row__title"><%= item.name %></div>
+                <div class="row__sub num"><%= ngultrum item.price_cents %></div>
+              </div>
+              <div class="stepper" data-order-cart-target="line"
+                   data-price="<%= item.price_cents %>">
+                <button type="button" class="stepper__btn" data-action="order-cart#less" aria-label="One fewer <%= item.name %>">−</button>
+                <input type="number" name="quantities[<%= item.id %>]" value="0" min="0" max="50"
+                       inputmode="numeric" class="stepper__value num"
+                       data-order-cart-target="quantity"
+                       data-action="input->order-cart#recalculate"
+                       aria-label="How many <%= item.name %>">
+                <button type="button" class="stepper__btn" data-action="order-cart#more" aria-label="One more <%= item.name %>">+</button>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="field">
+      <%= form.label :note, "Anything to tell the kitchen?" %>
+      <span class="field__hint">Optional — "no chilli", "one plate to share"</span>
+      <%= form.text_area :note, rows: 2 %>
+    </div>
+
+    <div class="order-bar no-print">
+      <div class="order-bar__total">
+        <span class="muted" style="font-size:13px">Your order</span>
+        <span class="num" style="font-size:18px;font-weight:700" data-order-cart-target="total">Nu. 0</span>
+      </div>
+      <%= form.submit "Send to the counter", class: "btn", style: "width:auto;padding:0 24px",
+            data: { order_cart_target: "submit" } %>
+    </div>
+  <% end %>
+<% else %>
+  <div class="card empty">
+    <span class="empty__icon">🍽️</span>
+    <div class="empty__title">No menu yet</div>
+    This shop has not put its menu on Bangkee. Order at the counter as usual.
+  </div>
+<% end %>

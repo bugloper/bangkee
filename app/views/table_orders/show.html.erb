@@ -1,0 +1,52 @@
+<% content_for(:title) { "Order sent · #{@shop.name}" } %>
+
+<div class="card card--pad" style="text-align:center">
+  <% if @order.pending? %>
+    <div class="sheet__mark" style="margin:0 auto 12px"><%= icon :bell, size: 26 %></div>
+    <div style="font-size:20px;font-weight:700">Sent to the counter</div>
+    <p class="muted" style="font-size:15px;margin-top:6px">
+      <%= @shop.name %> has been told. Someone will bring it over.
+    </p>
+  <% elsif @order.accepted? %>
+    <div class="sheet__mark" style="margin:0 auto 12px;background:var(--green-tint);color:var(--green)">
+      <%= icon :check, size: 26 %>
+    </div>
+    <div style="font-size:20px;font-weight:700">Accepted</div>
+    <p class="muted" style="font-size:15px;margin-top:6px">It is on <%= @table.name %>'s bill.</p>
+  <% else %>
+    <div class="sheet__mark" style="margin:0 auto 12px;background:var(--red-tint);color:var(--red)">
+      <%= icon :close, size: 26 %>
+    </div>
+    <div style="font-size:20px;font-weight:700">Turned down</div>
+    <p class="muted" style="font-size:15px;margin-top:6px">
+      <%= @order.rejection_reason.presence || "Ask at the counter." %>
+    </p>
+  <% end %>
+</div>
+
+<div class="card card--flush">
+  <div class="card__head">What you ordered</div>
+  <div class="rows">
+    <% @order.table_order_items.each do |item| %>
+      <div class="row row--static">
+        <div class="row__main">
+          <div class="row__title"><%= item.name %></div>
+          <div class="row__sub num"><%= item.quantity_label %> × <%= ngultrum item.unit_price_cents %></div>
+        </div>
+        <div class="row__amount num"><%= ngultrum item.total_cents %></div>
+      </div>
+    <% end %>
+  </div>
+  <div class="card__foot">
+    <div class="kv">
+      <span class="kv__key">Total</span>
+      <span class="kv__val" style="font-size:18px"><%= ngultrum @order.total_cents %></span>
+    </div>
+  </div>
+</div>
+
+<% if @order.note.present? %>
+  <div class="card"><span class="muted">Note:</span> <%= @order.note %></div>
+<% end %>
+
+<%= link_to "Order something else", table_menu_path(@table.token), class: "btn btn--quiet" %>

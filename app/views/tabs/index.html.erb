@@ -1,3 +1,10 @@
+<% pending_orders = current_shop.table_orders.pending.count %>
+<% if pending_orders.positive? %>
+  <%= link_to orders_path, class: "banner banner--info flash", style: "display:flex" do %>
+    <span><b><%= pluralize pending_orders, "order" %></b> waiting at the counter — tap to deal with them.</span>
+  <% end %>
+<% end %>
+
 <div class="section-head">
   <h1>Tabs</h1>
   <%= link_to new_tab_path, class: "btn btn--sm btn--desktop" do %>

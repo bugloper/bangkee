@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_122128) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -97,6 +97,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
     t.index ["transaction_id"], name: "index_line_items_on_transaction_id"
   end
 
+  create_table "menu_items", force: :cascade do |t|
+    t.boolean "available", default: true, null: false
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "price_cents", default: 0, null: false
+    t.bigint "shop_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id", "name"], name: "index_menu_items_on_shop_id_and_name", unique: true
+    t.index ["shop_id"], name: "index_menu_items_on_shop_id"
+  end
+
   create_table "notifications", force: :cascade do |t|
     t.string "body"
     t.datetime "created_at", null: false
@@ -180,6 +193,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
     t.index ["user_id"], name: "index_shared_receipts_on_user_id"
   end
 
+  create_table "shop_tables", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "shop_id", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id", "name"], name: "index_shop_tables_on_shop_id_and_name", unique: true
+    t.index ["shop_id"], name: "index_shop_tables_on_shop_id"
+    t.index ["token"], name: "index_shop_tables_on_token", unique: true
+  end
+
   create_table "shops", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "credit_due_days", default: 30, null: false
@@ -234,6 +260,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
     t.index ["tab_id"], name: "index_tab_items_on_tab_id"
   end
 
+  create_table "table_order_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "menu_item_id"
+    t.string "name", null: false
+    t.decimal "quantity", precision: 10, scale: 2, default: "1.0", null: false
+    t.bigint "table_order_id", null: false
+    t.bigint "unit_price_cents", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["menu_item_id"], name: "index_table_order_items_on_menu_item_id"
+    t.index ["table_order_id"], name: "index_table_order_items_on_table_order_id"
+  end
+
+  create_table "table_orders", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "note"
+    t.datetime "placed_at", null: false
+    t.string "rejection_reason"
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_id"
+    t.bigint "shop_id", null: false
+    t.bigint "shop_table_id", null: false
+    t.integer "status", default: 0, null: false
+    t.bigint "tab_id"
+    t.bigint "total_cents", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["reviewed_by_id"], name: "index_table_orders_on_reviewed_by_id"
+    t.index ["shop_id", "status"], name: "index_table_orders_on_shop_id_and_status"
+    t.index ["shop_id"], name: "index_table_orders_on_shop_id"
+    t.index ["shop_table_id"], name: "index_table_orders_on_shop_table_id"
+    t.index ["tab_id"], name: "index_table_orders_on_tab_id"
+  end
+
   create_table "tabs", force: :cascade do |t|
     t.bigint "account_id"
     t.datetime "created_at", null: false
@@ -246,6 +304,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
     t.bigint "settled_by_id"
     t.integer "settlement"
     t.bigint "shop_id", null: false
+    t.bigint "shop_table_id"
     t.integer "status", default: 0, null: false
     t.bigint "total_cents", default: 0, null: false
     t.bigint "transaction_id"
@@ -255,6 +314,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
     t.index ["settled_by_id"], name: "index_tabs_on_settled_by_id"
     t.index ["shop_id", "status"], name: "index_tabs_on_shop_id_and_status"
     t.index ["shop_id"], name: "index_tabs_on_shop_id"
+    t.index ["shop_table_id"], name: "index_tabs_on_shop_table_id"
     t.index ["transaction_id"], name: "index_tabs_on_transaction_id"
   end
 
@@ -301,6 +361,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
   add_foreign_key "audit_events", "users", column: "actor_id"
   add_foreign_key "bank_accounts", "shops"
   add_foreign_key "line_items", "transactions"
+  add_foreign_key "menu_items", "shops"
   add_foreign_key "notifications", "users"
   add_foreign_key "payment_proofs", "accounts"
   add_foreign_key "payment_proofs", "transactions"
@@ -311,6 +372,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
   add_foreign_key "shared_receipts", "accounts", column: "matched_account_id"
   add_foreign_key "shared_receipts", "payment_proofs"
   add_foreign_key "shared_receipts", "users"
+  add_foreign_key "shop_tables", "shops"
   add_foreign_key "shops", "users", column: "owner_id"
   add_foreign_key "subscription_payments", "shops"
   add_foreign_key "subscription_payments", "users", column: "reviewed_by_id"
@@ -318,7 +380,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_114316) do
   add_foreign_key "subscriptions", "shops"
   add_foreign_key "tab_items", "tabs"
   add_foreign_key "tab_items", "users", column: "added_by_id"
+  add_foreign_key "table_order_items", "menu_items"
+  add_foreign_key "table_order_items", "table_orders"
+  add_foreign_key "table_orders", "shop_tables"
+  add_foreign_key "table_orders", "shops"
+  add_foreign_key "table_orders", "tabs"
+  add_foreign_key "table_orders", "users", column: "reviewed_by_id"
   add_foreign_key "tabs", "accounts"
+  add_foreign_key "tabs", "shop_tables"
   add_foreign_key "tabs", "shops"
   add_foreign_key "tabs", "transactions", on_delete: :nullify
   add_foreign_key "tabs", "users", column: "opened_by_id"

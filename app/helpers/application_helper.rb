@@ -113,7 +113,7 @@ module ApplicationHelper
     elsif current_user.shop_owner?
       [ { label: "Home",      icon: :home,    path: dashboard_path, key: "dashboard" },
         { label: "Tabs",      icon: :table,   path: tabs_path, key: "tabs",
-          badge: current_shop&.tabs&.open&.count.to_i },
+          badge: current_shop&.tabs&.open&.count.to_i + current_shop&.table_orders&.pending&.count.to_i },
         { label: "Customers", icon: :users,   path: accounts_path,  key: "accounts" },
         { label: "Proofs",    icon: :receipt, path: payment_proofs_path, key: "payment_proofs",
           badge: current_shop&.payment_proofs&.pending&.count.to_i },
@@ -129,7 +129,8 @@ module ApplicationHelper
   # up its parent tab.
   NAV_ROOTS = {
     "dashboards" => "dashboard", "accounts" => "accounts", "credits" => "accounts",
-    "tabs" => "tabs", "tab_items" => "tabs",
+    "tabs" => "tabs", "tab_items" => "tabs", "counter_orders" => "tabs",
+    "menu_items" => "settings", "shop_tables" => "settings",
     "payments" => "accounts", "transactions" => "accounts", "statements" => "accounts",
     "invites" => "accounts", "payment_proofs" => "payment_proofs",
     "settings" => "settings", "bank_accounts" => "settings", "subscriptions" => "settings",

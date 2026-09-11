@@ -9,6 +9,9 @@ class Shop < ApplicationRecord
   has_many :payment_proofs, through: :accounts
   has_many :subscription_payments, dependent: :destroy
   has_many :tabs, dependent: :destroy
+  has_many :shop_tables, dependent: :destroy
+  has_many :menu_items, dependent: :destroy
+  has_many :table_orders, dependent: :destroy
 
   validates :name, presence: true
   validates :credit_due_days, numericality: { only_integer: true, greater_than: 0 }

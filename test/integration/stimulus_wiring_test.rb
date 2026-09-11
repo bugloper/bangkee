@@ -183,8 +183,15 @@ class StimulusWiringTest < ActionDispatch::IntegrationTest
         settled.tab_items.create!(name: "Momo", unit_price_cents: 8_000, added_by: owner)
         settled.settle_paid!(by: owner, method: "Cash")
 
+        shop_table = shop.shop_tables.create!(name: "Table 9")
+        shop.menu_items.create!(name: "Beer", price_cents: 12_000, category: "Drinks")
+        waiting_order = shop.table_orders.create!(shop_table: shop_table, placed_at: Time.current)
+        waiting_order.table_order_items.create!(name: "Beer", quantity: 2, unit_price_cents: 12_000)
+
         gather collected, owner, [
           tabs_path, new_tab_path, tab_path(tab), tab_path(settled),
+          orders_path, menu_items_path, shop_tables_path,
+          edit_shop_table_path(shop_table), cards_shop_tables_path,
           dashboard_path, accounts_path, new_account_path, edit_account_path(account),
           account_path(account), new_account_credit_path(account),
           new_account_credit_path(account, mode: "itemized"), new_account_payment_path(account),
@@ -210,9 +217,11 @@ class StimulusWiringTest < ActionDispatch::IntegrationTest
           admin_root_path, admin_subscription_payments_path, admin_shops_path
         ]
 
-        # Signed-out screens carry wiring too.
+        # Signed-out screens carry wiring too — including the one a diner
+        # reaches by scanning a table card.
         sign_out
-        [ new_session_path, new_registration_path, new_password_path, offline_path ].each do |path|
+        [ new_session_path, new_registration_path, new_password_path, offline_path,
+          table_menu_path(shop_table.token) ].each do |path|
           get path
           collected["(guest) #{path}"] = Nokogiri::HTML(response.body)
         end

@@ -31,6 +31,30 @@
         <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
       <% end %>
 
+      <%= link_to orders_path, class: "row" do %>
+        <div class="row__main">
+          <div class="row__title">Counter</div>
+          <div class="row__sub">Orders customers send by scanning a table card</div>
+        </div>
+        <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+      <% end %>
+
+      <%= link_to menu_items_path, class: "row" do %>
+        <div class="row__main">
+          <div class="row__title">Menu</div>
+          <div class="row__sub"><%= pluralize @shop.menu_items.count, "item" %> customers can order</div>
+        </div>
+        <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+      <% end %>
+
+      <%= link_to shop_tables_path, class: "row" do %>
+        <div class="row__main">
+          <div class="row__title">Tables and QR cards</div>
+          <div class="row__sub"><%= pluralize @shop.shop_tables.active.count, "table" %> set up for scanning</div>
+        </div>
+        <span class="row__chev"><%= icon :chev_right, size: 18 %></span>
+      <% end %>
+
       <%= link_to bank_accounts_path, class: "row" do %>
         <div class="row__main">
           <div class="row__title">Bank details</div>

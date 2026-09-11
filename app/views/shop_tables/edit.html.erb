@@ -1,0 +1,31 @@
+<% content_for :content_class, "content--narrow" %>
+
+<div class="card card--pad">
+  <%= form_with model: @table, class: "form-stack" do |form| %>
+    <%= render "shared/errors", record: @table %>
+    <div class="field">
+      <%= form.label :name, "Name" %>
+      <%= form.text_field :name, required: true %>
+    </div>
+    <label class="check">
+      <%= form.check_box :active %>
+      In use — its card works
+    </label>
+    <%= form.submit "Save changes", class: "btn" %>
+  <% end %>
+</div>
+
+<div class="card card--pad" style="text-align:center">
+  <div style="font-size:14px;font-weight:700;margin-bottom:10px">This table's card</div>
+  <%= qr_svg(table_menu_url(@table.token), size: 160) %>
+  <div class="muted num" style="font-size:12px;margin-top:8px;word-break:break-all">
+    <%= table_menu_url(@table.token) %>
+  </div>
+</div>
+
+<div class="card card--pad">
+  <%= button_to "Remove this table", shop_table_path(@table), method: :delete,
+        class: "btn btn--quiet", style: "color:var(--red);border-color:var(--red-tint)",
+        form: { data: { turbo_confirm: "Remove #{@table.name}?|Its printed card stops working immediately, and any orders already placed from it are kept.",
+                        turbo_confirm_style: "danger" } } %>
+</div>

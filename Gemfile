@@ -47,6 +47,9 @@ gem "web-push"
 # Reading shared bank receipts (Claude vision + structured outputs)
 gem "anthropic", "~> 1.69"
 
+# QR codes for the table cards customers scan to order
+gem "rqrcode", "~> 3.2"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

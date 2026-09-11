@@ -1,0 +1,54 @@
+<% content_for :content_class, "content--narrow" %>
+
+<div class="hint">
+  Each table gets a printed card with its own code. A customer scans it, reads
+  your menu and sends an order straight to the counter — they do not need a
+  Bangkee account.
+</div>
+
+<% if @tables.any? %>
+  <div class="card card--flush">
+    <div class="rows">
+      <% @tables.each do |table| %>
+        <div class="row row--static">
+          <div class="row__main">
+            <div class="row__title">
+              <%= table.name %>
+              <% unless table.active? %><span class="badge badge--settled" style="margin-left:6px">Not in use</span><% end %>
+            </div>
+            <div class="row__sub">
+              <% if table.open_tab %>
+                Tab running · <%= ngultrum table.open_tab.total_cents %>
+              <% else %>
+                No tab open
+              <% end %>
+            </div>
+          </div>
+          <%= link_to "Edit", edit_shop_table_path(table), class: "btn btn--tiny" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%= link_to cards_shop_tables_path, class: "btn" do %>
+    <%= icon :print, size: 18 %> Print the table cards
+  <% end %>
+<% else %>
+  <div class="card empty">
+    <span class="empty__icon">🍽️</span>
+    <div class="empty__title">No tables yet</div>
+    Add one for each table you want customers to be able to order from.
+  </div>
+<% end %>
+
+<div class="card card--pad">
+  <div style="font-size:16px;font-weight:700;margin-bottom:12px">Add a table</div>
+  <%= form_with model: @table, class: "form-stack" do |form| %>
+    <%= render "shared/errors", record: @table %>
+    <div class="field">
+      <%= form.label :name, "Name" %>
+      <%= form.text_field :name, placeholder: "Table 5", required: true %>
+    </div>
+    <%= form.submit "Add table", class: "btn" %>
+  <% end %>
+</div>

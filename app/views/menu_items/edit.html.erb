@@ -1,0 +1,8 @@
+<% content_for :content_class, "content--narrow" %>
+<div class="card card--pad"><%= render "form", item: @item %></div>
+<div class="card card--pad">
+  <%= button_to "Take off the menu", menu_item_path(@item), method: :delete,
+        class: "btn btn--quiet", style: "color:var(--red);border-color:var(--red-tint)",
+        form: { data: { turbo_confirm: "Remove #{@item.name}?|Orders already placed keep their own copy of the name and price, so nothing already ordered changes.",
+                        turbo_confirm_style: "danger" } } %>
+</div>

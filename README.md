@@ -41,6 +41,11 @@ Demo logins (from `db/seeds.rb`, password `password`):
   void). An open tab is never a balance: the customer is still ordering, and
   half of them pay cash. The quick-add chips are learned from what the shop has
   actually sold — no price list to maintain.
+- **Scan to order** — a printed QR card on each table. A customer scans it,
+  reads the shop's menu on their own phone with no sign-up, and sends an order
+  to the counter, where the screen refreshes itself and chimes. An order is a
+  request until someone accepts it; accepting copies its lines onto that
+  table's tab. See below.
 - **§16 bank-transfer settlement** — the owner publishes bank details, the
   customer uploads a transfer screenshot, and the owner's confirmation is what
   creates the payment. A pending proof never moves the balance.
@@ -118,6 +123,34 @@ and payments are queued on the device instead of failing:
   meta tag, not the per-form token, which would be stale).
 - Only credits and payments queue. Proof and subscription screenshots do not:
   they are uploads, and a half-sent image is worse than an honest failure.
+
+### Scan to order
+
+`ShopTable` is a place in the shop that keeps its identity between sittings —
+the printed card outlives the tab, so the QR points at the table, not the bill.
+`MenuItem` is what customers read (the tab's quick-add chips are still learned
+from history; a diner cannot be asked to type "Ema datshi 180"). `TableOrder`
+is what they send.
+
+- **The ordering pages are public.** A diner is not a Bangkee user, so the
+  table's token is the whole of the identification. That token is unguessable
+  and the pages are rate limited, but **anyone who can see a card can order from
+  that table** — which is why an order is a request, not a charge.
+- **Prices come from the menu, never from the form.** The form posts quantities
+  keyed by menu item; a price in a form field is a price the customer can edit.
+  Quantities are capped.
+- **Accepting is what makes it real.** It copies the lines onto the table's tab,
+  opening one if the group has not been set up yet, after which they are
+  ordinary tab items and settle the usual two ways.
+- **The counter polls and chimes.** `counter_controller.js` re-checks every five
+  seconds and plays a synthesised two-note chime — no audio file to fail to
+  load. Browsers refuse to play sound until the page has been interacted with,
+  so **staff must tap "Sound on" once per device**; the choice is remembered.
+  The owner also gets the usual push notification, for when nobody is at the
+  counter.
+- A write-locked shop still receives orders (the diner does not owe Bangkee
+  anything) but cannot accept them until billing is sorted.
+- Table cards print two-up from **Tables → Print the table cards**.
 
 ### Sharing a receipt in
 

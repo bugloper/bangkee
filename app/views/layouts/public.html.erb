@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "Order · Bangkee" %></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#003d9b">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <%# Deliberately not the app shell: a diner is not signing in, and showing
+      them navigation for an app they do not have is noise. %>
+  <body>
+    <header class="topbar">
+      <div class="topbar__title"><%= @shop&.name || "Bangkee" %></div>
+      <span class="topbar__spacer"></span>
+      <span class="muted" style="font-size:12px"><%= @table&.name %></span>
+    </header>
+
+    <% flash.each do |type, message| %>
+      <% next if message.blank? %>
+      <div class="banner banner--<%= type.to_s == "alert" ? "alert" : "ok" %>" role="alert">
+        <span><%= message %></span>
+      </div>
+    <% end %>
+
+    <main class="content content--narrow" style="padding-bottom:120px"><%= yield %></main>
+  </body>
+</html>
