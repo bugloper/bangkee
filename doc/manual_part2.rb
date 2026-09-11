@@ -295,6 +295,21 @@ module ManualPart2
            "is always no. Declining is remembered on that device. On an iPhone push works only " \
            "once the app is on the home screen."
 
+      subheading "What a push feels like"
+      body "The sound is the phone's, not Bangkee's: no browser lets a web app choose its own " \
+           "notification tone, and a per-app sound would need a native app's notification " \
+           "channel. Vibration is the one signal that can be shaped, so it carries the meaning " \
+           "instead — money arriving buzzes twice, an overdue reminder is one long buzz, " \
+           "everything else a short one. Android honours this and iPhones ignore it. The chime " \
+           "at the counter is a different thing altogether: that is a sound Bangkee makes " \
+           "itself, out of a screen open in front of somebody."
+
+      callout "Two payments always alert twice",
+        "Notifications about money never replace one another, so glancing at the phone once " \
+        "still shows both. Only reminders that repeat about the same thing collapse — " \
+        "yesterday's overdue notice for an account is replaced by today's rather than stacking " \
+        "up all week."
+
       # ------------------------------------------------------ 12 install/offline
       chapter "Installing and working offline",
         "A shop with two bars of signal is the normal case, not the exception. What the app " \

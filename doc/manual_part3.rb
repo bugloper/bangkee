@@ -103,16 +103,18 @@ module ManualPart3
           "Safari implements no share target, so on an iPhone Bangkee cannot appear in a bank " \
           "app's share sheet. Those customers upload a screenshot the ordinary way." ],
         [ "Reading receipts needs a key, and is unproven on real receipts",
-          "Set ANTHROPIC_API_KEY to turn it on. The request has been tested against a stub, but " \
-          "no real BoB or mBoB receipt has been through it yet — expect to tune the wording once " \
-          "real ones arrive." ],
+          "Set ANTHROPIC_API_KEY to turn it on. No real BoB or mBoB receipt has been through it " \
+          "yet — expect to tune the wording once they arrive." ],
         [ "A table card is a key to that table",
-          "Anyone who can see the card can send orders from it. They cannot spend anybody's " \
-          "money — an order does nothing until the counter accepts it — but cards left out " \
-          "overnight mean a queue to clear in the morning." ],
+          "Anyone who can see it can send orders. They spend nobody's money — an order does " \
+          "nothing until the counter accepts it — but cards left out overnight mean a queue to " \
+          "clear in the morning." ],
+        [ "A push cannot have its own sound",
+          "No browser lets a web app choose its tone, so a push sounds like everything else on " \
+          "that phone. Vibration carries the meaning instead." ],
         [ "The counter's chime needs one tap per device",
-          "Browsers will not play sound until the page has been interacted with. Staff tap " \
-          "Sound on once on the counter tablet; if that tablet is replaced, tap it again." ],
+          "Browsers will not play sound until the page has been tapped. Staff turn it on once " \
+          "per device." ],
         [ "Orders need a connection",
           "The counter re-checks every few seconds rather than holding a permanent connection, " \
           "but a table with no signal cannot send an order at all." ],
@@ -151,16 +153,6 @@ module ManualPart3
         end
         move_down 11
       end
-
-      # --------------------------------------------------------------- closing
-      move_down 10
-      rule
-      fill_color DocKit::MUTED
-      font_size 9.5
-      text "This document was generated from the application's own routes, models and " \
-           "constants, so the figures in it — trial length, grace period, overdue window, " \
-           "accepted image types — are the ones the code actually uses.",
-           align: :justify, leading: 3.4
     end
   end
 end

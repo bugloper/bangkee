@@ -35,7 +35,8 @@ module ManualPart1
       font_size 9
       text "Rails 8 · Hotwire · installable as a PWA"
       text "Generated #{Time.now.strftime("%-d %B %Y")} from the code at commit " \
-           "#{facts["commit"]}"
+           "#{facts["commit"]}. The figures in it — trial length, grace period, overdue"
+      text "window, accepted image types — are read out of the application at build time."
 
       # --------------------------------------------------------------- contents
       start_new_page
