@@ -28,7 +28,7 @@ class Tab < ApplicationRecord
   has_many :table_orders, dependent: :nullify
 
   enum :status, { open: 0, settled: 1, voided: 2 }, validate: true
-  enum :settlement, { paid: 0, credited: 1 }, prefix: true
+  enum :settlement, { paid: 0, credited: 1, part_paid: 2 }, prefix: true
 
   has_money_attribute :total
 
@@ -64,7 +64,7 @@ class Tab < ApplicationRecord
 
     self.class.transaction do
       update!(status: :settled, settlement: :paid, payment_method: method.presence,
-              settled_by: by, settled_at: Time.current)
+              paid_cents: total_cents, settled_by: by, settled_at: Time.current)
       log_audit(:settled_paid, actor: by, amount_cents: total_cents, method: payment_method)
     end
     true
@@ -77,20 +77,43 @@ class Tab < ApplicationRecord
     return false unless account && account.shop_id == shop_id
 
     self.class.transaction do
-      credit = account.transactions.new(
-        kind: :credit, itemized: true, occurred_at: Time.current,
-        description: description_for_credit, created_by: by, amount_cents: total_cents
-      )
-      tab_items.each do |item|
-        credit.line_items.build(name: item.name, quantity: item.quantity,
-                                unit_price_cents: item.unit_price_cents)
-      end
+      credit = build_credit_for(account, by)
       credit.save!
 
       update!(status: :settled, settlement: :credited, account: account,
               settled_by: by, settled_at: Time.current, settlement_transaction: credit)
       credit.log_audit(:created, actor: by, kind: "credit", amount_cents: credit.amount_cents, tab_id: id)
       log_audit(:settled_on_credit, actor: by, amount_cents: total_cents, account_id: account.id)
+    end
+    true
+  end
+
+  # Some of it now, the rest on the book — a group where one person pays cash
+  # and the regular takes the remainder on their page.
+  #
+  # This raises both entries rather than only the difference: the customer's
+  # page should show what they took and what they handed over, not a single
+  # netted-off number that explains nothing six weeks later.
+  def settle_part_paid!(by:, account:, paid_cents:, method: nil)
+    return false unless open? && !empty?
+    return false unless account && account.shop_id == shop_id
+    return false unless paid_cents.to_i.positive? && paid_cents.to_i < total_cents
+
+    self.class.transaction do
+      credit = build_credit_for(account, by)
+      credit.save!
+
+      account.transactions.create!(
+        kind: :payment, amount_cents: paid_cents, payment_method: method.presence || "Cash",
+        description: "Paid at the table", occurred_at: Time.current, created_by: by
+      )
+
+      update!(status: :settled, settlement: :part_paid, account: account,
+              paid_cents: paid_cents, payment_method: method.presence,
+              settled_by: by, settled_at: Time.current, settlement_transaction: credit)
+      credit.log_audit(:created, actor: by, kind: "credit", amount_cents: credit.amount_cents, tab_id: id)
+      log_audit(:settled_part_paid, actor: by, amount_cents: total_cents,
+                paid_cents: paid_cents, account_id: account.id)
     end
     true
   end
@@ -108,12 +131,35 @@ class Tab < ApplicationRecord
 
   def settlement_label
     return nil unless settled?
-    settlement_paid? ? "Paid#{" · #{payment_method}" if payment_method.present?}" : "On the book"
+
+    case settlement
+    when "paid"      then "Paid#{" · #{payment_method}" if payment_method.present?}"
+    when "part_paid" then "Part paid, rest on the book"
+    else                  "On the book"
+    end
+  end
+
+  # What the customer was left owing after settling.
+  def credited_cents
+    return 0 unless settlement_credited? || settlement_part_paid?
+    total_cents - paid_cents
   end
 
   private
     def default_opened_at
       self.opened_at ||= Time.current
+    end
+
+    def build_credit_for(account, by)
+      credit = account.transactions.new(
+        kind: :credit, itemized: true, occurred_at: Time.current,
+        description: description_for_credit, created_by: by, amount_cents: total_cents
+      )
+      tab_items.each do |item|
+        credit.line_items.build(name: item.name, quantity: item.quantity,
+                                unit_price_cents: item.unit_price_cents)
+      end
+      credit
     end
 
     def description_for_credit

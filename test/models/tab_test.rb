@@ -79,6 +79,58 @@ class TabTest < ActiveSupport::TestCase
     assert_equal @account, @tab.account
   end
 
+  test "part paid raises both entries, so the page shows what was taken and what was handed over" do
+    add "Beer", quantity: 2, unit_price_cents: 12_000
+    add "Chicken fried rice", unit_price_cents: 25_000   # 49,000 in all
+
+    assert_difference -> { @account.transactions.count }, 2 do
+      assert @tab.settle_part_paid!(by: @owner, account: @account, paid_cents: 20_000, method: "Cash")
+    end
+
+    @tab.reload
+    assert @tab.settlement_part_paid?
+    assert_equal 20_000, @tab.paid_cents
+    assert_equal 29_000, @tab.credited_cents
+    assert_equal 29_000, @account.reload.balance_cents, "they still owe the difference"
+
+    credit = @tab.settlement_transaction
+    assert_equal 49_000, credit.amount_cents, "the credit is the whole bill, not the remainder"
+    assert_equal 2, credit.line_items.count
+    payment = @account.transactions.payment.sole
+    assert_equal 20_000, payment.amount_cents
+    assert_equal "Cash", payment.payment_method
+  end
+
+  test "part paying the whole bill, or none of it, is refused" do
+    add "Beer", unit_price_cents: 12_000
+
+    assert_no_difference -> { @account.transactions.count } do
+      assert_not @tab.settle_part_paid!(by: @owner, account: @account, paid_cents: 12_000)
+      assert_not @tab.settle_part_paid!(by: @owner, account: @account, paid_cents: 20_000)
+      assert_not @tab.settle_part_paid!(by: @owner, account: @account, paid_cents: 0)
+    end
+    assert @tab.reload.open?
+  end
+
+  test "a part paid tab cannot be settled again, and refuses another shop's customer" do
+    add "Beer", unit_price_cents: 12_000
+    stranger = create_account(create_owner(email: "other@shop.bt").shop, name: "Not Ours")
+
+    assert_not @tab.settle_part_paid!(by: @owner, account: stranger, paid_cents: 5_000)
+
+    assert @tab.settle_part_paid!(by: @owner, account: @account, paid_cents: 5_000)
+    assert_not @tab.settle_part_paid!(by: @owner, account: @account, paid_cents: 1_000)
+    assert_not @tab.settle_paid!(by: @owner)
+  end
+
+  test "a fully paid tab records that the whole bill was handed over" do
+    add "Beer", unit_price_cents: 12_000
+    @tab.settle_paid!(by: @owner, method: "Cash")
+
+    assert_equal 12_000, @tab.reload.paid_cents
+    assert_equal 0, @tab.credited_cents
+  end
+
   test "a tab put on the book can be voided like any other credit" do
     add "Beer", unit_price_cents: 12_000
     @tab.settle_on_credit!(by: @owner, account: @account)

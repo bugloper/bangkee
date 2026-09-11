@@ -41,8 +41,9 @@ gem "image_processing", "~> 1.2"
 # Authentication (Rails 8 built-in generator)
 gem "bcrypt", "~> 3.1.7"
 
-# Web Push (VAPID) for PWA notifications
-gem "web-push"
+# Push notification delivery — Web Push (VAPID) today, and the same pipeline
+# if APNs or FCM are ever added.
+gem "rpush"
 
 # Reading shared bank receipts (Claude vision + structured outputs)
 gem "anthropic", "~> 1.69"

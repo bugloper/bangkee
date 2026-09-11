@@ -61,6 +61,39 @@ class TabFlowTest < ActionDispatch::IntegrationTest
     assert_match "1 item", response.body
   end
 
+  test "settling part paid leaves the difference on the customer's page" do
+    tab = open_tab
+    order tab, "Beer", quantity: "2", unit_price: "120"
+    order tab, "Momo", unit_price: "80"          # 320 in all
+
+    assert_difference -> { Transaction.count }, 2 do
+      post settle_tab_path(tab), params: {
+        settlement: "part_paid", account_id: @account.id, paid: "200", payment_method: "Cash"
+      }
+    end
+
+    assert_redirected_to account_path(@account)
+    assert_equal 12_000, @account.reload.balance_cents, "320 taken, 200 paid, 120 left"
+    assert tab.reload.settlement_part_paid?
+
+    get account_path(@account)
+    assert_match "Table 4", response.body
+    assert_match "Paid at the table", response.body
+  end
+
+  test "a part payment that covers the whole bill is sent back rather than accepted" do
+    tab = open_tab
+    order tab, "Beer", unit_price: "120"
+
+    assert_no_difference -> { Transaction.count } do
+      post settle_tab_path(tab), params: {
+        settlement: "part_paid", account_id: @account.id, paid: "120"
+      }
+    end
+    assert_redirected_to tab
+    assert tab.reload.open?
+  end
+
   test "settling onto the book needs a customer, and refuses one from another shop" do
     tab = open_tab
     order tab, "Beer", unit_price: "120"

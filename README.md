@@ -183,7 +183,7 @@ to `SharedReceiptsController#create`.
 - Reading a receipt creates nothing. The customer confirms, which makes an
   ordinary pending `PaymentProof`; the shop still confirms after that (BR-30).
 
-### Web Push
+### Web Push (delivered by rpush)
 
 ```bash
 bin/rails push:keys        # prints a VAPID pair
@@ -197,10 +197,26 @@ VAPID_PRIVATE_KEY=…
 VAPID_SUBJECT=mailto:you@example.bt
 ```
 
-Push is a **logged no-op until those are set**, so the app runs fine without
-them. A device opts in from Settings → Push notifications (the request has to
-come from a tap, and on iOS only once Bangkee is installed). Delivery runs
-through `PushDeliveryJob` on Solid Queue: `bin/jobs`.
+Push is a **no-op until those are set**, so the app runs fine without them. A
+device opts in from Settings → Push notifications (the request has to come from
+a tap, and on iOS only once Bangkee is installed).
+
+Delivery goes through **[rpush](https://github.com/rpush/rpush)**, not a direct
+send. `PushDeliveryJob` writes one `Rpush::Webpush::Notification` per registered
+device and stops there; the rpush daemon delivers them, with its own retries and
+backoff, so nothing about a slow or failing push service can reach the request
+that caused it. Two processes alongside the app:
+
+```bash
+bin/jobs                   # Solid Queue — emails, receipt reading, queueing the pushes
+bundle exec rpush start    # delivery daemon — actually sends them
+```
+
+The rpush app row (`bangkee`) is created on first use from the VAPID keys and
+updated if they are rotated. A dead endpoint — cleared site data, an uninstalled
+PWA — comes back as a 404 or 410 on delivery, and `config/initializers/push_cleanup.rb`
+deletes that `PushSubscription` when rpush reports it. That failure is the only
+moment the app can learn a device is gone.
 
 ## Conventions worth knowing before you edit
 

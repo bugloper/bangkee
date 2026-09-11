@@ -192,7 +192,7 @@ class PwaTest < ActionDispatch::IntegrationTest
     assert_equal 0, user.notifications.unread.count
   end
 
-  test "a queued push is enqueued for every notification but never sent without VAPID keys" do
+  test "a push is queued for every notification, and does nothing without VAPID keys" do
     user = create_customer
     user.push_subscriptions.create!(endpoint: "https://push.example/a", p256dh_key: "k", auth_key: "a")
 
@@ -202,7 +202,68 @@ class PwaTest < ActionDispatch::IntegrationTest
       PushDeliveryJob.perform_later(notification.id)
     end
 
-    # No keys configured in test, so delivery is a no-op rather than an error.
-    assert_nothing_raised { PushDeliveryJob.perform_now(notification.id) }
+    # Without keys there is no rpush app, so nothing is handed over — and that
+    # is a quiet no-op, not an error.
+    assert_no_difference -> { Rpush::Webpush::Notification.count } do
+      assert_nothing_raised { PushDeliveryJob.perform_now(notification.id) }
+    end
+  end
+
+  test "with keys, one rpush notification is written per registered device" do
+    with_vapid_keys do
+      user = create_customer
+      user.push_subscriptions.create!(endpoint: "https://push.example/phone", p256dh_key: "k1", auth_key: "a1")
+      user.push_subscriptions.create!(endpoint: "https://push.example/tablet", p256dh_key: "k2", auth_key: "a2")
+      notification = user.notifications.create!(kind: "proof", title: "Payment proof submitted",
+                                                body: "Nu. 500", path: "/payment_proofs")
+
+      assert_difference -> { Rpush::Webpush::Notification.count }, 2 do
+        PushDeliveryJob.perform_now(notification.id)
+      end
+
+      push = Rpush::Webpush::Notification.order(:id).last
+      registration = push.registration_ids.first.deep_symbolize_keys
+      assert_equal "https://push.example/tablet", registration[:endpoint]
+      assert_equal({ "p256dh" => "k2", "auth" => "a2" }, registration[:keys].stringify_keys)
+
+      # The service worker reads exactly this.
+      payload = JSON.parse(push.data["message"])
+      assert_equal "Payment proof submitted", payload["title"]
+      assert_equal "/payment_proofs", payload["path"]
+      assert_equal "bangkee-proof", payload["tag"]
+
+      assert_equal WebPushConfig::APP_NAME, push.app.name
+      assert_equal "test-public-key", JSON.parse(push.app.vapid_keypair)["public_key"]
+    end
+  end
+
+  test "the rpush app is made once and picks up a rotated key" do
+    with_vapid_keys do
+      first = WebPushConfig.rpush_app
+
+      assert_no_difference -> { Rpush::Webpush::App.count } do
+        assert_equal first.id, WebPushConfig.rpush_app.id
+      end
+
+      ENV["VAPID_PUBLIC_KEY"] = "rotated-public-key"
+      assert_equal "rotated-public-key", JSON.parse(WebPushConfig.rpush_app.vapid_keypair)["public_key"]
+    end
+  end
+
+  test "a device whose endpoint has died is forgotten when delivery reports it gone" do
+    with_vapid_keys do
+      user = create_customer
+      user.push_subscriptions.create!(endpoint: "https://push.example/gone", p256dh_key: "k", auth_key: "a")
+      notification = user.notifications.create!(kind: "credit", title: "New credit")
+      PushDeliveryJob.perform_now(notification.id)
+
+      push = Rpush::Webpush::Notification.order(:id).last
+      push.update!(failed: true, error_code: 410, error_description: "Gone")
+
+      # What the daemon does when the push service answers 410.
+      assert_difference -> { PushSubscription.count }, -1 do
+        Rpush.reflection_stack.first.__dispatch(:notification_failed, push)
+      end
+    end
   end
 end

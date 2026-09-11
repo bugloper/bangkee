@@ -49,6 +49,20 @@ class TabsController < ApplicationController
       else
         redirect_to @tab, alert: settle_failure
       end
+    when "part_paid"
+      account = current_shop.accounts.find_by(id: params[:account_id])
+      return redirect_to @tab, alert: "Choose whose book the rest goes on." if account.nil?
+
+      paid = Money.cents(params[:paid])
+      if @tab.settle_part_paid!(by: current_user, account: account, paid_cents: paid,
+                                method: params[:payment_method])
+        Notifier.credit_recorded(@tab.settlement_transaction)
+        offer_notifications_next
+        redirect_to account_path(account),
+          notice: "#{@tab.label} — #{helpers.ngultrum paid} paid, #{helpers.ngultrum @tab.credited_cents} on #{account.display_name}'s book."
+      else
+        redirect_to @tab, alert: part_paid_failure(paid)
+      end
     when "credited"
       account = current_shop.accounts.find_by(id: params[:account_id])
       return redirect_to @tab, alert: "Choose whose book this goes on." if account.nil?
@@ -81,6 +95,13 @@ class TabsController < ApplicationController
 
     def tab_params
       params.require(:tab).permit(:label, :note)
+    end
+
+    def part_paid_failure(paid)
+      return settle_failure if @tab.empty? || !@tab.open?
+      return "How much was handed over?" unless paid.to_i.positive?
+
+      "That is the whole bill — settle it as paid instead."
     end
 
     def settle_failure

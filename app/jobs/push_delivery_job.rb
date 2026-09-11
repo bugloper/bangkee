@@ -1,44 +1,48 @@
-# Sends one in-app notification out to every device the recipient has
-# registered. A dead endpoint (404/410) is deleted rather than retried — the
-# browser is gone and will register a new one when it comes back.
+# Hands one in-app notification to rpush for every device the recipient has
+# registered. rpush owns delivery from there: retries, backoff, and telling us
+# when an endpoint is gone.
+#
+# Nothing is sent from this process. The rows sit in rpush_notifications until
+# the delivery daemon picks them up (`bundle exec rpush start`), so a push
+# service that is slow or down can never hold up the request that caused it.
 class PushDeliveryJob < ApplicationJob
   queue_as :default
   discard_on ActiveRecord::RecordNotFound
 
+  # A push should be about something that just happened. One that has been
+  # sitting for hours is noise by the time it lands.
+  TIME_TO_LIVE = 4.hours.to_i
+
   def perform(notification_id)
-    return unless WebPushConfig.configured?
+    app = WebPushConfig.rpush_app
+    return if app.nil?   # no VAPID keys: push is switched off
 
     notification = Notification.find(notification_id)
-    payload = {
-      title: notification.title,
-      body: notification.body,
-      path: notification.path,
-      tag: "bangkee-#{notification.kind}"
-    }.to_json
 
-    notification.user.push_subscriptions.each do |subscription|
-      deliver(subscription, payload)
+    notification.user.push_subscriptions.find_each do |subscription|
+      Rpush::Webpush::Notification.create!(
+        app: app,
+        registration_ids: [ registration_for(subscription) ],
+        data: { message: payload_for(notification), urgency: "normal" },
+        time_to_live: TIME_TO_LIVE
+      )
     end
   end
 
   private
-    def deliver(subscription, payload)
-      WebPush.payload_send(
-        message: payload,
-        endpoint: subscription.endpoint,
-        p256dh: subscription.p256dh_key,
-        auth: subscription.auth_key,
-        vapid: {
-          subject: WebPushConfig.subject,
-          public_key: WebPushConfig.public_key,
-          private_key: WebPushConfig.private_key
-        },
-        urgency: "normal"
-      )
-      subscription.update_column(:last_used_at, Time.current)
-    rescue WebPush::ExpiredSubscription, WebPush::InvalidSubscription
-      subscription.destroy
-    rescue WebPush::ResponseError => error
-      Rails.logger.warn "[push] #{error.class}: #{error.message}"
+    # rpush wants exactly the shape the browser handed us at subscribe time.
+    def registration_for(subscription)
+      { endpoint: subscription.endpoint,
+        keys: { "p256dh" => subscription.p256dh_key, "auth" => subscription.auth_key } }
+    end
+
+    # What the service worker reads in its push handler.
+    def payload_for(notification)
+      {
+        title: notification.title,
+        body: notification.body,
+        path: notification.path,
+        tag: "bangkee-#{notification.kind}"
+      }.to_json
     end
 end

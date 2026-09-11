@@ -148,6 +148,52 @@
         </div>
         <%= form.submit "Put on the book — #{ngultrum @tab.total_cents}", class: "btn btn--credit" %>
       <% end %>
+
+      <div data-controller="reveal">
+        <button class="btn btn--quiet" data-action="reveal#toggle" style="width:100%">
+          They are paying part of it…
+        </button>
+
+        <%= form_with url: settle_tab_path(@tab), class: "form-stack",
+                      data: { reveal_target: "panel" }, html: { hidden: true } do |form| %>
+          <%= form.hidden_field :settlement, value: "part_paid" %>
+
+          <div class="field" style="margin-top:12px">
+            <%= form.label :paid, "Handed over now" %>
+            <div class="amount-field amount-field--payment">
+              <div class="amount-field__box">
+                <span class="amount-field__unit">Nu.</span>
+                <%= form.text_field :paid, inputmode: "decimal", required: true, placeholder: "0",
+                      "aria-label": "Amount paid at the table" %>
+              </div>
+            </div>
+            <span class="field__hint">
+              The rest of <%= ngultrum @tab.total_cents %> goes on the book.
+            </span>
+          </div>
+
+          <div class="field">
+            <%= form.label :account_id, "Whose book takes the rest?" %>
+            <%= form.select :account_id,
+                  @accounts.map { |account| [ "#{account.display_name} — #{ngultrum account.balance_cents} owed", account.id ] },
+                  { selected: @tab.account_id, include_blank: "Choose the customer" }, required: true %>
+          </div>
+
+          <div class="field">
+            <span>How was the cash part paid?</span>
+            <div class="segmented">
+              <% [ "Cash", "Mobile transfer" ].each do |method| %>
+                <label>
+                  <%= form.radio_button :payment_method, method, checked: method == "Cash" %>
+                  <span><%= method %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+          <%= form.submit "Settle — part paid", class: "btn" %>
+        <% end %>
+      </div>
     <% end %>
 
     <%= button_to "Close without charging", void_tab_path(@tab), method: :delete,
