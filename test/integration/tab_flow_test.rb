@@ -129,6 +129,49 @@ class TabFlowTest < ActionDispatch::IntegrationTest
     assert_equal 8_000, tab.reload.total_cents
   end
 
+  test "a round replayed from a phone that was offline lands once" do
+    tab = open_tab
+    key = SecureRandom.uuid
+
+    assert_difference -> { TabItem.count }, 1 do
+      2.times do
+        post tab_items_path(tab), params: {
+          tab_item: { name: "Beer", quantity: 2, unit_price: "120", idempotency_key: key }
+        }
+        assert_redirected_to tab
+      end
+    end
+
+    assert_equal 24_000, tab.reload.total_cents
+    assert_equal key, tab.tab_items.sole.idempotency_key
+  end
+
+  test "two rounds queued separately both land" do
+    tab = open_tab
+
+    assert_difference -> { TabItem.count }, 2 do
+      2.times do |index|
+        post tab_items_path(tab), params: {
+          tab_item: { name: "Beer", quantity: 1, unit_price: "120",
+                      idempotency_key: SecureRandom.uuid }
+        }
+      end
+    end
+    assert_equal 24_000, tab.reload.total_cents
+  end
+
+  test "the tab screen can queue rounds and shows what is waiting" do
+    tab = open_tab
+    order tab, "Beer", unit_price: "120"
+
+    get tab_path(tab)
+    assert_response :success
+    # Both the typed form and the one-tap chips queue to this tab.
+    assert_match "queued-form", response.body
+    assert_match "tab:#{tab.id}", response.body
+    assert_match "Waiting to send", response.body
+  end
+
   test "an empty tab cannot be settled" do
     tab = open_tab
 

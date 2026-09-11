@@ -5,8 +5,11 @@
 // localStorage, because they must survive a crash mid-write and hold more than
 // a page's worth — and replayed when the browser says it is online again.
 //
-// Only credits and payments are queued: they are small, they have no file
-// attachment, and each carries a key so a replay cannot enter the book twice.
+// Credits, payments and rounds added to a tab are queued: each is small, has no
+// file attachment, and carries an idempotency key so a replay cannot enter the
+// same thing twice. Nothing with a photo attached is queued, and neither is
+// opening or settling a tab — those are conversations with the server, not one
+// POST that can be repeated.
 
 const DB_NAME = "bangkee"
 const DB_VERSION = 1
@@ -90,8 +93,9 @@ export async function all() {
   }
 }
 
-export async function forAccount(accountId) {
-  return (await all()).filter((entry) => String(entry.accountId) === String(accountId))
+// Entries belonging to one screen — a customer's page, or one tab.
+export async function forKey(queueKey) {
+  return (await all()).filter((entry) => entry.queueKey === queueKey)
 }
 
 export async function remove(key) {

@@ -11,6 +11,8 @@ class TabItem < ApplicationRecord
   validates :name, presence: true
   validates :quantity, numericality: { greater_than: 0 }
   validates :unit_price_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  # Set for rounds added offline and replayed; see IdempotentWrites.
+  validates :idempotency_key, uniqueness: true, allow_nil: true
 
   after_save    -> { tab.recompute_total! }
   after_destroy -> { tab.recompute_total! }

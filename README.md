@@ -34,11 +34,13 @@ Demo logins (from `db/seeds.rb`, password `password`):
   from then on watches their own balance.
 - **Tabs (running bills)** — restaurants, bars and snooker halls note down what
   a table orders and settle at the end. Open a tab per table, add items as they
-  are ordered, then settle it exactly one of two ways: **paid** there and then
+  are ordered, then settle it: **paid** there and then
   (nothing is owed, so nothing reaches the credit book — the tab is the record
   of the sale), or **on the book** (one itemised credit on that customer's
   page, from then on an ordinary ledger entry they can see and the owner can
-  void). An open tab is never a balance: the customer is still ordering, and
+  void), or **part paid** — some cash now, the difference on the book, which
+  raises both entries so the page shows what was taken and what was handed over.
+  A linked customer can watch the tab as it runs. An open tab is never a balance: the customer is still ordering, and
   half of them pay cash. The quick-add chips are learned from what the shop has
   actually sold — no price list to maintain.
 - **Scan to order** — a printed QR card on each table. A customer scans it,
@@ -121,8 +123,12 @@ and payments are queued on the device instead of failing:
   IndexedDB because they exist nowhere else yet.
 - Replays carry the CSRF token from the page they are sent from (the `csrf-token`
   meta tag, not the per-form token, which would be stale).
-- Only credits and payments queue. Proof and subscription screenshots do not:
-  they are uploads, and a half-sent image is worse than an honest failure.
+- Credits, payments and **rounds added to an open tab** queue. Screenshots do
+  not — they are uploads, and a half-sent image is worse than an honest failure
+  — and neither does opening or settling a tab, which are conversations with the
+  server rather than one repeatable POST.
+- Entries are grouped by the screen that shows them (`account:12`, `tab:5`), so
+  a round waiting to reach one tab never appears against another.
 
 ### Scan to order
 
@@ -269,13 +275,13 @@ Development writes them to `tmp/mails`; preview at
 
 ## Not built yet
 
-- **Tabs offline.** Credits and payments queue on the device when the signal
-  drops; tabs do not. A tab is a multi-step object with a server-generated id,
-  so queuing it is a different problem from replaying one POST — and a bar with
-  no bars of signal is exactly where it would be wanted.
-- **Customers cannot see their own open tab.** They see it once it is settled
-  onto their page. Showing a live tab to the person running it up is a nice
-  idea and a bigger one (who may see what, and when).
-
-- Dzongkha localisation. No string is baked into an image, so it is a matter of
-  extracting them.
+- **Opening and settling a tab still need a connection.** Rounds added to a tab
+  that already exists queue like credits and payments do, which covers the case
+  that matters — a bar with no signal, adding drinks all evening. Opening a tab
+  offline would mean inventing an id on the device and remapping it on replay,
+  and settling offline would mean deciding a balance without the server.
+- **Dzongkha localisation.** No string is baked into an image, so it is a matter
+  of extracting them — but the extraction has not been done, and the
+  translations need a Dzongkha speaker rather than a guess.
+- **One shop per owner.** The data model allows more; nothing in the interface
+  manages a second shop, and every query would need re-scoping.

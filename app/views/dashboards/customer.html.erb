@@ -25,6 +25,23 @@
   </div>
 </div>
 
+<% if @open_tabs.any? %>
+  <div class="card card--flush">
+    <div class="card__head">Running now</div>
+    <div class="rows">
+      <% @open_tabs.each do |tab| %>
+        <%= link_to account_path(tab.account), class: "row" do %>
+          <div class="row__main">
+            <div class="row__title"><%= tab.shop.name %> · <%= tab.label %></div>
+            <div class="row__sub">Open — not on your balance yet</div>
+          </div>
+          <div class="row__amount"><%= ngultrum tab.total_cents %></div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <div class="card card--flush">
   <div class="card__head">My accounts</div>
   <% if @accounts.any? %>

@@ -5,13 +5,13 @@ import assert from "node:assert/strict"
 import { installFakeBrowser, ok, refused, unreachable } from "./fake_browser.mjs"
 
 const browser = installFakeBrowser()
-const { enqueue, all, remove, flush, newKey, SYNC_TAG } = await import("../../app/javascript/offline_queue.js")
+const { enqueue, all, remove, flush, newKey, forKey, SYNC_TAG } = await import("../../app/javascript/offline_queue.js")
 
 function entry(overrides = {}) {
   return {
     key: newKey(),
     url: "/accounts/1/credits",
-    accountId: "1",
+    queueKey: "account:1",
     label: "credit",
     amount: "1250",
     description: "Groceries",
@@ -152,4 +152,24 @@ test("marking an entry refused does not ask for another sync", async () => {
 
   assert.deepEqual(browser.syncRegistrations, [], "a refusal is not a reason to retry")
   assert.equal((await all())[0].rejected, 403)
+})
+
+test("entries are grouped by the screen that shows them", async () => {
+  await reset()
+  await enqueue(entry({ queueKey: "account:1" }))
+  await enqueue(entry({ queueKey: "tab:7", label: "round" }))
+  await enqueue(entry({ queueKey: "tab:7", label: "round" }))
+
+  assert.equal((await forKey("account:1")).length, 1)
+  assert.equal((await forKey("tab:7")).length, 2, "a tab shows only its own rounds")
+  assert.equal((await forKey("tab:9")).length, 0)
+})
+
+test("a round queued for one tab is not shown against another", async () => {
+  await reset()
+  await enqueue(entry({ queueKey: "tab:7", label: "round", description: "Beer" }))
+
+  const [ mine ] = await forKey("tab:7")
+  assert.equal(mine.description, "Beer")
+  assert.deepEqual(await forKey("account:1"), [])
 })

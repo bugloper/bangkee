@@ -25,6 +25,7 @@ class DashboardsController < ApplicationController
                              .sum(:amount_cents)
       @recent_transactions = Transaction.active.where(account: @accounts)
                               .includes(account: :shop).recent.limit(6)
+      @open_tabs = Tab.open.where(account: @accounts).includes(:shop).order(:opened_at)
       render :customer
     end
   end

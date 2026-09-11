@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_11_131223) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_11_131521) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -321,12 +321,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_11_131223) do
   create_table "tab_items", force: :cascade do |t|
     t.bigint "added_by_id", null: false
     t.datetime "created_at", null: false
+    t.string "idempotency_key"
     t.string "name", null: false
     t.decimal "quantity", precision: 10, scale: 2, default: "1.0", null: false
     t.bigint "tab_id", null: false
     t.bigint "unit_price_cents", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["added_by_id"], name: "index_tab_items_on_added_by_id"
+    t.index ["idempotency_key"], name: "index_tab_items_on_idempotency_key", unique: true
     t.index ["name"], name: "index_tab_items_on_name"
     t.index ["tab_id"], name: "index_tab_items_on_tab_id"
   end

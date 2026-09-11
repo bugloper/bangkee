@@ -2,11 +2,18 @@ import { Controller } from "@hotwired/stimulus"
 import { enqueue, newKey, flush } from "offline_queue"
 import { toast } from "toast"
 
-// Wraps the credit and payment forms. Online, it does nothing and lets Turbo
-// submit normally. Offline, it keeps the entry on the device and takes the
-// owner back to the account, so the shop can keep serving customers.
+// Wraps a form that must not be lost when the signal goes — a credit, a
+// payment, a round added to a tab. Online it does nothing and lets Turbo submit
+// normally. Offline it keeps the entry on the device and moves the shopkeeper
+// on, so they can keep serving.
 export default class extends Controller {
-  static values = { accountId: String, redirect: String, label: String }
+  static values = {
+    queueKey: String,              // which screen shows it while it waits
+    scope: { type: String, default: "transaction" },   // the params key it posts under
+    redirect: String,
+    label: String,
+    dated: { type: Boolean, default: true }            // stamp when it happened
+  }
 
   async submit(event) {
     if (navigator.onLine) return
@@ -22,19 +29,21 @@ export default class extends Controller {
     })
 
     const key = newKey()
-    fields["transaction[idempotency_key]"] = key
-    if (!fields["transaction[occurred_at]"]) {
+    const scope = this.scopeValue
+    fields[`${scope}[idempotency_key]`] = key
+    if (this.datedValue && !fields[`${scope}[occurred_at]`]) {
       // Record when it actually happened, not when it finally sends.
-      fields["transaction[occurred_at]"] = new Date().toISOString()
+      fields[`${scope}[occurred_at]`] = new Date().toISOString()
     }
 
     await enqueue({
       key,
       url: form.action,
-      accountId: this.accountIdValue,
+      queueKey: this.queueKeyValue,
       label: this.labelValue,
-      amount: fields["transaction[amount]"],
-      description: fields["transaction[description]"] || fields["transaction[payment_method]"] || "",
+      amount: fields[`${scope}[amount]`] || fields[`${scope}[unit_price]`],
+      description: fields[`${scope}[description]`] || fields[`${scope}[payment_method]`] ||
+                   fields[`${scope}[name]`] || "",
       queuedAt: Date.now(),
       fields
     })

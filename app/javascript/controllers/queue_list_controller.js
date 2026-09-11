@@ -1,12 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
-import { forAccount, remove, flush, QUEUE_CHANGED } from "offline_queue"
+import { forKey, remove, flush, QUEUE_CHANGED } from "offline_queue"
 import { toast } from "toast"
 
 // Shows the entries still waiting to reach the shop's books. They live only on
 // this device until they send, so they are rendered here rather than fetched.
 export default class extends Controller {
   static targets = ["list", "count"]
-  static values = { accountId: String }
+  static values = { queueKey: String }
 
   connect() {
     this.render = this.render.bind(this)
@@ -19,7 +19,7 @@ export default class extends Controller {
   }
 
   async render() {
-    const entries = await forAccount(this.accountIdValue)
+    const entries = await forKey(this.queueKeyValue)
     this.element.hidden = entries.length === 0
     if (entries.length === 0) return
 
@@ -36,10 +36,11 @@ export default class extends Controller {
     const rejected = entry.rejected
       ? `<div class="row__sub row__sub--warn">The shop's server refused this — open it again to re-enter it.</div>`
       : `<div class="row__sub">Queued ${when} — sends when you are back online</div>`
+    const tag = entry.label === "payment" ? "tag--payment" : "tag--credit"
 
     return `
       <div class="row row--static">
-        <span class="tag ${entry.label === "payment" ? "tag--payment" : "tag--credit"}">${entry.label.toUpperCase()}</span>
+        <span class="tag ${tag}">${entry.label.toUpperCase()}</span>
         <div class="row__main">
           <div class="row__title">${money}${entry.description ? ` · ${this.escape(entry.description)}` : ""}</div>
           ${rejected}

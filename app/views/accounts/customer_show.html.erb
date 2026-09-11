@@ -33,6 +33,40 @@
   <% end %>
 </div>
 
+<% @open_tabs.to_a.each do |tab| %>
+  <div class="card card--flush">
+    <div class="card__head">
+      Running now · <%= tab.label %>
+      <span class="count" style="background:var(--brand-tint);color:var(--brand-ink)">open</span>
+    </div>
+    <% if tab.tab_items.any? %>
+      <div class="rows">
+        <% tab.tab_items.order(:created_at).each do |item| %>
+          <div class="row row--static">
+            <div class="row__main">
+              <div class="row__title"><%= item.name %></div>
+              <div class="row__sub num"><%= item.quantity_label %> × <%= ngultrum item.unit_price_cents %></div>
+            </div>
+            <div class="row__amount num"><%= ngultrum item.total_cents %></div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty" style="padding:20px">Nothing on it yet.</div>
+    <% end %>
+    <div class="card__foot">
+      <div class="kv">
+        <span class="kv__key">So far</span>
+        <span class="kv__val" style="font-size:18px"><%= ngultrum tab.total_cents %></span>
+      </div>
+      <div class="muted" style="font-size:13px;margin-top:6px">
+        Not on your balance yet — it lands when the shop settles the tab, and only
+        if it goes on your book rather than being paid at the table.
+      </div>
+    </div>
+  </div>
+<% end %>
+
 <% if @bank_accounts.any? %>
   <div class="card">
     <div style="font-size:16px;font-weight:700;margin-bottom:8px">How to pay <%= @account.shop.name %></div>

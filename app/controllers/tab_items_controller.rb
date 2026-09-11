@@ -1,10 +1,15 @@
 # Adding to and correcting a running bill while the customer is still ordering.
 class TabItemsController < ApplicationController
+  include IdempotentWrites
+
   before_action :require_shop_owner
   before_action :require_writable_shop
   before_action :set_tab
 
   def create
+    # A round added with no signal, arriving for the second time.
+    return redirect_to @tab, notice: "That was already added." if already_added_to_tab
+
     @item = @tab.tab_items.new(item_params)
     @item.added_by = current_user
 
@@ -31,6 +36,6 @@ class TabItemsController < ApplicationController
     end
 
     def item_params
-      params.require(:tab_item).permit(:name, :quantity, :unit_price)
+      params.require(:tab_item).permit(:name, :quantity, :unit_price, :idempotency_key)
     end
 end

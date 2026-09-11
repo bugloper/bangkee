@@ -22,7 +22,12 @@ class AccountsController < ApplicationController
     @ledger = @account.ledger(include_voided: true).reverse
     @proofs = @account.payment_proofs.recent.limit(5)
     @audit_events = @account.audit_events.recent.limit(10) if owner_of?(@account)
-    @bank_accounts = @account.shop.bank_accounts.active.ordered unless owner_of?(@account)
+    unless owner_of?(@account)
+      @bank_accounts = @account.shop.bank_accounts.active.ordered
+      # A tab being run up right now on this account. It is not a balance yet,
+      # which the screen says plainly.
+      @open_tabs = @account.tabs.open.includes(:tab_items).order(:opened_at)
+    end
     render owner_of?(@account) ? :show : :customer_show
   end
 

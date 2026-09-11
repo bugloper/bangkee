@@ -6,12 +6,20 @@ module IdempotentWrites
   extend ActiveSupport::Concern
 
   private
-    def idempotency_key
-      params.dig(:transaction, :idempotency_key).presence
+    # The key travels under whichever record the form is posting.
+    def idempotency_key(scope = :transaction)
+      params.dig(scope, :idempotency_key).presence
     end
 
     def already_recorded
-      return nil if idempotency_key.blank?
-      Transaction.find_by(idempotency_key: idempotency_key)
+      key = idempotency_key
+      return nil if key.blank?
+      Transaction.find_by(idempotency_key: key)
+    end
+
+    def already_added_to_tab
+      key = idempotency_key(:tab_item)
+      return nil if key.blank?
+      TabItem.find_by(idempotency_key: key)
     end
 end

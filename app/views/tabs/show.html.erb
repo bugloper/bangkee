@@ -75,7 +75,13 @@
       <div class="chips">
         <% @suggestions.each do |suggestion| %>
           <%= button_to tab_items_path(@tab), class: "chip chip--action",
-                form: { style: "display:inline" },
+                form: { style: "display:inline",
+                        data: { controller: "queued-form", action: "submit->queued-form#submit",
+                                queued_form_queue_key_value: "tab:#{@tab.id}",
+                                queued_form_scope_value: "tab_item",
+                                queued_form_dated_value: false,
+                                queued_form_redirect_value: tab_path(@tab),
+                                queued_form_label_value: "round" } },
                 params: { tab_item: { name: suggestion.name, quantity: 1,
                                       unit_price: suggestion.unit_price } } do %>
             <span><%= suggestion.name %></span>
@@ -89,7 +95,16 @@
     </div>
   <% end %>
 
-  <%= form_with url: tab_items_path(@tab), scope: :tab_item, class: "card card--pad form-stack" do |form| %>
+  <%= render "shared/queued_writes", queue_key: "tab:#{@tab.id}",
+        caption: "These rounds are on this phone only — they reach the tab once you are back online." %>
+
+  <%= form_with url: tab_items_path(@tab), scope: :tab_item, class: "card card--pad form-stack",
+                data: { controller: "queued-form", action: "submit->queued-form#submit",
+                        queued_form_queue_key_value: "tab:#{@tab.id}",
+                        queued_form_scope_value: "tab_item",
+                        queued_form_dated_value: false,
+                        queued_form_redirect_value: tab_path(@tab),
+                        queued_form_label_value: "round" } do |form| %>
     <div style="font-size:16px;font-weight:700">Add an item</div>
 
     <div class="item-fields">

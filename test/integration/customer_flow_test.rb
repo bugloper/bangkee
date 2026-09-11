@@ -28,6 +28,51 @@ class CustomerFlowTest < ActionDispatch::IntegrationTest
     assert_no_match "Void", response.body
   end
 
+  test "a customer can watch the tab being run up on their own account" do
+    tab = @shop.tabs.create!(label: "Table 4", account: @account, opened_by: @owner)
+    tab.tab_items.create!(name: "Beer", quantity: 2, unit_price_cents: 12_000, added_by: @owner)
+
+    get account_path(@account)
+    assert_response :success
+    assert_match "Running now", response.body
+    assert_match "Beer", response.body
+    assert_match "Nu. 240", response.body
+    assert_match "Not on your balance yet", response.body
+
+    # And it is exactly that — not on the balance.
+    assert_equal 100_000, @account.reload.balance_cents
+
+    get dashboard_path
+    assert_match "Running now", response.body
+    assert_match "Table 4", response.body
+  end
+
+  test "a customer sees no tab that is not on their own account" do
+    other = create_account(@shop, name: "Someone Else")
+    walk_in = @shop.tabs.create!(label: "Table 9", opened_by: @owner)
+    walk_in.tab_items.create!(name: "Whisky", unit_price_cents: 90_000, added_by: @owner)
+    theirs = @shop.tabs.create!(label: "Table 7", account: other, opened_by: @owner)
+    theirs.tab_items.create!(name: "Momo", unit_price_cents: 8_000, added_by: @owner)
+
+    get dashboard_path
+    assert_no_match "Whisky", response.body
+    assert_no_match "Table 9", response.body
+    assert_no_match "Table 7", response.body
+
+    get account_path(@account)
+    assert_no_match "Running now", response.body
+  end
+
+  test "a settled tab stops showing as running" do
+    tab = @shop.tabs.create!(label: "Table 4", account: @account, opened_by: @owner)
+    tab.tab_items.create!(name: "Beer", unit_price_cents: 12_000, added_by: @owner)
+    tab.settle_on_credit!(by: @owner, account: @account)
+
+    get account_path(@account)
+    assert_no_match "Running now", response.body
+    assert_equal 112_000, @account.reload.balance_cents, "now it counts"
+  end
+
   test "a customer cannot see another customer's account" do
     other = create_account(@shop, name: "Someone Else")
     get account_path(other)
