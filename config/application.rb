@@ -11,6 +11,13 @@ module Bangkee
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
 
+    # Bangkee is written in English and translated into Dzongkha. Anything not
+    # yet translated falls back to English rather than showing a missing-key
+    # error, so a half-finished translation is usable.
+    config.i18n.available_locales = %i[ en dz ]
+    config.i18n.default_locale = :en
+    config.i18n.fallbacks = [ :en ]
+
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.

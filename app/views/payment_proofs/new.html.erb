@@ -2,29 +2,27 @@
 
 <% if @bank_accounts.any? %>
   <div class="card">
-    <div style="font-size:16px;font-weight:700;margin-bottom:4px">Pay <%= @account.shop.name %></div>
-    <p class="muted" style="font-size:14px;margin-bottom:8px">Transfer the money first, then upload the screenshot below.</p>
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px"><%= t("proof.pay_shop", shop: @account.shop.name) %></div>
+    <p class="muted" style="font-size:14px;margin-bottom:8px"><%= t("proof.transfer_first") %></p>
     <% @bank_accounts.each do |bank| %>
       <div style="border-top:1px solid var(--line);padding-top:8px">
         <div style="font-weight:600"><%= bank.bank_name %><%= " · primary" if bank.primary? %></div>
-        <div class="kv"><span class="kv__key">Account name</span><span class="kv__val"><%= bank.account_name %></span></div>
-        <div class="kv"><span class="kv__key">Account number</span><span class="kv__val"><%= bank.account_number %></span></div>
+        <div class="kv"><span class="kv__key"><%= t("account.account_name") %></span><span class="kv__val"><%= bank.account_name %></span></div>
+        <div class="kv"><span class="kv__key"><%= t("account.account_number") %></span><span class="kv__val"><%= bank.account_number %></span></div>
         <% if bank.mobile_wallet.present? %>
-          <div class="kv"><span class="kv__key">Mobile wallet</span><span class="kv__val"><%= bank.mobile_wallet %></span></div>
+          <div class="kv"><span class="kv__key"><%= t("account.mobile_wallet") %></span><span class="kv__val"><%= bank.mobile_wallet %></span></div>
         <% end %>
       </div>
     <% end %>
   </div>
 <% else %>
   <div class="banner banner--warn flash">
-    <span><%= @account.shop.name %> has not published bank details yet. Ask them where to transfer.</span>
+    <span><%= t("proof.no_bank_details", shop: @account.shop.name) %></span>
   </div>
 <% end %>
 
 <div class="hint">
-  <strong>Quicker:</strong> finish the transfer in your bank's app, tap <strong>Share</strong>
-  on the receipt and choose <strong>Bangkee</strong> — the amount and reference are filled in
-  for you. Needs Bangkee installed on an Android phone.
+  <%= t("proof.quicker") %>
 </div>
 
 <%= form_with model: @proof, url: account_payment_proofs_path(@account),
@@ -33,7 +31,7 @@
   <%= render "shared/errors", record: @proof %>
 
   <div>
-    <div class="amount-field__label">How much did you transfer?</div>
+    <div class="amount-field__label"><%= t("proof.how_much") %></div>
     <div class="amount-field amount-field--payment">
       <div class="amount-field__box">
         <span class="amount-field__unit">Nu.</span>
@@ -43,28 +41,28 @@
       </div>
     </div>
     <div class="muted" style="font-size:14px;margin-top:8px">
-      You owe <span class="num owed"><%= ngultrum @account.balance_cents %></span>
+      <%= t("proof.you_owe", amount: ngultrum(@account.balance_cents)) %>
     </div>
   </div>
 
   <div class="field">
-    <%= form.label :screenshot, "Transfer screenshot" %>
-    <span class="field__hint">Required — the shop checks this against their bank</span>
+    <%= form.label :screenshot, t("proof.screenshot") %>
+    <span class="field__hint"><%= t("proof.screenshot_hint") %></span>
     <%= form.file_field :screenshot, accept: "image/*", capture: "environment", required: true,
           data: { image_preview_target: "input", action: "change->image-preview#show" } %>
     <img class="shot shot-preview" data-image-preview-target="preview" hidden alt="Your screenshot">
   </div>
 
   <div class="field">
-    <%= form.label :reference, "Reference number" %>
-    <span class="field__hint">Optional — the journal or transaction number</span>
+    <%= form.label :reference, t("proof.reference") %>
+    <span class="field__hint"><%= t("proof.reference_hint") %></span>
     <%= form.text_field :reference, placeholder: "e.g. BT26082911022", class: "num" %>
   </div>
 
   <div class="field">
-    <%= form.label :note, "Note for the shop" %>
+    <%= form.label :note, t("proof.note") %>
     <span class="field__hint">Optional</span>
-    <%= form.text_area :note, rows: 2, placeholder: "e.g. paid for last month's rice" %>
+    <%= form.text_area :note, rows: 2, placeholder: t("proof.note_placeholder") %>
   </div>
 
   <div class="keypad">
@@ -75,10 +73,9 @@
   </div>
 
   <div class="hint">
-    Your balance does not change until <%= @account.shop.name %> confirms this — you will get
-    a notification either way.
+    <%= t("proof.balance_note", shop: @account.shop.name) %>
   </div>
 
-  <%= form.submit "Send proof", class: "btn" %>
-  <%= link_to "Cancel", account_path(@account), class: "btn btn--quiet" %>
+  <%= form.submit t("proof.send"), class: "btn" %>
+  <%= link_to t("common.cancel"), account_path(@account), class: "btn btn--quiet" %>
 <% end %>

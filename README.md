@@ -72,6 +72,23 @@ Seeds include two pending payment proofs and a subscription payment with a
 sample receipt image (`db/seed_assets/`), so the review queues and the
 screenshot viewer have something real in them.
 
+## Language
+
+English and Dzongkha (`en`, `dz`), with **fallbacks to English**, so a
+half-finished translation is usable rather than broken — an untranslated key
+shows English instead of erroring. A signed-in person's language lives on their
+account so it follows them to another device; a walk-in reading a menu has no
+account, so `?locale=` puts it in their session. An unknown or stale locale is
+ignored rather than trusted.
+
+`config/locales/en.yml` holds the screens a customer reads — their home, their
+page at a shop, uploading a proof, notifications, and the shared chrome. Owner
+and operator screens are still written inline; extracting them is the same
+mechanical job.
+
+**To translate:** copy a key from `en.yml` into `dz.yml`, put the Dzongkha next
+to it, and it appears immediately. There is no wrong moment to stop.
+
 ## Design system
 
 Material 3 "Trust Blue", Inter, 8px baseline — the whole system is
@@ -280,8 +297,11 @@ Development writes them to `tmp/mails`; preview at
   that matters — a bar with no signal, adding drinks all evening. Opening a tab
   offline would mean inventing an id on the device and remapping it on replay,
   and settling offline would mean deciding a balance without the server.
-- **Dzongkha localisation.** No string is baked into an image, so it is a matter
-  of extracting them — but the extraction has not been done, and the
-  translations need a Dzongkha speaker rather than a guess.
-- **One shop per owner.** The data model allows more; nothing in the interface
-  manages a second shop, and every query would need re-scoping.
+- **The Dzongkha translation itself.** The plumbing is in and the screens a
+  customer reads are extracted (see below); what is missing is a Dzongkha
+  speaker to fill `config/locales/dz.yml`. Owner and operator screens have not
+  been extracted yet — the same mechanical job, when someone wants them.
+- **One shop per owner.** The data model allows more, but nothing in the
+  interface manages a second shop and every query would need re-scoping. Not
+  built on purpose: no one has asked for it, and the failure mode of getting
+  the scoping wrong is an owner seeing another shop's ledger.

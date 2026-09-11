@@ -60,6 +60,7 @@ Rails.application.routes.draw do
 
   # ---------------------------------------------------------------- settings
   get "settings", to: "settings#show", as: :settings
+  patch "language", to: "settings#update_language", as: :language
 
   # §17 — billing
   resource :subscription, only: :show, controller: "subscriptions" do

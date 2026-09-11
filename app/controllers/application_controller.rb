@@ -3,9 +3,21 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   stale_when_importmap_changes
 
+  around_action :switch_locale
+
   helper_method :current_user, :current_shop, :current_subscription, :unread_notifications_count
 
   private
+    # Signed-in people carry their own language; a walk-in reading a menu has no
+    # account, so theirs rides in the session after ?locale= puts it there.
+    def switch_locale(&action)
+      requested = params[:locale].presence
+      session[:locale] = requested if requested && I18n.available_locales.map(&:to_s).include?(requested)
+
+      locale = current_user&.reading_locale || session[:locale] || I18n.default_locale
+      I18n.with_locale(locale, &action)
+    end
+
     # Views call the `page_title` helper; controllers that know the title before
     # rendering (a nested screen with a back link) call this.
     def page_title(title, back: nil)

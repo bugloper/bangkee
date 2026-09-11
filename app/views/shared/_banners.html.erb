@@ -2,8 +2,7 @@
     it can appear the instant the connection drops. %>
 <div class="banner banner--offline no-print" data-offline-target="banner" hidden>
   <%= icon :wifi_off, size: 18 %>
-  <span>You are offline — showing the last data this device loaded. Credits and
-        payments you record are kept on this phone and sent when the signal is back.</span>
+  <span><%= t("offline.banner") %></span>
 </div>
 
 <% if authenticated? && current_subscription %>

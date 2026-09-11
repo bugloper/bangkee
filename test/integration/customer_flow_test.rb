@@ -73,6 +73,42 @@ class CustomerFlowTest < ActionDispatch::IntegrationTest
     assert_equal 112_000, @account.reload.balance_cents, "now it counts"
   end
 
+  test "a customer reads the app in the language on their account" do
+    # Nothing is translated into Dzongkha yet, so the screens fall back to
+    # English rather than breaking — which is what makes a part-finished
+    # translation safe to ship.
+    @customer.update!(locale: "dz")
+
+    get dashboard_path
+    assert_response :success
+    assert_match "My credit", response.body
+
+    # Once a key exists, that screen speaks Dzongkha and the rest does not.
+    I18n.backend.store_translations(:dz, customer_home: { title: "ངའི་བུ་ལོན" })
+    get dashboard_path
+    assert_match "ངའི་བུ་ལོན", response.body
+    assert_match "Recent activity", response.body, "untranslated keys stay English"
+  ensure
+    I18n.backend.reload!
+  end
+
+  test "the language can be changed from settings and sticks" do
+    patch language_path, params: { locale: "dz" }
+    assert_redirected_to settings_path
+    assert_equal "dz", @customer.reload.locale
+
+    patch language_path, params: { locale: "klingon" }
+    assert_equal "dz", @customer.reload.locale, "an unknown language is refused"
+  end
+
+  test "a stale or unknown locale on the account does not break the app" do
+    @customer.update_columns(locale: "xx")
+
+    get dashboard_path
+    assert_response :success
+    assert_match "My credit", response.body
+  end
+
   test "a customer cannot see another customer's account" do
     other = create_account(@shop, name: "Someone Else")
     get account_path(other)

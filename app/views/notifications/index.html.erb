@@ -1,7 +1,7 @@
 <div class="section-head">
-  <h1>Notifications</h1>
+  <h1><%= t("notifications.title") %></h1>
   <% if @unread_count.positive? %>
-    <%= button_to "Mark all read", read_all_notifications_path, method: :patch, class: "btn btn--tiny" %>
+    <%= button_to t("notifications.mark_all_read"), read_all_notifications_path, method: :patch, class: "btn btn--tiny" %>
   <% end %>
 </div>
 
@@ -18,15 +18,15 @@
         <span class="notif__main">
           <span class="notif__title"><%= notification.title %></span>
           <span class="notif__body"><%= notification.body %></span>
-          <span class="notif__time"><%= time_ago_in_words notification.created_at %> ago</span>
+          <span class="notif__time"><%= t("notifications.ago", time: time_ago_in_words(notification.created_at)) %></span>
         </span>
       <% end %>
     <% end %>
   <% else %>
     <div class="empty">
       <span class="empty__icon">🔔</span>
-      <div class="empty__title">Nothing yet</div>
-      Credits, payments, proofs and reminders show up here.
+      <div class="empty__title"><%= t("notifications.empty_title") %></div>
+      <%= t("notifications.empty_body") %>
     </div>
   <% end %>
 </div>

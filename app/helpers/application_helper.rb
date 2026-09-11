@@ -119,8 +119,8 @@ module ApplicationHelper
           badge: current_shop&.payment_proofs&.pending&.count.to_i },
         { label: "Settings",  icon: :gear,    path: settings_path, key: "settings" } ]
     else
-      [ { label: "Home",   icon: :home, path: dashboard_path, key: "dashboard" },
-        { label: "Alerts", icon: :bell, path: notifications_path, key: "notifications",
+      [ { label: t("nav.home"),   icon: :home, path: dashboard_path, key: "dashboard" },
+        { label: t("nav.alerts"), icon: :bell, path: notifications_path, key: "notifications",
           badge: unread_notifications_count } ]
     end
   end

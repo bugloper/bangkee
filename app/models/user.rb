@@ -18,6 +18,12 @@ class User < ApplicationRecord
   validates :name, presence: true
   validates :email_address, presence: true, uniqueness: { case_sensitive: false }
 
+  # nil means "follow the app default"; an unknown value is ignored rather than
+  # trusted, so a stale row cannot break every page this person opens.
+  def reading_locale
+    locale.to_s.presence&.to_sym.then { |value| I18n.available_locales.include?(value) ? value : nil }
+  end
+
   def shop = owned_shops.first
 
   def display_name = name.presence || email_address

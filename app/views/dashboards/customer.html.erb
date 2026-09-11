@@ -1,13 +1,13 @@
-<% page_title "My credit" %>
+<% page_title t("customer_home.title") %>
 
 <div class="hero <%= "hero--green" if @total_owed_cents.zero? %>">
-  <div class="hero__label">Your total balance</div>
+  <div class="hero__label"><%= t("customer_home.total_label") %></div>
   <div class="hero__value"><%= ngultrum @total_owed_cents %></div>
   <div class="hero__sub">
     <% if @total_owed_cents.positive? %>
-      Outstanding across <%= pluralize @accounts.size, "shop" %>
+      <%= t("customer_home.outstanding_across", count: @accounts.size) %>
     <% else %>
-      You are all settled
+      <%= t("customer_home.all_settled") %>
     <% end %>
   </div>
 </div>
@@ -17,23 +17,23 @@
 <div class="stats" style="grid-template-columns:repeat(2,1fr)">
   <div class="stat">
     <div class="stat__value"><%= @accounts.size %></div>
-    <div class="stat__label">Shops</div>
+    <div class="stat__label"><%= t("customer_home.shops") %></div>
   </div>
   <div class="stat">
     <div class="stat__value"><%= ngultrum @spent_month_cents %></div>
-    <div class="stat__label">Taken this month</div>
+    <div class="stat__label"><%= t("customer_home.taken_this_month") %></div>
   </div>
 </div>
 
 <% if @open_tabs.any? %>
   <div class="card card--flush">
-    <div class="card__head">Running now</div>
+    <div class="card__head"><%= t("customer_home.running_now") %></div>
     <div class="rows">
       <% @open_tabs.each do |tab| %>
         <%= link_to account_path(tab.account), class: "row" do %>
           <div class="row__main">
             <div class="row__title"><%= tab.shop.name %> · <%= tab.label %></div>
-            <div class="row__sub">Open — not on your balance yet</div>
+            <div class="row__sub"><%= t("customer_home.not_on_balance") %></div>
           </div>
           <div class="row__amount"><%= ngultrum tab.total_cents %></div>
         <% end %>
@@ -43,7 +43,7 @@
 <% end %>
 
 <div class="card card--flush">
-  <div class="card__head">My accounts</div>
+  <div class="card__head"><%= t("customer_home.my_accounts") %></div>
   <% if @accounts.any? %>
     <div class="rows">
       <% @accounts.each do |account| %>
@@ -51,7 +51,7 @@
           <div class="avatar avatar--lg"><%= account.shop.name.first.upcase %></div>
           <div class="row__main">
             <div class="row__title"><%= account.shop.name %></div>
-            <div class="row__sub"><%= account.customer_phone.presence || "Credit account" %></div>
+            <div class="row__sub"><%= account.customer_phone.presence || t("customer_home.credit_account") %></div>
           </div>
           <div class="row__end">
             <div class="row__amount <%= balance_state account.balance_cents %>"><%= ngultrum account.balance_cents %></div>
@@ -63,15 +63,15 @@
   <% else %>
     <div class="empty">
       <span class="empty__icon">🛍️</span>
-      <div class="empty__title">No shops yet</div>
-      Ask your shopkeeper for their Bangkee invite link.
+      <div class="empty__title"><%= t("customer_home.no_shops_title") %></div>
+      <%= t("customer_home.no_shops_body") %>
     </div>
   <% end %>
 </div>
 
 <% if @recent_transactions.any? %>
   <div class="card card--flush">
-    <div class="card__head">Recent activity</div>
+    <div class="card__head"><%= t("customer_home.recent_activity") %></div>
     <div class="rows">
       <% @recent_transactions.each do |transaction| %>
         <div class="row row--static">

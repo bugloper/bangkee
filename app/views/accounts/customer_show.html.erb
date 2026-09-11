@@ -8,27 +8,27 @@
       <div class="acct-head__meta">Your credit account</div>
     </div>
     <%= link_to account_statement_path(@account), class: "btn btn--tiny", style: "color:var(--brand)" do %>
-      <%= icon :print, size: 16 %> Statement
+      <%= icon :print, size: 16 %> <%= t("account.statement") %>
     <% end %>
   </div>
 
   <div class="big-balance__label">
-    <% if @account.balance_cents.positive? %>You owe this shop
-    <% elsif @account.in_credit? %>Paid in advance
-    <% else %>Settled — nothing owed<% end %>
+    <% if @account.balance_cents.positive? %><%= t("account.you_owe") %>
+    <% elsif @account.in_credit? %><%= t("account.paid_in_advance") %>
+    <% else %><%= t("account.settled_nothing_owed") %><% end %>
   </div>
   <div class="big-balance__row">
     <div class="big-balance__value <%= balance_state @account.balance_cents %>"><%= ngultrum @account.balance_cents %></div>
     <% if @account.overdue? %>
       <span class="badge badge--square badge--overdue" style="font-size:13px;padding:3px 10px">
-        <%= pluralize @account.days_overdue, "day" %> overdue
+        <%= t("account.days_overdue", count: @account.days_overdue) %>
       </span>
     <% end %>
   </div>
 
   <% if @account.balance_cents.positive? %>
     <div class="action-row">
-      <%= link_to "I've paid — upload proof", new_account_payment_proof_path(@account), class: "btn" %>
+      <%= link_to t("account.upload_proof"), new_account_payment_proof_path(@account), class: "btn" %>
     </div>
   <% end %>
 </div>
@@ -36,7 +36,7 @@
 <% @open_tabs.to_a.each do |tab| %>
   <div class="card card--flush">
     <div class="card__head">
-      Running now · <%= tab.label %>
+      <%= t("account.running_now", label: tab.label) %>
       <span class="count" style="background:var(--brand-tint);color:var(--brand-ink)">open</span>
     </div>
     <% if tab.tab_items.any? %>
@@ -52,16 +52,15 @@
         <% end %>
       </div>
     <% else %>
-      <div class="empty" style="padding:20px">Nothing on it yet.</div>
+      <div class="empty" style="padding:20px"><%= t("account.running_nothing_yet") %></div>
     <% end %>
     <div class="card__foot">
       <div class="kv">
-        <span class="kv__key">So far</span>
+        <span class="kv__key"><%= t("account.running_so_far") %></span>
         <span class="kv__val" style="font-size:18px"><%= ngultrum tab.total_cents %></span>
       </div>
       <div class="muted" style="font-size:13px;margin-top:6px">
-        Not on your balance yet — it lands when the shop settles the tab, and only
-        if it goes on your book rather than being paid at the table.
+        <%= t("account.running_note") %>
       </div>
     </div>
   </div>
@@ -69,17 +68,17 @@
 
 <% if @bank_accounts.any? %>
   <div class="card">
-    <div style="font-size:16px;font-weight:700;margin-bottom:8px">How to pay <%= @account.shop.name %></div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px"><%= t("account.how_to_pay", shop: @account.shop.name) %></div>
     <% @bank_accounts.each do |bank| %>
       <div style="padding:8px 0;border-top:1px solid var(--line)">
         <div style="font-weight:600"><%= bank.bank_name %><%= " · primary" if bank.primary? %></div>
-        <div class="kv"><span class="kv__key">Account name</span><span class="kv__val"><%= bank.account_name %></span></div>
-        <div class="kv"><span class="kv__key">Account number</span><span class="kv__val"><%= bank.account_number %></span></div>
+        <div class="kv"><span class="kv__key"><%= t("account.account_name") %></span><span class="kv__val"><%= bank.account_name %></span></div>
+        <div class="kv"><span class="kv__key"><%= t("account.account_number") %></span><span class="kv__val"><%= bank.account_number %></span></div>
         <% if bank.branch.present? %>
-          <div class="kv"><span class="kv__key">Branch</span><span class="kv__val"><%= bank.branch %></span></div>
+          <div class="kv"><span class="kv__key"><%= t("account.branch") %></span><span class="kv__val"><%= bank.branch %></span></div>
         <% end %>
         <% if bank.mobile_wallet.present? %>
-          <div class="kv"><span class="kv__key">Mobile wallet</span><span class="kv__val"><%= bank.mobile_wallet %></span></div>
+          <div class="kv"><span class="kv__key"><%= t("account.mobile_wallet") %></span><span class="kv__val"><%= bank.mobile_wallet %></span></div>
         <% end %>
         <% if bank.instructions.present? %>
           <p class="muted" style="font-size:14px;margin-top:8px"><%= bank.instructions %></p>
@@ -92,7 +91,7 @@
 <% if @proofs.any? %>
   <div class="card card--flush" data-controller="viewer">
     <%= render "shared/screenshot_viewer" %>
-    <div class="card__head">Your payment proofs</div>
+    <div class="card__head"><%= t("account.your_proofs") %></div>
     <div class="rows">
       <% @proofs.each do |proof| %>
         <div class="row row--static">
@@ -121,15 +120,15 @@
 <% end %>
 
 <div class="card card--flush">
-  <div class="card__head">Transaction history</div>
+  <div class="card__head"><%= t("account.transaction_history") %></div>
   <% if @ledger.any? %>
     <% @ledger.each do |transaction, running| %>
       <%= render "transactions/row", transaction: transaction, running: running, owner: false, locked: false %>
     <% end %>
   <% else %>
     <div class="empty" style="border-top:1px solid var(--line)">
-      <div class="empty__title">Nothing recorded yet</div>
-      When the shop adds something to your book it appears here.
+      <div class="empty__title"><%= t("account.nothing_recorded_title") %></div>
+      <%= t("account.nothing_recorded_body") %>
     </div>
   <% end %>
 </div>

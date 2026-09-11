@@ -1,0 +1,12 @@
+# Dzongkha (རྫོང་ཁ).
+#
+# This file is deliberately almost empty: the translations have to come from a
+# Dzongkha speaker, not from a guess. Copy any key from en.yml, put the
+# Dzongkha next to it, and it appears in the app immediately — everything still
+# missing falls back to English, so there is no wrong moment to stop.
+#
+# Start with config/locales/en.yml → customer_home, account, proof. Those are
+# the screens a customer reads.
+dz:
+  language:
+    name: རྫོང་ཁ

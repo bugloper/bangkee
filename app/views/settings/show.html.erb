@@ -75,6 +75,26 @@
 <% end %>
 
 <div class="card card--flush">
+  <div class="card__head"><%= t("language.choose") %></div>
+  <div class="rows">
+    <% I18n.available_locales.each do |locale| %>
+      <% name = I18n.with_locale(locale) { t("language.name") } %>
+      <%= button_to language_path, method: :patch, params: { locale: locale },
+            class: "row", form: { style: "display:contents" },
+            style: "border:0;background:none;padding:0;width:100%;text-align:left;cursor:pointer" do %>
+        <span class="row__main">
+          <span class="row__title"><%= name %></span>
+          <% if locale == :dz %>
+            <span class="row__sub"><%= t("language.hint") %></span>
+          <% end %>
+        </span>
+        <% if I18n.locale == locale %><span class="badge badge--brand">Current</span><% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<div class="card card--flush">
   <div class="card__head">Notifications</div>
   <div class="rows">
     <div class="row row--static">

@@ -1,31 +1,110 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
+# The English the app is written in. Every user-facing string on a screen a
+# customer reads lives here; owner and operator screens have not been extracted
+# yet and are still written inline.
 #
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
+# To translate: copy a key into config/locales/dz.yml and put the Dzongkha
+# there. Anything missing falls back to this file, so a partly finished
+# translation is usable rather than broken.
 en:
-  hello: "Hello world"
+  language:
+    name: English
+    choose: Language
+    hint: Anything not yet translated is shown in English.
+
+  common:
+    cancel: Cancel
+    save: Save
+    back: Back
+    optional: Optional
+    settled: Settled
+    overdue: Overdue
+    owes: Owes
+    advance: Advance
+    pending: Pending
+    confirmed: Confirmed
+    rejected: Rejected
+
+  nav:
+    home: Home
+    alerts: Alerts
+    customers: Customers
+    tabs: Tabs
+    proofs: Proofs
+    settings: Settings
+    notifications: Notifications
+    your_account: Your account
+    sign_out: Sign out
+
+  offline:
+    banner: >-
+      You are offline — showing the last data this device loaded. Credits and
+      payments you record are kept on this phone and sent when the signal is back.
+
+  customer_home:
+    title: My credit
+    total_label: Your total balance
+    outstanding_across: Outstanding across %{count} shop
+    outstanding_across_plural: Outstanding across %{count} shops
+    all_settled: You are all settled
+    shops: Shops
+    taken_this_month: Taken this month
+    my_accounts: My accounts
+    running_now: Running now
+    not_on_balance: Open — not on your balance yet
+    recent_activity: Recent activity
+    no_shops_title: No shops yet
+    no_shops_body: Ask your shopkeeper for their Bangkee invite link.
+    credit_account: Credit account
+
+  account:
+    you_owe: You owe this shop
+    paid_in_advance: Paid in advance
+    settled_nothing_owed: Settled — nothing owed
+    days_overdue: "%{count} days overdue"
+    upload_proof: I've paid — upload proof
+    statement: Statement
+    how_to_pay: How to pay %{shop}
+    account_name: Account name
+    account_number: Account number
+    branch: Branch
+    mobile_wallet: Mobile wallet
+    your_proofs: Your payment proofs
+    transaction_history: Transaction history
+    nothing_recorded_title: Nothing recorded yet
+    nothing_recorded_body: When the shop adds something to your book it appears here.
+    running_now: Running now · %{label}
+    running_so_far: So far
+    running_nothing_yet: Nothing on it yet.
+    running_note: >-
+      Not on your balance yet — it lands when the shop settles the tab, and only
+      if it goes on your book rather than being paid at the table.
+
+  proof:
+    title: Upload payment proof
+    pay_shop: Pay %{shop}
+    transfer_first: Transfer the money first, then upload the screenshot below.
+    how_much: How much did you transfer?
+    you_owe: You owe %{amount}
+    screenshot: Transfer screenshot
+    screenshot_hint: Required — the shop checks this against their bank
+    reference: Reference number
+    reference_hint: Optional — the journal or transaction number
+    note: Note for the shop
+    note_placeholder: e.g. paid for last month's rice
+    balance_note: >-
+      Your balance does not change until %{shop} confirms this — you will get a
+      notification either way.
+    send: Send proof
+    no_bank_details: >-
+      %{shop} has not published bank details yet. Ask them where to transfer.
+    quicker: >-
+      Quicker: finish the transfer in your bank's app, tap Share on the receipt
+      and choose Bangkee — the amount and reference are filled in for you. Needs
+      Bangkee installed on an Android phone.
+
+  notifications:
+    title: Notifications
+    mark_all_read: Mark all read
+    empty_title: Nothing yet
+    empty_body: Credits, payments, proofs and reminders show up here.
+    ago: "%{time} ago"
