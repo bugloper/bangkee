@@ -39,6 +39,48 @@ class PwaTest < ActionDispatch::IntegrationTest
     assert_match offline_path, response.body
   end
 
+  test "two money events in a row each alert, rather than one silently replacing the other" do
+    with_vapid_keys do
+      user = create_customer
+      user.push_subscriptions.create!(endpoint: "https://push.example/a", p256dh_key: "k", auth_key: "a")
+
+      first = user.notifications.create!(kind: "payment", title: "Payment recorded", body: "Nu. 500")
+      second = user.notifications.create!(kind: "payment", title: "Payment recorded", body: "Nu. 800")
+      [ first, second ].each { |notification| PushDeliveryJob.perform_now(notification.id) }
+
+      tags = Rpush::Webpush::Notification.order(:id).last(2).map { |push| JSON.parse(push.data["message"])["tag"] }
+      assert_equal 2, tags.uniq.size, "distinct payments must not share a tag"
+    end
+  end
+
+  test "a reminder that repeats about the same account collapses instead of stacking" do
+    with_vapid_keys do
+      owner = create_owner
+      account = create_account(owner.shop)
+      owner.push_subscriptions.create!(endpoint: "https://push.example/a", p256dh_key: "k", auth_key: "a")
+
+      tags = 2.times.map do
+        notification = owner.notifications.create!(kind: "overdue", title: "Overdue",
+                                                   path: account_path(account))
+        PushDeliveryJob.perform_now(notification.id)
+        JSON.parse(Rpush::Webpush::Notification.order(:id).last.data["message"])["tag"]
+      end
+
+      assert_equal 1, tags.uniq.size, "yesterday's reminder is replaced, not stacked"
+      assert_match "overdue", tags.first
+    end
+  end
+
+  test "the push handler asks to alert again and to vibrate" do
+    get pwa_service_worker_path
+    assert_response :success
+
+    # A PWA cannot set its own sound, so vibration is the only signal we shape.
+    assert_match "renotify: true", response.body
+    assert_match "vibrate:", response.body
+    assert_match "VIBRATION", response.body
+  end
+
   test "the service worker can drain the offline queue after the app is closed" do
     get pwa_service_worker_path
     assert_response :success
@@ -230,7 +272,8 @@ class PwaTest < ActionDispatch::IntegrationTest
       payload = JSON.parse(push.data["message"])
       assert_equal "Payment proof submitted", payload["title"]
       assert_equal "/payment_proofs", payload["path"]
-      assert_equal "bangkee-proof", payload["tag"]
+      assert_equal "proof", payload["kind"]
+      assert_equal "bangkee-proof-#{notification.id}", payload["tag"], "a proof is its own event"
 
       assert_equal WebPushConfig::APP_NAME, push.app.name
       assert_equal "test-public-key", JSON.parse(push.app.vapid_keypair)["public_key"]

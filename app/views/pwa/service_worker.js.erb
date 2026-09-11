@@ -157,6 +157,17 @@ self.addEventListener("sync", (event) => {
 });
 
 // ------------------------------------------------------------------- push
+// A PWA cannot choose its own notification sound — the Notification API's
+// `sound` was never implemented by any browser, and a custom tone needs a
+// native app's notification channel. Vibration is the one signal we can shape,
+// so money arriving feels different in the pocket from everything else.
+const VIBRATION = {
+  payment: [ 90, 60, 90, 60, 180 ],   // money in — the one worth looking at
+  proof:   [ 90, 60, 90, 60, 180 ],
+  overdue: [ 220 ],                   // one long buzz: attention, not good news
+  default: [ 120, 70, 120 ]
+};
+
 self.addEventListener("push", (event) => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch (_) { payload = {}; }
@@ -167,6 +178,10 @@ self.addEventListener("push", (event) => {
     icon: "/icon-192.png",
     badge: "/icon-badge.png",
     tag: payload.tag || "bangkee",
+    // Without this, a notification sharing a tag replaces the last one in
+    // silence — two payments a minute apart would alert once.
+    renotify: true,
+    vibrate: VIBRATION[payload.kind] || VIBRATION.default,
     data: { path: payload.path || "/" },
     requireInteraction: false
   };

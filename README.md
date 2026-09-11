@@ -235,6 +235,19 @@ bin/jobs                   # Solid Queue — emails, receipt reading, queueing t
 bundle exec rpush start    # delivery daemon — actually sends them
 ```
 
+**What a push feels like.** A PWA cannot choose its own notification sound — the
+Notification API's `sound` was never implemented, and a custom tone needs a
+native app's notification channel — so the phone plays whatever it plays for the
+browser. Vibration is the one signal we can shape, and the service worker picks
+a pattern by kind: a double buzz for money arriving, one long buzz for an
+overdue reminder. Notifications also set `renotify: true`, because a
+same-tagged notification otherwise replaces the last one **in silence**.
+
+Tags follow one rule: collapse what repeats about the same thing, never collapse
+money. Overdue reminders for one account share a tag so yesterday's is replaced
+rather than stacking all week; every credit, payment and proof carries its own
+tag so two arriving a minute apart both survive with their own text.
+
 The rpush app row (`bangkee`) is created on first use from the VAPID keys and
 updated if they are rotated. A dead endpoint — cleared site data, an uninstalled
 PWA — comes back as a 404 or 410 on delivery, and `config/initializers/push_cleanup.rb`

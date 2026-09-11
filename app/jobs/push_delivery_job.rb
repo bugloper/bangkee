@@ -42,7 +42,23 @@ class PushDeliveryJob < ApplicationJob
         title: notification.title,
         body: notification.body,
         path: notification.path,
-        tag: "bangkee-#{notification.kind}"
+        kind: notification.kind,
+        tag: tag_for(notification)
       }.to_json
+    end
+
+    # A shared tag makes one notification replace another, which is right for a
+    # reminder that repeats about the same thing and wrong for money.
+    #
+    # Overdue reminders go out daily per account, so they collapse: yesterday's
+    # is replaced rather than stacking up all week. Everything else — a credit,
+    # a payment, a proof — is its own event, and two of them arriving a minute
+    # apart must both survive with their own text.
+    def tag_for(notification)
+      if notification.kind == "overdue" && notification.path.present?
+        "bangkee-overdue-#{notification.path}"
+      else
+        "bangkee-#{notification.kind}-#{notification.id}"
+      end
     end
 end
