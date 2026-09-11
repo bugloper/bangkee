@@ -36,7 +36,7 @@ gem "kamal", require: false
 gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.1"
 
 # Object storage for uploads, on hosts whose disk does not survive a deploy.
 # Also speaks to Cloudflare R2 and Backblaze B2.
