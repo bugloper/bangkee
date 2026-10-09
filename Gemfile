@@ -50,7 +50,7 @@ gem "bcrypt", "~> 3.1.7"
 gem "rpush"
 
 # Reading shared bank receipts (Claude vision + structured outputs)
-gem "anthropic", "~> 1.69"
+gem "anthropic", "~> 1.76"
 
 # QR codes for the table cards customers scan to order
 gem "rqrcode", "~> 3.2"
