@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Bangkee - Overdue Reminders</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#ffc6b9",
+                    "inverse-surface": "#1d3052",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "primary": "#003d9b",
+                    "surface-tint": "#0c56d0",
+                    "surface-container-low": "#f1f3ff",
+                    "on-secondary-fixed": "#002113",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#b02300",
+                    "on-secondary-fixed-variant": "#005235",
+                    "on-surface": "#041b3c",
+                    "on-background": "#041b3c",
+                    "on-tertiary-fixed-variant": "#8b1a00",
+                    "tertiary-fixed": "#ffdad2",
+                    "on-surface-variant": "#434654",
+                    "primary-fixed": "#dae2ff",
+                    "inverse-on-surface": "#edf0ff",
+                    "inverse-primary": "#b2c5ff",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#001848",
+                    "tertiary": "#851800",
+                    "secondary-fixed-dim": "#71dba6",
+                    "surface": "#f9f9ff",
+                    "primary-fixed-dim": "#b2c5ff",
+                    "on-primary": "#ffffff",
+                    "on-primary-fixed-variant": "#0040a2",
+                    "surface-variant": "#d7e2ff",
+                    "outline": "#737685",
+                    "secondary-fixed": "#8df7c1",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#ffb4a3",
+                    "primary-container": "#0052cc",
+                    "surface-dim": "#cadaff",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#3d0600",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#e0e8ff",
+                    "surface-bright": "#f9f9ff",
+                    "secondary": "#006c47",
+                    "secondary-container": "#8af5be",
+                    "on-primary-container": "#c4d2ff",
+                    "surface-container": "#e8edff",
+                    "background": "#f9f9ff",
+                    "surface-container-highest": "#d7e2ff",
+                    "on-secondary-container": "#00714b",
+                    "outline-variant": "#c3c6d6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "12px",
+                    "stack-sm": "4px",
+                    "stack-lg": "24px",
+                    "stack-md": "12px",
+                    "touch-target-min": "48px",
+                    "container-padding": "16px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-amount-mobile": ["Inter"],
+                    "display-amount": ["Inter"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "display-amount-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "display-amount": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .overdue-card-shadow {
+            box-shadow: 0px 2px 8px rgba(23, 43, 77, 0.08);
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 z-50 w-full bg-surface border-b border-outline-variant flex justify-between items-center h-16 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly Bhutanese shop owner, wearing a traditional Gho with a subtle pattern, set against a clean, modern store interior with soft lighting and professional minimalism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsssg5mEkEq_MoxGENNY3g2yskpcsVAIJbDG3eszFfXu17fyfsIAa_XbuNaSFMotxZzAaLY_okuec3gf8SaQLLaSWRJbK1yBSuafvB6bBWJBqMxgZoDrg9-jsvWObzWapzQOoXZTOdRhyR1A839pRZxZ2xlUdEgQCex0x-eWsNlxHCOGzOtnP_-xT2MozP4zrqZexp_0UF3d-eeES_ftkaja7eyNHrQDtBAX3NYFP2SzDpwQBymYIkcEEx2Az0yD2mQh9NzxW8P9I"/>
+</div>
+<span class="font-headline-lg text-headline-lg font-bold text-primary">Bangkee</span>
+</div>
+<button class="p-2 text-primary hover:bg-surface-container-low transition-colors rounded-full active:bg-surface-container-high">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-20 pb-28 px-container-padding max-w-[1024px] mx-auto w-full">
+<!-- Summary Header Section -->
+<section class="mb-stack-lg">
+<div class="bg-primary text-on-primary p-6 rounded-xl overdue-card-shadow relative overflow-hidden">
+<!-- Decorative background pattern for the "Digital Ledger" feel -->
+<div class="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+<span class="material-symbols-outlined text-[120px]" data-icon="receipt_long">receipt_long</span>
+</div>
+<h2 class="font-label-md text-label-md text-on-primary-container mb-1">Total Overdue</h2>
+<p class="font-display-amount text-display-amount">Nu. 12,450</p>
+<div class="mt-4 flex gap-2">
+<div class="bg-white/20 px-3 py-1 rounded-full text-label-sm font-label-sm backdrop-blur-sm">
+                        8 Customers Overdue
+                    </div>
+</div>
+</div>
+</section>
+<!-- Filters & Sort -->
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-headline-md text-headline-md">Overdue Reminders</h3>
+<button class="flex items-center gap-1 text-primary font-label-md">
+<span class="material-symbols-outlined text-base" data-icon="sort">sort</span>
+                Days Late
+            </button>
+</div>
+<!-- Overdue List (Bento-style Grid for higher-end feel) -->
+<div class="space-y-stack-md">
+<!-- Customer Card 1: Karma Thinley -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl overdue-card-shadow flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-bold">
+                            KT
+                        </div>
+<div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Karma Thinley</h4>
+<p class="text-error font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+                                14 Days Overdue
+                            </p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-error font-headline-md text-headline-md">Nu. 4,200</p>
+<p class="text-on-surface-variant font-label-sm">Last Transaction: Oct 12</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 h-12 bg-surface-container-high text-on-secondary-container rounded-lg font-label-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+                        WhatsApp
+                    </button>
+<button class="flex items-center justify-center gap-2 h-12 border-2 border-secondary text-secondary rounded-lg font-label-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="sms">sms</span>
+                        Send SMS
+                    </button>
+</div>
+</div>
+<!-- Customer Card 2: Tashi Dorji -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl overdue-card-shadow flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-bold">
+                            TD
+                        </div>
+<div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Tashi Dorji</h4>
+<p class="text-error font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+                                8 Days Overdue
+                            </p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-error font-headline-md text-headline-md">Nu. 1,850</p>
+<p class="text-on-surface-variant font-label-sm">Last Transaction: Oct 18</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 h-12 bg-surface-container-high text-on-secondary-container rounded-lg font-label-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+                        WhatsApp
+                    </button>
+<button class="flex items-center justify-center gap-2 h-12 border-2 border-secondary text-secondary rounded-lg font-label-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="sms">sms</span>
+                        Send SMS
+                    </button>
+</div>
+</div>
+<!-- Customer Card 3: Pema Lhazin -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl overdue-card-shadow flex flex-col gap-4 opacity-80">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center font-bold">
+                            PL
+                        </div>
+<div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Pema Lhazin</h4>
+<p class="text-on-surface-variant font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+                                2 Days Overdue
+                            </p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-on-surface font-headline-md text-headline-md">Nu. 650</p>
+<p class="text-on-surface-variant font-label-sm">Last Transaction: Oct 24</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 h-12 bg-surface-container-high text-on-secondary-container rounded-lg font-label-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+                        WhatsApp
+                    </button>
+<button class="flex items-center justify-center gap-2 h-12 border-2 border-secondary text-secondary rounded-lg font-label-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="sms">sms</span>
+                        Send SMS
+                    </button>
+</div>
+</div>
+</div>
+<!-- Quick Help / Insights Card -->
+<section class="mt-stack-lg">
+<div class="bg-surface-container-low p-6 rounded-xl border-2 border-dashed border-outline-variant">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="lightbulb">lightbulb</span>
+<h4 class="font-label-md text-label-md text-primary">Owner Tip</h4>
+</div>
+<p class="text-on-surface-variant font-body-md">Reminders sent within 3 days of the due date are 40% more likely to be settled promptly. Try sending a friendly WhatsApp nudge today.</p>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface border-t border-outline-variant flex justify-around items-center h-20 px-2 pb-safe">
+<!-- Home -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<!-- Customers (Active) -->
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-5 py-1 active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-sm text-label-sm">Customers</span>
+</button>
+<!-- Reports -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-sm text-label-sm">Reports</span>
+</button>
+<!-- Settings -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:text-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</button>
+</nav>
+<script>
+        // Simple micro-interaction for reminder buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (this.innerText.includes('Send')) {
+                    const originalContent = this.innerHTML;
+                    this.innerHTML = `<span class="material-symbols-outlined animate-spin" data-icon="progress_activity">progress_activity</span> Sending...`;
+                    this.disabled = true;
+                    
+                    setTimeout(() => {
+                        this.innerHTML = `<span class="material-symbols-outlined text-secondary" data-icon="check_circle">check_circle</span> Sent`;
+                        setTimeout(() => {
+                            this.innerHTML = originalContent;
+                            this.disabled = false;
+                        }, 2000);
+                    }, 800);
+                }
+            });
+        });
+    </script>
+</body></html>

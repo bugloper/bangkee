@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bangkee - Shop Owner Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c3c6d6",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#851800",
+                    "primary-fixed": "#dae2ff",
+                    "secondary-fixed": "#8df7c1",
+                    "surface-container-highest": "#d7e2ff",
+                    "on-secondary-fixed": "#002113",
+                    "primary-fixed-dim": "#b2c5ff",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#ffdad2",
+                    "on-primary-fixed": "#001848",
+                    "surface": "#f9f9ff",
+                    "tertiary-container": "#b02300",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-surface": "#041b3c",
+                    "surface-container-high": "#e0e8ff",
+                    "on-background": "#041b3c",
+                    "on-secondary-fixed-variant": "#005235",
+                    "on-surface-variant": "#434654",
+                    "inverse-surface": "#1d3052",
+                    "on-primary-container": "#c4d2ff",
+                    "on-secondary-container": "#00714b",
+                    "tertiary-fixed-dim": "#ffb4a3",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#b2c5ff",
+                    "background": "#f9f9ff",
+                    "secondary-fixed-dim": "#71dba6",
+                    "secondary-container": "#8af5be",
+                    "surface-container-low": "#f1f3ff",
+                    "primary": "#003d9b",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#ffc6b9",
+                    "outline": "#737685",
+                    "on-tertiary-fixed": "#3d0600",
+                    "surface-bright": "#f9f9ff",
+                    "secondary": "#006c47",
+                    "surface-container": "#e8edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#0c56d0",
+                    "on-tertiary-fixed-variant": "#8b1a00",
+                    "surface-variant": "#d7e2ff",
+                    "primary-container": "#0052cc",
+                    "surface-dim": "#cadaff",
+                    "on-primary-fixed-variant": "#0040a2",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "12px",
+                    "base": "8px",
+                    "stack-sm": "4px",
+                    "gutter": "12px",
+                    "stack-lg": "24px",
+                    "container-padding": "16px",
+                    "touch-target-min": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-amount-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-amount": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-amount-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "display-amount": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F4F5F7; /* Level 0 Background from Style Guidance */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bento-shadow {
+            box-shadow: 0px 2px 8px rgba(23, 43, 77, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline w-full top-0 sticky z-50">
+<div class="flex items-center justify-between px-container-padding h-touch-target-min w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a friendly Bhutanese shop owner smiling warmly, set against a blurred background of a modern clean grocery store interior. The lighting is soft and natural, emphasizing a trustworthy and professional character. The overall aesthetic is clean, minimalist, and high-quality digital photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzNj2X3PS360HHALJ1bkWZQI2bRSxlFzPVyM8hkmCOWFlHpZcS5rzggYvEBR9UwDbvJLRcZPP72WBmE1Id49ACpzNW4cSbzPGEgKIvzydq_uQ9pabLnhdtoLQC8C9Ik--N1NawA8ZjvfHwnP-WZD1TW8r04HB3yyGxd-PlxXTPJuAgJAo61IrltU69k4w2qU3ekNHtEyHXnrPgnyrQpQK41aWvJEpIMC7q0J67eGjSH0p73RTEgyY_6OxvN1sUT2M3Tm7XRMhgTac"/>
+</div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed">Bangkee</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-primary hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-container-padding pt-stack-lg space-y-stack-lg">
+<!-- Summary Dashboard (High-end Summary Card) -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<div class="md:col-span-12 lg:col-span-8 bg-surface-container-lowest bento-shadow p-6 rounded-xl border border-outline-variant/30 relative overflow-hidden">
+<!-- Subtle Gradient Pattern -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16"></div>
+<div class="space-y-stack-md">
+<p class="text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">Total Outstanding Credit</p>
+<div class="flex items-baseline gap-2">
+<span class="text-on-surface-variant font-headline-md text-headline-md">Nu.</span>
+<h2 class="text-primary font-display-amount text-display-amount md:text-display-amount">45,230</h2>
+</div>
+<div class="pt-4 flex items-center justify-between border-t border-outline-variant/20">
+<div>
+<p class="text-on-surface-variant font-label-sm text-label-sm">Repayments This Month</p>
+<p class="text-on-secondary-container font-headline-md text-headline-md">Nu. 12,400</p>
+</div>
+<div class="h-12 w-12 bg-secondary-container flex items-center justify-center rounded-full">
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Stats Row (Bento Grid) -->
+<div class="md:col-span-6 lg:col-span-2 bg-surface-container-lowest bento-shadow p-6 rounded-xl border border-outline-variant/30 text-center">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="group">group</span>
+<p class="text-on-surface-variant font-label-sm text-label-sm">Total Customers</p>
+<p class="text-on-surface font-headline-md text-headline-md">24</p>
+</div>
+<div class="md:col-span-6 lg:col-span-2 bg-surface-container-lowest bento-shadow p-6 rounded-xl border border-outline-variant/30 text-center">
+<span class="material-symbols-outlined text-error mb-2" data-icon="history_toggle_off">history_toggle_off</span>
+<p class="text-on-surface-variant font-label-sm text-label-sm">Overdue Accounts</p>
+<p class="text-on-surface font-headline-md text-headline-md text-error">3</p>
+</div>
+</section>
+<!-- Transactions Section -->
+<section class="space-y-stack-md">
+<div class="flex items-center justify-between">
+<h3 class="text-on-surface font-headline-md text-headline-md">Recent Transactions</h3>
+<button class="text-primary font-label-md text-label-md hover:underline">View All</button>
+</div>
+<div class="space-y-base">
+<!-- Transaction Card 1 -->
+<div class="bg-surface-container-lowest bento-shadow px-4 py-3 rounded-lg border border-outline-variant/20 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="font-headline-md text-headline-md text-on-surface">Karma Tenzin</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Today, 10:45 AM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-headline-md text-secondary">+ Nu. 250</p>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container/30 text-on-secondary-container text-label-sm font-label-sm">Payment</span>
+</div>
+</div>
+<!-- Transaction Card 2 -->
+<div class="bg-surface-container-lowest bento-shadow px-4 py-3 rounded-lg border border-outline-variant/20 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="font-headline-md text-headline-md text-on-surface">Dorji Wangchuk</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Yesterday, 4:20 PM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-headline-md text-error">- Nu. 1,500</p>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container/30 text-on-error-container text-label-sm font-label-sm">Credit</span>
+</div>
+</div>
+<!-- Transaction Card 3 -->
+<div class="bg-surface-container-lowest bento-shadow px-4 py-3 rounded-lg border border-outline-variant/20 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="font-headline-md text-headline-md text-on-surface">Pema Choden</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 12, 11:15 AM</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-headline-md text-secondary">+ Nu. 3,200</p>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container/30 text-on-secondary-container text-label-sm font-label-sm">Payment</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Insights / Graphic Section -->
+<section class="bg-primary/5 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 border border-primary/10">
+<div class="flex-1 space-y-2">
+<h4 class="text-primary font-headline-md text-headline-md">Keep track of your growth</h4>
+<p class="text-on-surface-variant font-body-md text-body-md">You've recovered 15% more credit this week compared to last month. Great job managing your ledger!</p>
+</div>
+<div class="w-full md:w-48 h-32 rounded-xl overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A minimalist data visualization showing a positive upward trend with smooth blue curves and soft glowing accents. The graphic is clean, abstract, and represents financial growth and stability. The background is a very light neutral gray consistent with a professional digital ledger dashboard aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjVyuOU-64T4vhKynh-dnsKKLf_OkARp9eBS9IPplVugujCpHwojtZScwnoEhJ6-9J2dfTvpdK7LmveX-0pAzaP-EPzJ55osI45FTssqq9CHs62tqL70GjPyRpXiKjRB4OVYPZ6KJAx4C92KkWgXH4cctajgl7aEMLs5qxPHSAfa_18w9B52ieQ_i92rYo9dP8X450GTdekCJz01013eWN-Xgjyfm30dyhC0XwRCmfJOrZZy2hlqbOPjIZXkXV3YsXUJRrJOSnfaY"/>
+</div>
+</section>
+</main>
+<!-- FAB: Add Transaction -->
+<button aria-label="Add Transaction" class="fixed bottom-20 right-6 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-100 flex items-center justify-center z-50">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-2 h-16 bg-surface dark:bg-surface border-t border-outline-variant dark:border-outline shadow-sm">
+<!-- Dashboard (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-full px-4 py-1 active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-sm text-label-sm">Dashboard</span>
+</a>
+<!-- Customers -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-sm text-label-sm">Customers</span>
+</a>
+<!-- Search -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-sm text-label-sm">Search</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-container-high dark:hover:bg-surface-container-highest active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions for transaction cards
+        document.querySelectorAll('section div[class*="cursor-pointer"]').forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.add('scale-[0.98]');
+                setTimeout(() => card.classList.remove('scale-[0.98]'), 100);
+            });
+        });
+
+        // FAB interaction
+        const fab = document.querySelector('button[aria-label="Add Transaction"]');
+        fab.addEventListener('click', () => {
+            // Placeholder for opening an "Add Transaction" modal or screen
+            console.log("Add Transaction clicked");
+        });
+    </script>
+</body></html>

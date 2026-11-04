@@ -1,0 +1,490 @@
+// The wire contract between the Go server and this app. Every response body
+// the server sends has one of these shapes; every request body the client
+// sends is one of the *Input types. Money is always integer chetrum (`_cents`)
+// on the way out; on the way in, amounts are the strings people typed
+// ("1,250.50") and the server does the parsing, exactly as the Rails app did.
+//
+// Timestamps are RFC 3339 strings in UTC.
+//
+// Errors: any non-2xx response carries `ApiErrorBody`:
+//   401 { error: "unauthenticated" }                       -> go to /session/new
+//   403 { error, code: "write_locked" }                    -> go to /subscription
+//   403 { error }                                          -> not yours / wrong role
+//   404 { error }
+//   422 { errors: string[] }  validation (full sentences)  -> show on the form
+//   422 { error }             a rule said no ("already reviewed") -> alert banner
+//   429 { error }             rate limited
+
+export type Cents = number
+export type Timestamp = string
+
+export interface ApiErrorBody {
+  error?: string
+  errors?: string[]
+  code?: "write_locked" | "unauthenticated"
+}
+
+/** Every successful mutation says what happened, in the words the Rails flash used. */
+export interface Notice {
+  notice: string
+}
+
+// ------------------------------------------------------------------ identity
+
+export type Role = "shop_owner" | "customer"
+export type Locale = "en" | "dz"
+
+export interface User {
+  id: number
+  name: string
+  email_address: string | null // null for a customer who joined with phone and PIN
+  phone: string | null
+  role: Role
+  platform_admin: boolean
+  locale: Locale | null
+  display_name: string
+  initial: string
+}
+
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "disabled"
+
+export interface Subscription {
+  status: SubscriptionStatus // derived from server time (BR-37), never the cached column
+  status_label: string // "Free trial" | "Active" | "Payment due" | "Inactive"
+  summary: string // "3 days of free trial left" | "Renews 4 Oct 2026" | ...
+  price_cents: Cents
+  current_period_end: Timestamp
+  grace_until: Timestamp | null
+  days_remaining: number
+  grace_days_remaining: number
+  write_locked: boolean
+}
+
+export interface ShopRef {
+  id: number
+  name: string
+  credit_due_days: number
+  kind: string | null // a ShopKind key; null until the owner picks one
+}
+
+/** GET /api/me — the shell's one query. 401 when signed out. */
+export interface Me {
+  user: User
+  shop: ShopRef | null
+  subscription: Subscription | null
+  badges: {
+    admin_payments: number // pending subscription payments (platform admins)
+  }
+  unread_notifications: number
+  push: {
+    configured: boolean
+    public_key: string | null // VAPID public key, URL-safe base64
+    devices: number // push subscriptions this user has
+  }
+}
+
+/** Email and password, or (customers) phone and 4-digit PIN. */
+export type SignInInput = { email_address: string; password: string } | { phone: string; pin: string }
+/** POST /api/session */
+export type SignInResult = Record<string, never>
+
+/** GET /api/registration */
+export interface RegistrationInfo {
+  invited: boolean // an invite link was opened first: signing up as a customer
+}
+export interface RegistrationInput {
+  name: string
+  shop_name?: string // required unless invited
+  email_address: string
+  phone?: string
+  password: string
+}
+
+export interface PasswordResetRequestInput {
+  email_address: string
+}
+export interface PasswordUpdateInput {
+  password: string
+  password_confirmation: string
+}
+
+/**
+ * GET /api/invitations/:token
+ * - signed out: `landing` (the server remembers the token in a cookie for sign-up)
+ * - signed in: the claim is attempted and the outcome returned
+ */
+/**
+ * What someone signed out does with the link: `join` (new to Bangkee: name
+ * and a PIN), `sign_in` (they have a login), `new_pin` (the shop sent a fresh
+ * link for a forgotten PIN).
+ */
+export type InviteNext = "join" | "sign_in" | "new_pin"
+
+export type InvitationResult =
+  | { outcome: "landing"; shop_name: string; token_prefix: string; customer_name: string; phone: string; next: InviteNext }
+  | { outcome: "claimed" | "already_yours"; account_id: number; notice: string }
+  | { outcome: "refused"; alert: string } // shop owner, claimed by someone else, bad token
+
+// ------------------------------------------------------------------- ledger
+
+export type TransactionKind = "credit" | "payment"
+
+export interface LineItem {
+  id: number
+  name: string
+  quantity: string // decimal as typed, e.g. "2", "1.5"
+  quantity_label: string // "2", "1.5"
+  unit_price_cents: Cents
+  total_cents: Cents
+}
+
+export interface LedgerEntry {
+  id: number
+  kind: TransactionKind
+  amount_cents: Cents
+  signed_amount_cents: Cents // credit +, payment −
+  description: string | null
+  notes: string | null
+  payment_method: string | null
+  occurred_at: Timestamp
+  itemized: boolean
+  voided: boolean
+  voided_at: Timestamp | null
+  created_by_name: string
+  running_balance_cents: Cents | null // null for voided rows (BR-11)
+  line_items: LineItem[]
+  screenshot_url: string | null // a payment's photo of the customer's payment screen; /api/attachments/:id
+}
+
+export interface AccountSummary {
+  id: number
+  customer_name: string
+  display_name: string
+  customer_phone: string | null
+  balance_cents: Cents
+  overdue: boolean
+  days_overdue: number
+  joined: boolean
+  last_activity_at: Timestamp | null
+}
+
+export interface AuditEvent {
+  id: number
+  action: string
+  actor_name: string // "System" when no actor (BR-18)
+  created_at: Timestamp
+  amount_cents: Cents | null
+}
+
+export interface BankAccount {
+  id: number
+  bank_name: string
+  account_name: string
+  account_number: string
+  branch: string | null
+  mobile_wallet: string | null
+  instructions: string | null
+  primary: boolean
+  active: boolean
+}
+export interface BankAccountInput {
+  bank_name: string
+  account_name: string
+  account_number: string
+  branch?: string
+  mobile_wallet?: string
+  instructions?: string
+  primary: boolean
+  active: boolean
+}
+
+/** GET /api/accounts?q=&filter=outstanding|overdue|settled */
+export interface AccountList {
+  accounts: AccountSummary[]
+}
+
+export interface AccountInput {
+  customer_name: string
+  customer_phone?: string
+}
+
+/** GET /api/accounts/:id — the shape depends on who is looking. */
+export type AccountDetail =
+  | {
+      viewer: "owner"
+      account: AccountSummary
+      ledger: LedgerEntry[] // newest first, voided rows included
+      audit_events: AuditEvent[] // latest 10
+      write_locked: boolean
+    }
+  | {
+      viewer: "customer"
+      account: AccountSummary
+      shop: { id: number; name: string }
+      ledger: LedgerEntry[] // newest first, voided rows included
+      bank_accounts: BankAccount[] // active, primary first
+    }
+
+export interface LineItemInput {
+  name: string
+  quantity: string
+  unit_price: string
+}
+
+/** POST /api/accounts/:id/credits */
+export interface CreditInput {
+  itemized: boolean
+  amount?: string // ignored when itemized: the items are the amount (BR-12)
+  description?: string
+  notes?: string
+  occurred_at?: string // datetime-local value or ISO; blank = now
+  line_items?: LineItemInput[]
+  idempotency_key?: string // stamped by the offline queue
+}
+
+export const PAYMENT_METHODS = ["Cash", "Mobile transfer", "Bank transfer", "Other"] as const
+
+/** POST /api/accounts/:id/payments */
+export interface PaymentInput {
+  amount: string
+  payment_method: string
+  notes?: string
+  occurred_at?: string
+  idempotency_key?: string
+}
+
+/** Response of credits/payments. `duplicate` when the idempotency key was already in the book. */
+export interface RecordedEntry extends Notice {
+  account_id: number
+  transaction_id: number
+  duplicate: boolean
+}
+
+/** GET /api/transactions/:id — for the edit screen. */
+export interface TransactionDetail {
+  transaction: LedgerEntry
+  account: { id: number; display_name: string }
+}
+/** PATCH /api/transactions/:id */
+export interface TransactionUpdateInput {
+  amount: string
+  description?: string
+  notes?: string
+  payment_method?: string
+  occurred_at?: string
+}
+
+/** GET /api/accounts/:id/statement — active entries only, oldest first. */
+export interface Statement {
+  account: AccountSummary
+  shop: { id: number; name: string }
+  rows: LedgerEntry[]
+  debit_cents: Cents // total taken on credit
+  credit_cents: Cents // total paid
+  viewer: "owner" | "customer"
+  printed_on: Timestamp
+}
+
+/** GET /api/accounts/:id/invite */
+export interface Invite {
+  account: AccountSummary
+  invite_path: string // "/join/<token>" — the client prefixes location.origin
+  phone: string // where the owner sends it
+  pin_customer: boolean // joined with phone and PIN, so a forgotten PIN can be replaced
+  pin_reset_until: Timestamp | null // a fresh link that can set a new PIN, until then
+}
+
+/** POST /api/invitations/:token/join — new to Bangkee: their name and a PIN. */
+export interface JoinInput {
+  name: string
+  pin: string
+}
+
+// ------------------------------------------------------------- dashboards
+
+export interface OwnerDashboard {
+  kind: "owner"
+  shop: ShopRef
+  total_outstanding_cents: Cents
+  customers_count: number
+  overdue_accounts: AccountSummary[] // up to 5, biggest first
+  overdue_count: number
+  items_count: number
+  repaid_month_cents: Cents
+  recent_transactions: (LedgerEntry & { account: { id: number; display_name: string } })[]
+}
+
+export interface CustomerDashboard {
+  kind: "customer"
+  total_owed_cents: Cents
+  spent_month_cents: Cents
+  accounts: (AccountSummary & { shop: { id: number; name: string } })[]
+  recent_transactions: (LedgerEntry & { account: { id: number; shop_name: string } })[]
+}
+
+/** GET /api/dashboard (platform admins use /api/admin/dashboard) */
+export type Dashboard = OwnerDashboard | CustomerDashboard
+
+export interface MenuItem {
+  id: number
+  name: string
+  category: string | null
+  price_cents: Cents
+  price: string // major units for the edit form
+  available: boolean
+  position: number
+  image_url: string | null // optional photo; anyone can load it
+}
+export interface MenuItemInput {
+  name: string
+  category?: string
+  price: string
+  available: boolean
+  position?: number
+}
+/** GET /api/menu_items */
+export interface MenuBoard {
+  items: MenuItem[]
+}
+
+// ------------------------------------------------------- the shops catalog
+
+export interface MenuGroup {
+  category: string
+  items: { id: number; name: string; price_cents: Cents; image_url: string | null }[]
+}
+
+/** A sort of business customers browse by. */
+export interface ShopKind {
+  key: string
+  label: string
+}
+
+/** GET /api/shops?kind=&q= — every shop with items to show. */
+export interface ShopDirectory {
+  shops: { id: number; name: string; kind: string | null; kind_label: string; items_count: number }[]
+  kinds: ShopKind[]
+}
+
+/** GET /api/shops/:id — a shop's available items, as customers read them. */
+export interface ShopPage {
+  shop: { id: number; name: string; kind: string | null; kind_label: string }
+  menu: MenuGroup[]
+}
+
+// ---------------------------------------------------------------- settings
+
+/** GET /api/settings */
+export interface SettingsInfo {
+  shop_kinds: ShopKind[] // the types of business an owner picks from
+  menu_items_count: number
+  bank_accounts_count: number
+}
+
+// ------------------------------------------------------------------ billing
+
+export interface SubscriptionPayment {
+  id: number
+  amount_cents: Cents
+  months: number
+  payment_method: string | null
+  reference: string | null
+  status: "pending" | "approved" | "rejected"
+  rejection_reason: string | null
+  created_at: Timestamp
+  reviewed_at: Timestamp | null
+  reviewed_by_name: string | null
+  screenshot_url: string | null
+}
+
+export interface OperatorBilling {
+  annual_price_cents: Cents // what one year of cover costs: 12 × the monthly price
+  bank_name: string
+  account_name: string
+  account_number: string
+  branch: string
+  mobile_wallet: string
+  instructions: string
+}
+
+/** GET /api/subscription (owner; never write-locked) */
+export interface Billing {
+  subscription: Subscription
+  payments: SubscriptionPayment[]
+  operator: OperatorBilling
+}
+/** POST /api/subscription/payments — multipart: amount, method, reference, screenshot (months defaults to 12: billed annually) */
+
+// ------------------------------------------------------------------ pricing
+
+/** GET /api/public/pricing — no sign-in; the homepage's pricing section. One plan, billed annually. */
+export interface PublicPricing {
+  monthly_price_cents: Cents // 30000 = Nu. 300 a month
+  annual_price_cents: Cents // 360000 = Nu. 3,600, paid once a year
+  trial_days: number // 14
+}
+
+// -------------------------------------------------------------------- admin
+//
+// The operator's screens live on their own host, admin.<domain>. There the
+// API serves only identity, /api/admin/*, notifications, push and
+// attachments; everything else is 404. On the app host /api/admin/* is 404.
+// Sign-in on the admin host refuses anyone who is not a platform admin.
+
+export interface AdminPayment extends SubscriptionPayment {
+  shop: { id: number; name: string; paid_through: Timestamp; status_label: string }
+  submitted_by_name: string
+}
+
+/** GET /api/admin/dashboard */
+export interface AdminDashboard {
+  approved_month_cents: Cents
+  shops_count: number
+  pending_count: number
+  locked_count: number
+  pending: AdminPayment[] // up to 5, oldest first
+}
+
+/** GET /api/admin/subscription_payments?status=pending|approved|rejected|all */
+export interface AdminPaymentQueue {
+  status: string
+  payments: AdminPayment[]
+  pending_count: number
+}
+
+/** GET /api/admin/shops */
+export interface AdminShops {
+  shops: {
+    id: number
+    name: string
+    owner_name: string
+    owner_email: string
+    subscription: Subscription | null
+  }[]
+}
+
+// ------------------------------------------------------------ notifications
+
+export type NotificationKind = "credit" | "payment" | "void" | "overdue" | "sub"
+
+export interface AppNotification {
+  id: number
+  kind: NotificationKind
+  title: string
+  body: string | null
+  path: string | null
+  read: boolean
+  created_at: Timestamp
+}
+
+/** GET /api/notifications */
+export interface NotificationList {
+  notifications: AppNotification[] // latest 50
+  unread_count: number
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string
+  p256dh_key: string
+  auth_key: string
+}

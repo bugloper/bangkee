@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bangkee - Customer Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#ffc6b9",
+                        "inverse-surface": "#1d3052",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary": "#003d9b",
+                        "surface-tint": "#0c56d0",
+                        "surface-container-low": "#f1f3ff",
+                        "on-secondary-fixed": "#002113",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#b02300",
+                        "on-secondary-fixed-variant": "#005235",
+                        "on-surface": "#041b3c",
+                        "on-background": "#041b3c",
+                        "on-tertiary-fixed-variant": "#8b1a00",
+                        "tertiary-fixed": "#ffdad2",
+                        "on-surface-variant": "#434654",
+                        "primary-fixed": "#dae2ff",
+                        "inverse-on-surface": "#edf0ff",
+                        "inverse-primary": "#b2c5ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001848",
+                        "tertiary": "#851800",
+                        "secondary-fixed-dim": "#71dba6",
+                        "surface": "#f9f9ff",
+                        "primary-fixed-dim": "#b2c5ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#0040a2",
+                        "surface-variant": "#d7e2ff",
+                        "outline": "#737685",
+                        "secondary-fixed": "#8df7c1",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb4a3",
+                        "primary-container": "#0052cc",
+                        "surface-dim": "#cadaff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#3d0600",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#e0e8ff",
+                        "surface-bright": "#f9f9ff",
+                        "secondary": "#006c47",
+                        "secondary-container": "#8af5be",
+                        "on-primary-container": "#c4d2ff",
+                        "surface-container": "#e8edff",
+                        "background": "#f9f9ff",
+                        "surface-container-highest": "#d7e2ff",
+                        "on-secondary-container": "#00714b",
+                        "outline-variant": "#c3c6d6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "12px",
+                        "stack-sm": "4px",
+                        "stack-lg": "24px",
+                        "stack-md": "12px",
+                        "touch-target-min": "48px",
+                        "container-padding": "16px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-amount-mobile": ["Inter"],
+                        "display-amount": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                        "display-amount-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "display-amount": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #F4F5F7;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bento-card {
+            background: #ffffff;
+            box-shadow: 0px 2px 8px rgba(23, 43, 77, 0.08);
+            transition: transform 0.2s ease;
+        }
+        .bento-card:active {
+            transform: scale(0.98);
+            background: #F4F5F7;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline flex justify-between items-center h-16 px-4 w-full">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional studio portrait of a Bhutanese shop owner in traditional attire, smiling warmly against a soft-focus background of a clean, modern retail space. The lighting is natural and bright, conveying trust and reliability. High-key aesthetic with a focus on professional minimalism and clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvu0pBRPPhIBGwCpFuzsYLy37c5iSZi3qJnBk9YnUyFtbKfGoH8qfMUhsmcFJGWDn12Pjp692hv11_1SPumNioEbB3n2NclZ4ZvlhT1xAMujWWzzYLi_CfOYQ98qbT8s7tqXF6lP5G_LLQvrn8DFvXQloYBbjfUqhmdV4JAjoVvVt6EC7uL4k51qj6M3eyE9Mn46SmTQcKAI8GK0NjFZ6Rw4IKd4cxYRVq1cMoFf9HgWuUFaAtMJhF0L3PuPimB4SH9Jqq-Yv9K38"/>
+</div>
+<span class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed">Bangkee</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors active:bg-surface-container-high">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+</div>
+</header>
+<main class="max-w-[1024px] mx-auto px-container-padding pt-base">
+<!-- Overdue Alert Banner -->
+<section class="mt-4 mb-stack-lg animate-pulse">
+<div class="bg-error rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg border border-error">
+<div class="flex items-center gap-4">
+<div class="bg-on-error rounded-full p-2 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-error leading-tight">Balance Overdue</h2>
+<p class="font-label-sm text-label-sm text-on-error opacity-90">Your account balance has been overdue for 3 days. Please settle to avoid service disruption.</p>
+</div>
+</div>
+<button class="bg-on-error text-error px-6 py-2 rounded-full font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all shadow-md whitespace-nowrap min-h-[48px] w-full md:w-auto">
+                    Pay Now
+                </button>
+</div>
+</section>
+<!-- Bento Layout: Balance Overview -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-stack-lg">
+<!-- Main Balance Card -->
+<div class="md:col-span-2 bento-card rounded-xl p-6 flex flex-col justify-between min-h-[200px]">
+<div>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Outstanding Balance</span>
+<div class="flex items-baseline gap-1 mt-2">
+<span class="font-display-amount text-display-amount-mobile md:text-display-amount text-on-surface">Nu.</span>
+<span class="font-display-amount text-display-amount-mobile md:text-display-amount text-error">4,850.00</span>
+</div>
+</div>
+<div class="flex gap-3 mt-6">
+<button class="flex-1 bg-primary text-on-primary h-12 rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 hover:opacity-90 transition-all">
+<span class="material-symbols-outlined">payments</span> Add Payment
+                    </button>
+<button class="flex-1 border-2 border-outline text-on-surface-variant h-12 rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined">description</span> View Ledger
+                    </button>
+</div>
+</div>
+<!-- Shop Info Card -->
+<div class="bento-card rounded-xl p-6 flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">storefront</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">Dorji General Store</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Thimphu Main St.</p>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-outline-variant">
+<div class="flex justify-between items-center text-label-sm">
+<span class="text-on-surface-variant">Credit Limit</span>
+<span class="font-bold text-on-surface">Nu. 10,000</span>
+</div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full mt-2 overflow-hidden">
+<div class="bg-error h-full" style="width: 48.5%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity Section -->
+<section class="mb-stack-lg">
+<div class="flex justify-between items-center mb-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">Recent Activity</h2>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1">
+                    See all <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<div class="space-y-3">
+<!-- Activity Item 1 -->
+<div class="bento-card rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-error-container text-error flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Grocery Purchase</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 24, 2023 • Credit</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-headline-md text-error">-Nu. 1,200.00</p>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-error/10 text-error uppercase">Unpaid</span>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="bento-card rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Partial Payment</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 20, 2023 • Bank Transfer</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-headline-md text-secondary">+Nu. 5,000.00</p>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary/10 text-secondary uppercase">Settled</span>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="bento-card rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-error-container text-error flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Kitchen Supplies</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Oct 18, 2023 • Credit</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-headline-md text-headline-md text-error">-Nu. 3,650.00</p>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-error/10 text-error uppercase">Overdue</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Insights / Visual Aid Section -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bento-card rounded-xl p-6 relative overflow-hidden group">
+<div class="relative z-10">
+<h3 class="font-headline-md text-headline-md text-on-surface">Payment History</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4">You've made 4 payments this month.</p>
+<div class="h-32 w-full flex items-end gap-1">
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[40%] group-hover:h-[50%] transition-all"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[60%] group-hover:h-[70%] transition-all"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[30%] group-hover:h-[40%] transition-all"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[80%] group-hover:h-[90%] transition-all"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[95%]"></div>
+</div>
+</div>
+</div>
+<div class="bento-card rounded-xl overflow-hidden min-h-[200px] relative">
+<div class="absolute inset-0 bg-cover bg-center opacity-40" data-alt="A clean, minimalist 3D render of a Bhutanese mountain landscape in a soft daylight setting. The image is used as a decorative background for a mobile app dashboard, featuring smooth gradients and high-quality textures. The aesthetic is professional and modern, using the brand's primary blues and secondary greens in a subtle, artistic way." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBI8MTojgC7WN348c97Vml_Z3QCZXIkdA-rWYsEbF5L1TiuA_xuJa8CHZvCAYPYBMbyMDoQ12sFy3xHDCxI8l2mGvXVjJaUOrKOULNTufRR91tNztC-liQ7hflKF5vZlhxXFU3eDjxMXu2_liKckRuFFYqG8aDJW5bvXUXgrjW5sJsBZAs9Yg0qfOkN9A5hwZV6oVJVlnyLdk9VIT6dYYy3UUqt0X7fjR2mEruvfxnKpn5_8rFpHGds7YW1naYNQGwsvQQsP63-7mY')"></div>
+<div class="relative z-10 p-6 flex flex-col h-full justify-center">
+<h3 class="font-headline-md text-headline-md text-primary">Need Help?</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-[200px]">Contact Dorji General Store support directly for balance inquiries.</p>
+<button class="mt-4 flex items-center gap-2 font-label-md text-label-md text-primary group">
+                        Contact Shop <span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface dark:bg-surface-dim border-t border-outline-variant dark:border-outline flex justify-around items-center h-20 px-2 pb-safe">
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-container text-on-secondary-container dark:text-secondary-container rounded-full px-5 py-1 active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:text-primary transition-colors active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-sm text-label-sm">Customers</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:text-primary transition-colors active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-sm text-label-sm">Reports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant p-2 hover:text-primary transition-colors active:scale-95 duration-100" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for the banner
+        document.querySelector('.bg-error button').addEventListener('click', function() {
+            this.textContent = 'Processing...';
+            this.classList.add('animate-pulse');
+            setTimeout(() => {
+                this.textContent = 'Pay Now';
+                this.classList.remove('animate-pulse');
+            }, 2000);
+        });
+
+        // Tonal layer interaction for bento cards
+        document.querySelectorAll('.bento-card').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                card.style.backgroundColor = '#F4F5F7';
+            });
+            card.addEventListener('touchend', () => {
+                card.style.backgroundColor = '#FFFFFF';
+            });
+        });
+    </script>
+</body></html>

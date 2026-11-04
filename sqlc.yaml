@@ -1,0 +1,31 @@
+# Queries live in db/queries as SQL and are checked against the schema when
+# Go code is generated from them (`sqlc generate`); the result is
+# internal/store, which nothing edits by hand.
+version: "2"
+sql:
+  - engine: postgresql
+    schema:
+      - migrations/20261104174119_create_schema.sql
+    queries: db/queries
+    gen:
+      go:
+        package: store
+        out: internal/store
+        sql_package: pgx/v5
+        emit_pointers_for_null_types: true
+        overrides:
+          - db_type: timestamptz
+            go_type: time.Time
+          - db_type: timestamptz
+            nullable: true
+            go_type:
+              type: time.Time
+              pointer: true
+          - db_type: pg_catalog.numeric
+            go_type: github.com/shopspring/decimal.Decimal
+          - db_type: pg_catalog.numeric
+            nullable: true
+            go_type:
+              import: github.com/shopspring/decimal
+              type: Decimal
+              pointer: true

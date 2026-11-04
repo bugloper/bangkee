@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  },
+  "overrides": [
+    {
+      // TanStack file routes export `Route` beside their screens by design
+      // (autoCodeSplitting keeps hot reload working), and shadcn primitives
+      // export their variant helpers.
+      "files": ["src/routes/**", "src/components/ui/**"],
+      "rules": { "react/only-export-components": "off" }
+    }
+  ]
+}

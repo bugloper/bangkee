@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Bangkee - Record Transaction</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "outline-variant": "#c3c6d6",
+                "surface-container-lowest": "#ffffff",
+                "tertiary": "#851800",
+                "primary-fixed": "#dae2ff",
+                "secondary-fixed": "#8df7c1",
+                "surface-container-highest": "#d7e2ff",
+                "on-secondary-fixed": "#002113",
+                "primary-fixed-dim": "#b2c5ff",
+                "error": "#ba1a1a",
+                "on-primary": "#ffffff",
+                "tertiary-fixed": "#ffdad2",
+                "on-primary-fixed": "#001848",
+                "surface": "#f9f9ff",
+                "tertiary-container": "#b02300",
+                "inverse-on-surface": "#edf0ff",
+                "on-surface": "#041b3c",
+                "surface-container-high": "#e0e8ff",
+                "on-background": "#041b3c",
+                "on-secondary-fixed-variant": "#005235",
+                "on-surface-variant": "#434654",
+                "inverse-surface": "#1d3052",
+                "on-primary-container": "#c4d2ff",
+                "on-secondary-container": "#00714b",
+                "tertiary-fixed-dim": "#ffb4a3",
+                "on-error-container": "#93000a",
+                "on-secondary": "#ffffff",
+                "inverse-primary": "#b2c5ff",
+                "background": "#f9f9ff",
+                "secondary-fixed-dim": "#71dba6",
+                "secondary-container": "#8af5be",
+                "surface-container-low": "#f1f3ff",
+                "primary": "#003d9b",
+                "on-error": "#ffffff",
+                "on-tertiary-container": "#ffc6b9",
+                "outline": "#737685",
+                "on-tertiary-fixed": "#3d0600",
+                "surface-bright": "#f9f9ff",
+                "secondary": "#006c47",
+                "surface-container": "#e8edff",
+                "on-tertiary": "#ffffff",
+                "surface-tint": "#0c56d0",
+                "on-tertiary-fixed-variant": "#8b1a00",
+                "surface-variant": "#d7e2ff",
+                "primary-container": "#0052cc",
+                "surface-dim": "#cadaff",
+                "on-primary-fixed-variant": "#0040a2",
+                "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "stack-md": "12px",
+                "base": "8px",
+                "stack-sm": "4px",
+                "gutter": "12px",
+                "stack-lg": "24px",
+                "container-padding": "16px",
+                "touch-target-min": "48px"
+            },
+            "fontFamily": {
+                "headline-lg": ["Inter"],
+                "headline-md": ["Inter"],
+                "body-md": ["Inter"],
+                "display-amount-mobile": ["Inter"],
+                "label-md": ["Inter"],
+                "body-lg": ["Inter"],
+                "label-sm": ["Inter"],
+                "display-amount": ["Inter"]
+            },
+            "fontSize": {
+                "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "display-amount-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                "display-amount": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f9f9ff;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background-color: #EBECF0;
+        }
+        .numpad-key {
+            background-color: white;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 500;
+            color: #041b3c;
+            transition: background-color 0.1s;
+        }
+        .numpad-key:active {
+            background-color: #f1f3ff;
+        }
+        .active-credit {
+            background-color: #ba1a1a !important;
+            color: white !important;
+        }
+        .active-payment {
+            background-color: #006c47 !important;
+            color: white !important;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- Top AppBar (Back Navigation as it is a task-focused screen) -->
+<header class="bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline w-full top-0 sticky z-50">
+<div class="flex items-center justify-between px-container-padding h-touch-target-min w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="p-2 -ml-2 rounded-full hover:bg-surface-container-low transition-colors" onclick="history.back()">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-on-surface">Record Transaction</h1>
+</div>
+<button class="flex items-center gap-1 text-primary font-label-md px-3 py-1 rounded-full hover:bg-primary-container/10 transition-colors">
+<span class="material-symbols-outlined text-[20px]">list_alt</span>
+<span>Itemized Entry</span>
+</button>
+</div>
+</header>
+<main class="flex-grow max-w-lg mx-auto w-full px-container-padding pb-32">
+<!-- Transaction Type Toggle -->
+<div class="mt-stack-lg p-1 bg-surface-container-high rounded-xl flex">
+<button class="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-label-md transition-all active-credit" id="creditToggle" onclick="setType('credit')">
+<span class="material-symbols-outlined text-[20px]">remove_circle</span>
+                Give Credit
+            </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-label-md transition-all text-on-surface-variant" id="paymentToggle" onclick="setType('payment')">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+                Receive Payment
+            </button>
+</div>
+<!-- Amount Display -->
+<section class="mt-stack-lg text-center">
+<p class="text-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Amount</p>
+<div class="flex items-baseline justify-center gap-2">
+<span class="text-headline-lg text-on-surface-variant font-headline-lg">Nu.</span>
+<span class="font-display-amount text-display-amount text-on-surface tabular-nums" id="amountDisplay">0.00</span>
+</div>
+</section>
+<!-- Form Fields -->
+<div class="mt-stack-lg space-y-4">
+<!-- Description Field -->
+<div class="relative">
+<label class="absolute left-4 top-2 text-label-sm text-on-surface-variant" for="description">Description</label>
+<input class="w-full pt-7 pb-3 px-4 bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-body-md text-body-md text-on-surface shadow-sm" id="description" placeholder="e.g. Groceries, Milk &amp; Sugar" type="text"/>
+</div>
+<!-- Date Picker -->
+<div class="relative">
+<label class="absolute left-4 top-2 text-label-sm text-on-surface-variant" for="date">Transaction Date</label>
+<div class="relative">
+<input class="w-full pt-7 pb-3 px-4 bg-white border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all font-body-md text-body-md text-on-surface shadow-sm" id="date" type="date" value=""/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">calendar_today</span>
+</div>
+</div>
+</div>
+<!-- Numeric Keypad (Simulated for Touch Experience) -->
+<div class="mt-stack-lg bg-white rounded-2xl overflow-hidden border border-outline-variant shadow-sm">
+<div class="numpad-grid">
+<button class="numpad-key" onclick="appendNum('1')">1</button>
+<button class="numpad-key" onclick="appendNum('2')">2</button>
+<button class="numpad-key" onclick="appendNum('3')">3</button>
+<button class="numpad-key" onclick="appendNum('4')">4</button>
+<button class="numpad-key" onclick="appendNum('5')">5</button>
+<button class="numpad-key" onclick="appendNum('6')">6</button>
+<button class="numpad-key" onclick="appendNum('7')">7</button>
+<button class="numpad-key" onclick="appendNum('8')">8</button>
+<button class="numpad-key" onclick="appendNum('9')">9</button>
+<button class="numpad-key" onclick="appendNum('.')">.</button>
+<button class="numpad-key" onclick="appendNum('0')">0</button>
+<button class="numpad-key bg-surface-container-low" onclick="clearLast()">
+<span class="material-symbols-outlined text-error">backspace</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Save Action Bar -->
+<div class="fixed bottom-0 left-0 w-full p-container-padding bg-surface/80 backdrop-blur-md z-50">
+<button class="w-full h-touch-target-min bg-primary text-on-primary font-label-md text-lg rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform" id="saveBtn">
+<span class="material-symbols-outlined">check_circle</span>
+            Save Transaction
+        </button>
+</div>
+<script>
+        // Set initial date to today
+        document.getElementById('date').valueAsDate = new Date();
+
+        let currentAmount = "0.00";
+        let rawInput = "";
+        let transactionType = "credit";
+
+        function setType(type) {
+            transactionType = type;
+            const creditBtn = document.getElementById('creditToggle');
+            const paymentBtn = document.getElementById('paymentToggle');
+            const saveBtn = document.getElementById('saveBtn');
+
+            if (type === 'credit') {
+                creditBtn.classList.add('active-credit', 'text-white');
+                creditBtn.classList.remove('text-on-surface-variant');
+                paymentBtn.classList.remove('active-payment', 'text-white');
+                paymentBtn.classList.add('text-on-surface-variant');
+                saveBtn.className = "w-full h-touch-target-min bg-error text-on-primary font-label-md text-lg rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform";
+            } else {
+                paymentBtn.classList.add('active-payment', 'text-white');
+                paymentBtn.classList.remove('text-on-surface-variant');
+                creditBtn.classList.remove('active-credit', 'text-white');
+                creditBtn.classList.add('text-on-surface-variant');
+                saveBtn.className = "w-full h-touch-target-min bg-secondary text-on-primary font-label-md text-lg rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform";
+            }
+        }
+
+        function updateDisplay() {
+            const display = document.getElementById('amountDisplay');
+            if (rawInput === "") {
+                display.innerText = "0.00";
+                display.classList.add('text-on-surface-variant');
+                display.classList.remove('text-on-surface');
+            } else {
+                // Formatting logic for Nu. display
+                let formatted = rawInput;
+                if (!formatted.includes('.')) {
+                    display.innerText = formatted + ".00";
+                } else {
+                    display.innerText = formatted;
+                }
+                display.classList.remove('text-on-surface-variant');
+                display.classList.add('text-on-surface');
+            }
+        }
+
+        function appendNum(num) {
+            if (num === '.' && rawInput.includes('.')) return;
+            if (rawInput.split('.')[1]?.length >= 2) return; // limit to 2 decimals
+            if (rawInput === "" && num === '.') {
+                rawInput = "0.";
+            } else {
+                rawInput += num;
+            }
+            updateDisplay();
+        }
+
+        function clearLast() {
+            rawInput = rawInput.slice(0, -1);
+            updateDisplay();
+        }
+
+        // Haptic feedback simulation
+        document.querySelectorAll('.numpad-key, button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (window.navigator.vibrate) {
+                    window.navigator.vibrate(10);
+                }
+            });
+        });
+
+        // Simple save feedback
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            if (rawInput === "" || parseFloat(rawInput) === 0) {
+                alert("Please enter a valid amount.");
+                return;
+            }
+            const btn = document.getElementById('saveBtn');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Saving...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = '<span class="material-symbols-outlined">done_all</span> Transaction Recorded';
+                btn.style.backgroundColor = '#006c47';
+                setTimeout(() => {
+                    alert("Transaction of Nu. " + (rawInput || "0.00") + " recorded successfully!");
+                    window.location.reload();
+                }, 1000);
+            }, 1500);
+        });
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body></html>

@@ -1,0 +1,62 @@
+# Bangkee
+
+The shared credit book — the *khata* — for shops in Bhutan. The owner records
+credits and payments, the customer sees their own balance. A credit can be
+picked from the shop's items; a payment made by mBoB or mPay can carry a photo
+of the customer's payment screen, straightened like a scanned document.
+Customers browse shops and their items. One subscription plan (Nu. 300 a
+month, billed annually) is reviewed by the Bangkee operator.
+
+| | |
+|---|---|
+| Go at the root | Echo v5, pgx + sqlc on PostgreSQL. The JSON API under `/api` and the built web app. |
+| `web/` | React 19, TanStack Router + Query, shadcn/ui on Tailwind v4. The homepage, the app, the operator console; an installable PWA with an offline write queue. |
+| `migrations/` | goose migrations, embedded in the binary and run on boot. |
+| `db/queries/` | Every SQL query; `sqlc generate` turns them into `internal/store`. |
+
+One server, two hosts: `bangkee.bt` is the homepage and the app for shops and
+customers; `admin.bangkee.bt` is the operator console. Any host starting
+`admin.` is the console, so in development it is `admin.localhost`.
+
+## Running it
+
+Needs Go 1.26+, Node 26+, PostgreSQL, and [sqlc](https://sqlc.dev) to change queries.
+
+```sh
+echo 'DATABASE_URL=postgres://localhost/bangkee_development' > .env
+createdb bangkee_development      # unless it already exists
+go run ./cmd/seed                 # demo shop: karma@shop.bt / dawa@example.bt / admin@bangkee.bt, password "password"
+make dev                          # API on :3000 and the web app on :5173; Ctrl-C stops both
+# app:     http://localhost:5173
+# console: http://admin.localhost:5173
+```
+
+`make dev` installs the web packages when they are missing and runs
+`go run ./cmd/bangkee` (migrations run on boot; `PORT` to change it) beside
+`npm run dev` in `web/`.
+
+Run both from the repository root: `.env`, `storage/` and `web/dist` are found
+relative to it. In production the server serves `web/dist` itself; the
+`Dockerfile` builds both and `render.yaml` deploys them as one service. Point
+both `bangkee.bt` and `admin.bangkee.bt` at it.
+
+## Tests
+
+```sh
+go test ./...                     # integration tests get a throwaway database on DATABASE_URL's server
+cd web && npm run build && npm run lint
+```
+
+After changing a query in `db/queries/`, run `sqlc generate`. A new migration:
+`go tool goose -dir migrations create <name> sql`.
+
+## Configuration
+
+Uploads go to `storage/` on disk, or to S3 with `ACTIVE_STORAGE_SERVICE=s3`
+and `S3_*`. Optional: `VAPID_*` for Web Push (a key pair:
+`npx web-push generate-vapid-keys`), `SMTP_*` and `BANGKEE_MAIL_FROM` for email,
+`BANGKEE_HOST` for links in email, `BANGKEE_PRICE_CENTS` for the monthly
+price (Nu. 300 by default), and `BANGKEE_BANK_NAME`, `BANGKEE_ACCOUNT_NAME`,
+`BANGKEE_ACCOUNT_NUMBER`, `BANGKEE_BRANCH`, `BANGKEE_WALLET` for where shops
+pay Bangkee. `SECRET_KEY_BASE` signs the short-lived invite cookie
+and password reset links.

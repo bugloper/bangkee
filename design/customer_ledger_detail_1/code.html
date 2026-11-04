@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bangkee - Customer Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c3c6d6",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#851800",
+                    "primary-fixed": "#dae2ff",
+                    "secondary-fixed": "#8df7c1",
+                    "surface-container-highest": "#d7e2ff",
+                    "on-secondary-fixed": "#002113",
+                    "primary-fixed-dim": "#b2c5ff",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#ffdad2",
+                    "on-primary-fixed": "#001848",
+                    "surface": "#f9f9ff",
+                    "tertiary-container": "#b02300",
+                    "inverse-on-surface": "#edf0ff",
+                    "on-surface": "#041b3c",
+                    "surface-container-high": "#e0e8ff",
+                    "on-background": "#041b3c",
+                    "on-secondary-fixed-variant": "#005235",
+                    "on-surface-variant": "#434654",
+                    "inverse-surface": "#1d3052",
+                    "on-primary-container": "#c4d2ff",
+                    "on-secondary-container": "#00714b",
+                    "tertiary-fixed-dim": "#ffb4a3",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#b2c5ff",
+                    "background": "#f9f9ff",
+                    "secondary-fixed-dim": "#71dba6",
+                    "secondary-container": "#8af5be",
+                    "surface-container-low": "#f1f3ff",
+                    "primary": "#003d9b",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#ffc6b9",
+                    "outline": "#737685",
+                    "on-tertiary-fixed": "#3d0600",
+                    "surface-bright": "#f9f9ff",
+                    "secondary": "#006c47",
+                    "surface-container": "#e8edff",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#0c56d0",
+                    "on-tertiary-fixed-variant": "#8b1a00",
+                    "surface-variant": "#d7e2ff",
+                    "primary-container": "#0052cc",
+                    "surface-dim": "#cadaff",
+                    "on-primary-fixed-variant": "#0040a2",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-md": "12px",
+                    "base": "8px",
+                    "stack-sm": "4px",
+                    "gutter": "12px",
+                    "stack-lg": "24px",
+                    "container-padding": "16px",
+                    "touch-target-min": "48px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-amount-mobile": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-amount": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-amount-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "display-amount": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #F4F5F7; /* Level 0 Background */
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .card-shadow {
+            box-shadow: 0px 2px 8px rgba(23, 43, 77, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface">
+<!-- Top Navigation Anchor (As per Shared Components) -->
+<header class="w-full top-0 sticky z-40 bg-surface border-b border-outline-variant">
+<div class="flex items-center justify-between px-container-padding h-touch-target-min w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-base">
+<button aria-label="Back" class="p-2 -ml-2 rounded-full hover:bg-surface-container-low transition-colors duration-200">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-fixed font-bold">TD</div>
+<div class="flex flex-col">
+<h1 class="font-headline-md text-headline-md text-on-surface leading-tight">Tenzin Dorji</h1>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Customer since Aug 2023</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors" title="Share Statement">
+<span class="material-symbols-outlined text-on-surface-variant">share</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-container-padding pb-32">
+<!-- Balance Summary Card -->
+<section class="mt-stack-lg bg-surface-container-lowest rounded-xl p-6 card-shadow border border-outline-variant/30 overflow-hidden relative">
+<div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-[80px]" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<div class="relative z-10">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Total Balance Due</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-headline-md font-headline-md text-on-surface-variant">Nu.</span>
+<h2 class="font-display-amount text-display-amount-mobile md:text-display-amount text-error">3,420.00</h2>
+</div>
+<div class="mt-4 flex gap-stack-md">
+<button class="flex items-center gap-2 text-label-md font-label-md text-primary bg-primary-container/20 px-4 py-2 rounded-full hover:bg-primary-container/30 transition-colors">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                        Share Statement
+                    </button>
+</div>
+</div>
+</section>
+<!-- Transaction History Section -->
+<section class="mt-stack-lg">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface">Ledger History</h3>
+<button class="text-label-md font-label-md text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                    Filter
+                </button>
+</div>
+<!-- Transaction List -->
+<div class="space-y-base">
+<!-- Date Divider -->
+<div class="flex items-center gap-gutter py-2">
+<div class="h-px flex-grow bg-outline-variant/50"></div>
+<span class="text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Today, 24 Oct 2023</span>
+<div class="h-px flex-grow bg-outline-variant/50"></div>
+</div>
+<!-- Transaction Card: Credit -->
+<div class="bg-white border border-outline-variant/50 rounded-xl p-4 card-shadow hover:bg-surface-container-low transition-colors flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface">Weekly Groceries</span>
+<span class="font-headline-md text-headline-md text-error">Nu. 1,200</span>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-label-sm font-label-sm text-on-surface-variant">04:32 PM</span>
+<span class="text-label-sm font-label-sm text-outline">Bal: Nu. 3,420</span>
+</div>
+</div>
+</div>
+<!-- Date Divider -->
+<div class="flex items-center gap-gutter py-2">
+<div class="h-px flex-grow bg-outline-variant/50"></div>
+<span class="text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Yesterday, 23 Oct 2023</span>
+<div class="h-px flex-grow bg-outline-variant/50"></div>
+</div>
+<!-- Transaction Card: Payment -->
+<div class="bg-white border border-outline-variant/50 rounded-xl p-4 card-shadow hover:bg-surface-container-low transition-colors flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">payments</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface">Cash Payment</span>
+<span class="font-headline-md text-headline-md text-secondary">Nu. 500</span>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-label-sm font-label-sm text-on-surface-variant">11:15 AM</span>
+<span class="text-label-sm font-label-sm text-outline">Bal: Nu. 2,220</span>
+</div>
+</div>
+</div>
+<!-- Transaction Card: Credit -->
+<div class="bg-white border border-outline-variant/50 rounded-xl p-4 card-shadow hover:bg-surface-container-low transition-colors flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">shopping_basket</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-start">
+<span class="font-label-md text-label-md text-on-surface">Rice (25kg) &amp; Oil</span>
+<span class="font-headline-md text-headline-md text-error">Nu. 2,720</span>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-label-sm font-label-sm text-on-surface-variant">09:05 AM</span>
+<span class="text-label-sm font-label-sm text-outline">Bal: Nu. 2,720</span>
+</div>
+</div>
+</div>
+<!-- Empty State Illustration Placeholder (if needed, but here we have data) -->
+<div class="py-stack-lg flex flex-col items-center justify-center opacity-40">
+<span class="material-symbols-outlined text-[48px]">history</span>
+<p class="text-label-sm font-label-sm mt-base">End of visible history</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Action Buttons at the Bottom -->
+<div class="fixed bottom-0 left-0 w-full bg-surface-container-lowest p-container-padding border-t border-outline-variant/50 z-50">
+<div class="max-w-4xl mx-auto flex gap-gutter">
+<!-- Give Credit Button -->
+<button class="flex-1 h-touch-target-min flex items-center justify-center gap-2 border-2 border-tertiary text-tertiary font-label-md text-label-md rounded-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined">outbound</span>
+                GIVE CREDIT
+            </button>
+<!-- Receive Payment Button -->
+<button class="flex-1 h-touch-target-min flex items-center justify-center gap-2 bg-secondary text-on-secondary font-label-md text-label-md rounded-lg active:scale-95 transition-transform shadow-md shadow-secondary/20">
+<span class="material-symbols-outlined">download</span>
+                GET PAYMENT
+            </button>
+</div>
+</div>
+<!-- Quick Floating WhatsApp Share (Contextual FAB Suppression would normally hide this, but this is a specific requirement) -->
+<button class="fixed bottom-24 right-4 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform md:hidden" title="WhatsApp Statement">
+<svg class="w-7 h-7 fill-current" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path>
+</svg>
+</button>
+<!-- Overlay Micro-interactions -->
+<script>
+        // Simple scale effect on buttons for tactile feedback
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.96)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = 'scale(1)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'scale(1)';
+            });
+        });
+
+        // Toggle sticky header elevation on scroll
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 0) {
+                header.classList.add('shadow-sm');
+                header.classList.remove('border-b');
+            } else {
+                header.classList.remove('shadow-sm');
+                header.classList.add('border-b');
+            }
+        });
+    </script>
+</body></html>
