@@ -99,7 +99,7 @@ func seed() error {
 		name, phone       string
 		credits, payments []entry
 	}{
-		{"Tashi Wangmo", "17 61 23 45", []entry{{1200, "Groceries — monthly", 29}, {800, "Festival goods", 9}}, []entry{{500, "Cash", 16}}},
+		{"Dawa Tashi", "17 61 23 45", []entry{{1200, "Groceries — monthly", 29}, {800, "Festival goods", 9}}, []entry{{500, "Cash", 16}}},
 		{"Pema Choden", "77 23 45 67", []entry{{600, "Vegetables and dry goods", 26}, {460, "Household items", 13}}, []entry{{200, "Cash", 19}}},
 		{"Sonam Tobgay", "17 89 01 23", []entry{{750, "Monthly groceries", 28}}, []entry{{750, "Mobile transfer", 3}}},
 		{"Dechen Lhamo", "77 12 98 76", nil, []entry{{300, "Cash", 6}}},
@@ -126,14 +126,14 @@ func seed() error {
 	}
 
 	// An itemized purchase, so that screen has something real in it.
-	tashi := accounts["Tashi Wangmo"]
-	_, err = domain.RecordEntry(ctx, q, tashi.ID, owner.ID, domain.EntryInput{
+	dawa := accounts["Dawa Tashi"]
+	_, err = domain.RecordEntry(ctx, q, dawa.ID, owner.ID, domain.EntryInput{
 		Kind: domain.Credit, Itemized: true, Description: "Itemized purchase", OccurredAt: ago(21),
 		LineItems: []domain.LineInput{{Name: "Rice 25 kg", Quantity: "1", UnitPrice: "620"}, {Name: "Cooking oil 1 L", Quantity: "2", UnitPrice: "95"}, {Name: "Salt 1 kg", Quantity: "2", UnitPrice: "70"}},
 	})
 	must(err)
 	// A crossed-out entry, so that look is on screen.
-	crossed, err := domain.RecordEntry(ctx, q, tashi.ID, owner.ID, domain.EntryInput{Kind: domain.Credit, Amount: "400", Description: "School supplies", OccurredAt: ago(11)})
+	crossed, err := domain.RecordEntry(ctx, q, dawa.ID, owner.ID, domain.EntryInput{Kind: domain.Credit, Amount: "400", Description: "School supplies", OccurredAt: ago(11)})
 	must(err)
 	_, err = domain.CrossOutTransaction(ctx, q, crossed.Entry, owner.ID)
 	must(err)
