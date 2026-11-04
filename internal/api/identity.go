@@ -31,7 +31,7 @@ func (s *Server) me(c *echo.Context) error {
 
 	var shopView *domain.ShopRef
 	var subView *domain.SubscriptionDTO
-	var adminPayments int64
+	var adminPayments, adminFeedback int64
 	if user.Role == domain.RoleShopOwner {
 		shop, err := domain.ShopForOwner(ctx, q, user.ID)
 		if err != nil {
@@ -54,6 +54,9 @@ func (s *Server) me(c *echo.Context) error {
 		if adminPayments, err = q.PendingSubscriptionPaymentCount(ctx); err != nil {
 			return err
 		}
+		if adminFeedback, err = q.NewFeedbackCount(ctx); err != nil {
+			return err
+		}
 	}
 	unread, err := q.UnreadCount(ctx, user.ID)
 	if err != nil {
@@ -71,7 +74,7 @@ func (s *Server) me(c *echo.Context) error {
 		"user":                 domain.UserView(user),
 		"shop":                 shopView,
 		"subscription":         subView,
-		"badges":               M{"admin_payments": adminPayments},
+		"badges":               M{"admin_payments": adminPayments, "admin_feedback": adminFeedback},
 		"unread_notifications": unread,
 		"push":                 M{"configured": s.Cfg.Vapid != nil, "public_key": publicKey, "devices": devices},
 	})

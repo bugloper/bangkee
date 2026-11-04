@@ -288,3 +288,65 @@ func TestOnePlanBilledAnnually(t *testing.T) {
 	owner.multipart("/api/subscription/payments", map[string]string{"amount": "3600"}, "screenshot", screenshot(t))
 	equal(t, owner.get("/api/subscription").num("payments.0.months"), 12, "a year")
 }
+
+func TestFeedbackReachesTheOperatorWhoAcknowledgesAndReplies(t *testing.T) {
+	a := newApp(t)
+	owner := a.browser()
+	owner.openShop("Karma", "karma@shop.bt")
+	customer := a.browser()
+	customer.join(owner.invitePath(owner.addCustomer("Pema")), "Pema", "pema@example.bt")
+
+	ctx := context.Background()
+	staffUser, err := domain.CreateUser(ctx, store.New(a.DB), domain.NewUser{Name: "Operator", EmailAddress: "admin@bangkee.bt", Password: "password", Role: domain.RoleShopOwner})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = a.DB.Exec(ctx, "UPDATE users SET platform_admin = true WHERE id = $1", staffUser.ID)
+	operator := a.console()
+	operator.signIn("admin@bangkee.bt")
+
+	// Anyone signed in can write; what they write must be something.
+	equal(t, owner.get("/api/feedback").len("kinds"), 3, "feedback, feature, support")
+	equal(t, fmt.Sprint(owner.post("/api/feedback", map[string]any{"kind": "praise", "body": " "}).get("errors")),
+		"[Choose feedback, a feature request or support Message can't be blank]", "checked")
+	sent := owner.post("/api/feedback", map[string]any{"kind": "feature", "body": "  Let me export the book to Excel.  "})
+	equal(t, sent.str("notice"), "Sent. Thank you — Bangkee will get back to you here.", "sent")
+	customer.post("/api/feedback", map[string]any{"kind": "support", "body": "I forgot which shop I joined."})
+	equal(t, a.browser().post("/api/feedback", map[string]any{"kind": "support", "body": "hi"}).Status, 401, "signed in only")
+
+	// The operator is told, and sees who wrote.
+	equal(t, operator.get("/api/me").num("badges.admin_feedback"), 2, "badge")
+	equal(t, operator.get("/api/notifications").str("notifications.0.path"), "/feedback", "console path")
+	queue := operator.get("/api/admin/feedback")
+	equal(t, queue.num("new_count"), 2, "two new")
+	equal(t, queue.str("messages.1.body"), "Let me export the book to Excel.", "trimmed, oldest last")
+	equal(t, queue.str("messages.1.from.shop"), "Karma's Shop", "the owner's shop")
+	equal(t, queue.str("messages.1.from.role"), "shop_owner", "an owner")
+	equal(t, queue.str("messages.0.from.role"), "customer", "a customer")
+	equal(t, queue.get("messages.0.from.shop"), any(nil), "customers have no shop")
+	featureID := queue.num("messages.1.id")
+	supportID := queue.num("messages.0.id")
+
+	// Acknowledge, once.
+	ack := operator.post(fmt.Sprintf("/api/admin/feedback/%d/acknowledge", featureID), map[string]any{})
+	equal(t, ack.str("notice"), "Acknowledged. They have been told it was seen.", "acknowledged")
+	equal(t, operator.post(fmt.Sprintf("/api/admin/feedback/%d/acknowledge", featureID), map[string]any{}).str("error"), "That message was already acknowledged.", "twice")
+	mine := owner.get("/api/feedback")
+	equal(t, mine.str("messages.0.status"), "acknowledged", "the owner sees it was seen")
+	equal(t, owner.get("/api/notifications").str("notifications.0.title"), "Bangkee has seen your feature request", "owner told")
+
+	// Reply, once; a reply needs words.
+	equal(t, operator.post(fmt.Sprintf("/api/admin/feedback/%d/reply", supportID), map[string]any{"reply": ""}).Status, 422, "blank reply")
+	operator.post(fmt.Sprintf("/api/admin/feedback/%d/reply", supportID), map[string]any{"reply": "You joined Karma's Shop — it is on your Home screen."})
+	equal(t, operator.post(fmt.Sprintf("/api/admin/feedback/%d/reply", supportID), map[string]any{"reply": "Again"}).str("error"), "That message already has a reply.", "one reply")
+	answered := customer.get("/api/feedback")
+	equal(t, answered.str("messages.0.status"), "replied", "replied")
+	equal(t, answered.str("messages.0.reply"), "You joined Karma's Shop — it is on your Home screen.", "the customer reads the reply")
+	equal(t, customer.get("/api/notifications").str("notifications.0.path"), "/help", "to their Help page")
+	equal(t, operator.get("/api/admin/feedback?status=replied").len("messages"), 1, "filtered by status")
+	equal(t, operator.get("/api/me").num("badges.admin_feedback"), 0, "nothing new left")
+
+	// Only the operator reviews, and each person sees only their own.
+	equal(t, owner.get("/api/admin/feedback").Status, 404, "not on the app host")
+	equal(t, owner.get("/api/feedback").len("messages"), 1, "only their own")
+}

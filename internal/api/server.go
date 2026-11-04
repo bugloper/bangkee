@@ -154,6 +154,8 @@ func (s *Server) routes(g *echo.Group) {
 	// settings & billing
 	g.GET("/settings", s.settings)
 	g.PATCH("/language", s.setLanguage)
+	g.GET("/feedback", s.myFeedback)
+	g.POST("/feedback", s.sendFeedback)
 	g.GET("/subscription", s.billing)
 	g.POST("/subscription/payments", s.submitSubscriptionPayment)
 	// operator
@@ -162,6 +164,9 @@ func (s *Server) routes(g *echo.Group) {
 	g.POST("/admin/subscription_payments/:id/approve", s.approvePayment)
 	g.POST("/admin/subscription_payments/:id/reject", s.rejectPayment)
 	g.GET("/admin/shops", s.adminShops)
+	g.GET("/admin/feedback", s.adminFeedback)
+	g.POST("/admin/feedback/:id/acknowledge", s.acknowledgeFeedback)
+	g.POST("/admin/feedback/:id/reply", s.replyToFeedback)
 	// notifications & push
 	g.GET("/notifications", s.notifications)
 	g.POST("/notifications/read_all", s.readAllNotifications)

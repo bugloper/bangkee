@@ -180,6 +180,35 @@ func (n *Notifier) SubscriptionPaymentRejected(ctx context.Context, submittedBy 
 	n.deliver(ctx, note{userID: submittedBy, kind: "sub", title: "Subscription payment rejected", body: reason, path: "/subscription"})
 }
 
+// FeedbackReceived: every platform admin hears about a new message.
+func (n *Notifier) FeedbackReceived(ctx context.Context, from, kindLabel, body string) {
+	admins, err := n.q.PlatformAdminIDs(ctx)
+	if err != nil {
+		slog.Error("could not load admins", "error", err)
+		return
+	}
+	for _, id := range admins {
+		n.deliver(ctx, note{userID: id, kind: "feedback", title: kindLabel + " from " + from, body: snippet(body), path: consoleFeedbackPath})
+	}
+}
+
+func (n *Notifier) FeedbackAcknowledged(ctx context.Context, userID int64, kindLabel, body string) {
+	n.deliver(ctx, note{userID: userID, kind: "feedback", title: "Bangkee has seen your " + strings.ToLower(kindLabel), body: snippet(body), path: helpPath})
+}
+
+func (n *Notifier) FeedbackReplied(ctx context.Context, userID int64, kindLabel, reply string) {
+	n.deliver(ctx, note{userID: userID, kind: "feedback", title: "Bangkee replied to your " + strings.ToLower(kindLabel), body: snippet(reply), path: helpPath})
+}
+
+// snippet keeps a notification to a glance: the start of a long message.
+func snippet(text string) string {
+	runes := []rune(strings.Join(strings.Fields(text), " "))
+	if len(runes) <= 140 {
+		return string(runes)
+	}
+	return strings.TrimSpace(string(runes[:139])) + "…"
+}
+
 // ----------------------------------------------------------------- push
 
 // A push should be about something that just happened; one that has been
@@ -247,8 +276,13 @@ func (n *Notifier) push(ctx context.Context, notificationID int64) {
 // §16.7 says email SHOULD accompany the in-app notification, so a missing
 // mail server degrades to a log line rather than an error.
 
-// consoleQueuePath is the operator's review queue on the console host.
-const consoleQueuePath = "/subscription_payments"
+// The operator's queues on the console host, and where a person reads the
+// answers to what they sent.
+const (
+	consoleQueuePath    = "/subscription_payments"
+	consoleFeedbackPath = "/feedback"
+	helpPath            = "/help"
+)
 
 // absolute links into the app, or into the console (admin.<host>) for the
 // operator's own notifications.
@@ -320,7 +354,8 @@ func (n *Notifier) email(ctx context.Context, notificationID int64) {
 	if err != nil || to == nil {
 		return
 	}
-	url := n.absolute(util.Deref(notification.Path), notification.Kind == "sub" && util.Deref(notification.Path) == consoleQueuePath)
+	path := util.Deref(notification.Path)
+	url := n.absolute(path, path == consoleQueuePath || (notification.Kind == "feedback" && path == consoleFeedbackPath))
 	body := util.Deref(notification.Body)
 
 	text := fmt.Sprintf("%s\n%s\n\n%s\n\nOpen Bangkee: %s\n\nYou are getting this because you use Bangkee, the shared credit book.\n",

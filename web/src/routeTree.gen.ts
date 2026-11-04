@@ -14,9 +14,11 @@ import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as AdminFeedbackRouteImport } from './routes/_admin/feedback'
 import { Route as AdminShopsRouteImport } from './routes/_admin/shops'
 import { Route as AdminSubscription_paymentsRouteImport } from './routes/_admin/subscription_payments'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppHelpRouteImport } from './routes/_app/help'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppRecordRouteImport } from './routes/_app/record'
@@ -65,6 +67,11 @@ const OfflineRoute = OfflineRouteImport.update({
   path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminShopsRoute = AdminShopsRouteImport.update({
   id: '/shops',
   path: '/shops',
@@ -79,6 +86,11 @@ const AdminSubscription_paymentsRoute =
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHelpRoute = AppHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => AppRoute,
 } as any)
 const AppInsightsRoute = AppInsightsRouteImport.update({
@@ -211,9 +223,11 @@ const AppAccountsIdPaymentsNewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/offline': typeof OfflineRoute
+  '/feedback': typeof AdminFeedbackRoute
   '/shops': typeof AdminShopsRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/help': typeof AppHelpRoute
   '/insights': typeof AppInsightsRoute
   '/notifications': typeof AppNotificationsRoute
   '/record': typeof AppRecordRoute
@@ -243,9 +257,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/offline': typeof OfflineRoute
+  '/feedback': typeof AdminFeedbackRoute
   '/shops': typeof AppShopsIndexRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/help': typeof AppHelpRoute
   '/insights': typeof AppInsightsRoute
   '/notifications': typeof AppNotificationsRoute
   '/record': typeof AppRecordRoute
@@ -278,9 +294,11 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/offline': typeof OfflineRoute
+  '/_admin/feedback': typeof AdminFeedbackRoute
   '/_admin/shops': typeof AdminShopsRoute
   '/_admin/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/help': typeof AppHelpRoute
   '/_app/insights': typeof AppInsightsRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/record': typeof AppRecordRoute
@@ -312,9 +330,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/offline'
+    | '/feedback'
     | '/shops'
     | '/subscription_payments'
     | '/dashboard'
+    | '/help'
     | '/insights'
     | '/notifications'
     | '/record'
@@ -344,9 +364,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/offline'
+    | '/feedback'
     | '/shops'
     | '/subscription_payments'
     | '/dashboard'
+    | '/help'
     | '/insights'
     | '/notifications'
     | '/record'
@@ -378,9 +400,11 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/offline'
+    | '/_admin/feedback'
     | '/_admin/shops'
     | '/_admin/subscription_payments'
     | '/_app/dashboard'
+    | '/_app/help'
     | '/_app/insights'
     | '/_app/notifications'
     | '/_app/record'
@@ -453,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_admin/feedback': {
+      id: '/_admin/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/shops': {
       id: '/_admin/shops'
       path: '/shops'
@@ -472,6 +503,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/help': {
+      id: '/_app/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof AppHelpRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/insights': {
@@ -653,11 +691,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminShopsRoute: typeof AdminShopsRoute
   AdminSubscription_paymentsRoute: typeof AdminSubscription_paymentsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminFeedbackRoute: AdminFeedbackRoute,
   AdminShopsRoute: AdminShopsRoute,
   AdminSubscription_paymentsRoute: AdminSubscription_paymentsRoute,
 }
@@ -666,6 +706,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppHelpRoute: typeof AppHelpRoute
   AppInsightsRoute: typeof AppInsightsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppRecordRoute: typeof AppRecordRoute
@@ -690,6 +731,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppHelpRoute: AppHelpRoute,
   AppInsightsRoute: AppInsightsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppRecordRoute: AppRecordRoute,

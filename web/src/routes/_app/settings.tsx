@@ -7,6 +7,7 @@ import {
   ChevronRightIcon,
   CrownIcon,
   LandmarkIcon,
+  LifeBuoyIcon,
   LogOutIcon,
   MonitorSmartphoneIcon,
   NotebookTextIcon,
@@ -180,6 +181,16 @@ function Settings() {
           </div>
         </Panel>
       </Section>
+
+      {!console && (
+        <Section title="Help & feedback">
+          <Panel flush>
+            <Rows>
+              <Row href="/help" leading={<Tile icon={LifeBuoyIcon} />} title="Help & feedback" subtitle="Feedback, a feature you'd like, or help with a problem" chevron />
+            </Rows>
+          </Panel>
+        </Section>
+      )}
 
       <Section title="Notifications">
         <Panel flush>

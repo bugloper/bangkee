@@ -69,6 +69,20 @@ type BankAccount struct {
 	UpdatedAt     time.Time
 }
 
+type Feedback struct {
+	ID             int64
+	UserID         int64
+	Kind           string
+	Body           string
+	Status         int32
+	Reply          *string
+	ReviewedByID   *int64
+	AcknowledgedAt *time.Time
+	RepliedAt      *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type LineItem struct {
 	ID             int64
 	TransactionID  int64

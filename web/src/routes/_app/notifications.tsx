@@ -23,6 +23,7 @@ const DOT: Record<NotificationKind, string> = {
   cross_out: "bg-muted-foreground",
   overdue: "bg-owed",
   sub: "bg-paid",
+  feedback: "bg-primary",
 }
 
 // The bell. Every push notification has a row here too, so the in-app

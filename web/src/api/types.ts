@@ -74,6 +74,7 @@ export interface Me {
   subscription: Subscription | null
   badges: {
     admin_payments: number // pending subscription payments (platform admins)
+    admin_feedback: number // new feedback messages (platform admins)
   }
   unread_notifications: number
   push: {
@@ -472,7 +473,7 @@ export interface AdminShops {
 
 // ------------------------------------------------------------ notifications
 
-export type NotificationKind = "credit" | "payment" | "cross_out" | "overdue" | "sub"
+export type NotificationKind = "credit" | "payment" | "cross_out" | "overdue" | "sub" | "feedback"
 
 export interface AppNotification {
   id: number
@@ -494,4 +495,41 @@ export interface PushSubscriptionInput {
   endpoint: string
   p256dh_key: string
   auth_key: string
+}
+
+// ---------------------------------------------------------------- feedback
+
+export type FeedbackStatus = "new" | "acknowledged" | "replied"
+
+export interface FeedbackKind {
+  key: "feedback" | "feature" | "support"
+  label: string
+}
+
+export interface FeedbackMessage {
+  id: number
+  kind: FeedbackKind["key"]
+  kind_label: string
+  body: string
+  status: FeedbackStatus
+  reply: string | null
+  created_at: Timestamp
+  acknowledged_at: Timestamp | null
+  replied_at: Timestamp | null
+}
+
+/** GET /api/feedback — what this person has sent, newest first. */
+export interface MyFeedback {
+  messages: FeedbackMessage[]
+  kinds: FeedbackKind[]
+}
+
+/** GET /api/admin/feedback?status=new|acknowledged|replied|all */
+export interface AdminFeedbackQueue {
+  status: string
+  new_count: number
+  messages: (FeedbackMessage & {
+    from: { name: string; email: string | null; phone: string | null; role: "shop_owner" | "customer"; shop: string | null }
+    reviewed_by_name: string | null
+  })[]
 }

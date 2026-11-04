@@ -138,6 +138,13 @@ export const api = {
   approvePayment: (id: number) => post<T.Notice>(`/api/admin/subscription_payments/${id}/approve`),
   rejectPayment: (id: number, rejection_reason: string) => post<T.Notice>(`/api/admin/subscription_payments/${id}/reject`, { rejection_reason }),
   adminShops: () => get<T.AdminShops>("/api/admin/shops"),
+  adminFeedback: (status: string) => get<T.AdminFeedbackQueue>(`/api/admin/feedback${qs({ status })}`),
+  acknowledgeFeedback: (id: number) => post<T.Notice>(`/api/admin/feedback/${id}/acknowledge`),
+  replyToFeedback: (id: number, reply: string) => post<T.Notice>(`/api/admin/feedback/${id}/reply`, { reply }),
+
+  // feedback, feature requests and support
+  myFeedback: () => get<T.MyFeedback>("/api/feedback"),
+  sendFeedback: (kind: string, body: string) => post<T.Notice & { id: number }>("/api/feedback", { kind, body }),
 
   // notifications & push
   notifications: () => get<T.NotificationList>("/api/notifications"),
