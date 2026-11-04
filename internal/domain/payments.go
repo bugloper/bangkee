@@ -114,7 +114,6 @@ type BankAccountDTO struct {
 	AccountName   string  `json:"account_name"`
 	AccountNumber string  `json:"account_number"`
 	Branch        *string `json:"branch"`
-	MobileWallet  *string `json:"mobile_wallet"`
 	Instructions  *string `json:"instructions"`
 	Primary       bool    `json:"primary"`
 	Active        bool    `json:"active"`
@@ -123,7 +122,7 @@ type BankAccountDTO struct {
 func BankAccountView(b store.BankAccount) BankAccountDTO {
 	return BankAccountDTO{
 		ID: b.ID, BankName: b.BankName, AccountName: b.AccountName, AccountNumber: b.AccountNumber, Branch: b.Branch,
-		MobileWallet: b.MobileWallet, Instructions: b.Instructions, Primary: b.Primary, Active: b.Active,
+		Instructions: b.Instructions, Primary: b.Primary, Active: b.Active,
 	}
 }
 
@@ -145,7 +144,6 @@ type BankAccountInput struct {
 	AccountName   string `json:"account_name"`
 	AccountNumber string `json:"account_number"`
 	Branch        string `json:"branch"`
-	MobileWallet  string `json:"mobile_wallet"`
 	Instructions  string `json:"instructions"`
 	Primary       bool   `json:"primary"`
 	Active        *bool  `json:"active"`
@@ -171,13 +169,13 @@ func SaveBankAccount(ctx context.Context, q *store.Queries, shopID, id int64, in
 	if id == 0 {
 		id, err = q.CreateBankAccount(ctx, store.CreateBankAccountParams{
 			ShopID: shopID, BankName: trim(in.BankName), AccountName: trim(in.AccountName), AccountNumber: trim(in.AccountNumber),
-			Branch: util.Presence(in.Branch), MobileWallet: util.Presence(in.MobileWallet), Instructions: util.Presence(in.Instructions),
+			Branch: util.Presence(in.Branch), Instructions: util.Presence(in.Instructions),
 			Primary: in.Primary, Active: in.active(),
 		})
 	} else {
 		err = q.UpdateBankAccount(ctx, store.UpdateBankAccountParams{
 			ShopID: shopID, ID: id, BankName: trim(in.BankName), AccountName: trim(in.AccountName), AccountNumber: trim(in.AccountNumber),
-			Branch: util.Presence(in.Branch), MobileWallet: util.Presence(in.MobileWallet), Instructions: util.Presence(in.Instructions),
+			Branch: util.Presence(in.Branch), Instructions: util.Presence(in.Instructions),
 			Primary: in.Primary, Active: in.active(),
 		})
 	}

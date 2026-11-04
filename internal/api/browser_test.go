@@ -94,7 +94,7 @@ func newApp(t *testing.T) *app {
 	cfg := config.Config{
 		SecretKeyBase: "test-secret", Host: "bangkee.test", MailFrom: "Bangkee <notifications@bangkee.bt>",
 		Operator: config.OperatorBilling{BankName: "Bank of Bhutan", AccountName: "Bangkee", AccountNumber: "1010 2030 4050",
-			Branch: "Thimphu Main", MobileWallet: "mBoB 17 12 34 56", PriceCents: 30_000},
+			Branch: "Thimphu Main", PriceCents: 30_000},
 	}
 	server := api.NewServer(db, cfg, files)
 	httpServer := httptest.NewServer(server.Handler())

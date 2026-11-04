@@ -24,7 +24,7 @@ func (q *Queries) ApproveSubscriptionPayment(ctx context.Context, arg ApproveSub
 }
 
 const bankAccountInShop = `-- name: BankAccountInShop :one
-SELECT id, shop_id, bank_name, account_name, account_number, branch, mobile_wallet, instructions, "primary", active, created_at, updated_at FROM bank_accounts WHERE shop_id = $1 AND id = $2
+SELECT id, shop_id, bank_name, account_name, account_number, branch, instructions, "primary", active, created_at, updated_at FROM bank_accounts WHERE shop_id = $1 AND id = $2
 `
 
 type BankAccountInShopParams struct {
@@ -42,7 +42,6 @@ func (q *Queries) BankAccountInShop(ctx context.Context, arg BankAccountInShopPa
 		&i.AccountName,
 		&i.AccountNumber,
 		&i.Branch,
-		&i.MobileWallet,
 		&i.Instructions,
 		&i.Primary,
 		&i.Active,
@@ -54,7 +53,7 @@ func (q *Queries) BankAccountInShop(ctx context.Context, arg BankAccountInShopPa
 
 const bankAccountsForShop = `-- name: BankAccountsForShop :many
 
-SELECT id, shop_id, bank_name, account_name, account_number, branch, mobile_wallet, instructions, "primary", active, created_at, updated_at FROM bank_accounts WHERE shop_id = $1 AND (active OR NOT $2::boolean)
+SELECT id, shop_id, bank_name, account_name, account_number, branch, instructions, "primary", active, created_at, updated_at FROM bank_accounts WHERE shop_id = $1 AND (active OR NOT $2::boolean)
 ORDER BY "primary" DESC, id
 `
 
@@ -80,7 +79,6 @@ func (q *Queries) BankAccountsForShop(ctx context.Context, arg BankAccountsForSh
 			&i.AccountName,
 			&i.AccountNumber,
 			&i.Branch,
-			&i.MobileWallet,
 			&i.Instructions,
 			&i.Primary,
 			&i.Active,
@@ -98,8 +96,8 @@ func (q *Queries) BankAccountsForShop(ctx context.Context, arg BankAccountsForSh
 }
 
 const createBankAccount = `-- name: CreateBankAccount :one
-INSERT INTO bank_accounts (shop_id, bank_name, account_name, account_number, branch, mobile_wallet, instructions, "primary", active)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
+INSERT INTO bank_accounts (shop_id, bank_name, account_name, account_number, branch, instructions, "primary", active)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id
 `
 
 type CreateBankAccountParams struct {
@@ -108,7 +106,6 @@ type CreateBankAccountParams struct {
 	AccountName   string
 	AccountNumber string
 	Branch        *string
-	MobileWallet  *string
 	Instructions  *string
 	Primary       bool
 	Active        bool
@@ -121,7 +118,6 @@ func (q *Queries) CreateBankAccount(ctx context.Context, arg CreateBankAccountPa
 		arg.AccountName,
 		arg.AccountNumber,
 		arg.Branch,
-		arg.MobileWallet,
 		arg.Instructions,
 		arg.Primary,
 		arg.Active,
@@ -336,8 +332,8 @@ func (q *Queries) SubscriptionPaymentOwnedBy(ctx context.Context, arg Subscripti
 }
 
 const updateBankAccount = `-- name: UpdateBankAccount :exec
-UPDATE bank_accounts SET bank_name = $3, account_name = $4, account_number = $5, branch = $6, mobile_wallet = $7,
-       instructions = $8, "primary" = $9, active = $10, updated_at = now()
+UPDATE bank_accounts SET bank_name = $3, account_name = $4, account_number = $5, branch = $6,
+       instructions = $7, "primary" = $8, active = $9, updated_at = now()
 WHERE shop_id = $1 AND id = $2
 `
 
@@ -348,7 +344,6 @@ type UpdateBankAccountParams struct {
 	AccountName   string
 	AccountNumber string
 	Branch        *string
-	MobileWallet  *string
 	Instructions  *string
 	Primary       bool
 	Active        bool
@@ -362,7 +357,6 @@ func (q *Queries) UpdateBankAccount(ctx context.Context, arg UpdateBankAccountPa
 		arg.AccountName,
 		arg.AccountNumber,
 		arg.Branch,
-		arg.MobileWallet,
 		arg.Instructions,
 		arg.Primary,
 		arg.Active,

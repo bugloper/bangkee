@@ -8,12 +8,12 @@ ORDER BY "primary" DESC, id;
 SELECT * FROM bank_accounts WHERE shop_id = $1 AND id = $2;
 
 -- name: CreateBankAccount :one
-INSERT INTO bank_accounts (shop_id, bank_name, account_name, account_number, branch, mobile_wallet, instructions, "primary", active)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;
+INSERT INTO bank_accounts (shop_id, bank_name, account_name, account_number, branch, instructions, "primary", active)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;
 
 -- name: UpdateBankAccount :exec
-UPDATE bank_accounts SET bank_name = $3, account_name = $4, account_number = $5, branch = $6, mobile_wallet = $7,
-       instructions = $8, "primary" = $9, active = $10, updated_at = now()
+UPDATE bank_accounts SET bank_name = $3, account_name = $4, account_number = $5, branch = $6,
+       instructions = $7, "primary" = $8, active = $9, updated_at = now()
 WHERE shop_id = $1 AND id = $2;
 
 -- name: DemoteOtherPrimaries :exec

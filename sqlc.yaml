@@ -6,6 +6,7 @@ sql:
   - engine: postgresql
     schema:
       - migrations/20261104174119_create_schema.sql
+      - migrations/20261104192839_drop_mobile_wallet_from_bank_accounts.sql
     queries: db/queries
     gen:
       go:

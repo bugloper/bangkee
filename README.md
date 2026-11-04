@@ -83,6 +83,6 @@ and `S3_*`. Optional: `VAPID_*` for Web Push (a key pair:
 `npx web-push generate-vapid-keys`), `SMTP_*` and `BANGKEE_MAIL_FROM` for email,
 `BANGKEE_HOST` for links in email, `BANGKEE_PRICE_CENTS` for the monthly
 price (Nu. 300 by default), and `BANGKEE_BANK_NAME`, `BANGKEE_ACCOUNT_NAME`,
-`BANGKEE_ACCOUNT_NUMBER`, `BANGKEE_BRANCH`, `BANGKEE_WALLET` for where shops
+`BANGKEE_ACCOUNT_NUMBER`, `BANGKEE_BRANCH` for where shops
 pay Bangkee. `SECRET_KEY_BASE` signs the short-lived invite cookie
 and password reset links.

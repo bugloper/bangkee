@@ -56,7 +56,6 @@ const en = {
   "account.account_name": "Account name",
   "account.account_number": "Account number",
   "account.branch": "Branch",
-  "account.mobile_wallet": "Mobile wallet",
   "account.transaction_history": "Transaction history",
   "account.nothing_recorded_title": "Nothing recorded yet",
   "account.nothing_recorded_body": "When the shop adds something to your book it appears here.",

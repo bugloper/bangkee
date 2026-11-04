@@ -20,7 +20,6 @@ export function BankForm({ bank, defaultPrimary = false }: { bank?: BankAccount;
     account_name: bank?.account_name ?? "",
     account_number: bank?.account_number ?? "",
     branch: bank?.branch ?? "",
-    mobile_wallet: bank?.mobile_wallet ?? "",
     instructions: bank?.instructions ?? "",
     primary: bank?.primary ?? defaultPrimary,
     active: bank?.active ?? true,
@@ -32,7 +31,7 @@ export function BankForm({ bank, defaultPrimary = false }: { bank?: BankAccount;
     onSuccess: async (result) => {
       flashNotice(result.notice)
       await refreshAll()
-      if (!bank) setForm({ ...form, bank_name: "", account_name: "", account_number: "", branch: "", mobile_wallet: "", instructions: "", primary: false })
+      if (!bank) setForm({ ...form, bank_name: "", account_name: "", account_number: "", branch: "", instructions: "", primary: false })
       go("/bank_accounts")
     },
   })
@@ -57,14 +56,9 @@ export function BankForm({ bank, defaultPrimary = false }: { bank?: BankAccount;
         <Input id="account_number" required className="tabular" placeholder="1023 4567 8901" value={form.account_number} onChange={set("account_number")} />
       </Field>
       </div>
-      <div className="grid gap-5 sm:grid-cols-2">
       <Field label="Branch" hint="Optional" htmlFor="branch">
         <Input id="branch" placeholder="Thimphu Main" value={form.branch} onChange={set("branch")} />
       </Field>
-      <Field label="Mobile wallet" hint="Optional" htmlFor="mobile_wallet">
-        <Input id="mobile_wallet" placeholder="mBoB 17 55 66 77" value={form.mobile_wallet} onChange={set("mobile_wallet")} />
-      </Field>
-      </div>
       <Field label="Payment instructions" hint="Optional — shown to customers" htmlFor="instructions">
         <Textarea id="instructions" rows={2} placeholder="Send the screenshot after transferring." value={form.instructions} onChange={set("instructions")} />
       </Field>

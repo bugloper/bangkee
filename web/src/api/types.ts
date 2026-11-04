@@ -182,7 +182,6 @@ export interface BankAccount {
   account_name: string
   account_number: string
   branch: string | null
-  mobile_wallet: string | null
   instructions: string | null
   primary: boolean
   active: boolean
@@ -192,7 +191,6 @@ export interface BankAccountInput {
   account_name: string
   account_number: string
   branch?: string
-  mobile_wallet?: string
   instructions?: string
   primary: boolean
   active: boolean
@@ -413,7 +411,6 @@ export interface OperatorBilling {
   account_name: string
   account_number: string
   branch: string
-  mobile_wallet: string
   instructions: string
 }
 

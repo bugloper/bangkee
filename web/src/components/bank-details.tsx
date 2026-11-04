@@ -24,7 +24,6 @@ export function BankDetails({ banks, full }: { banks: BankAccount[]; full?: bool
             <span className="tabular select-all">{bank.account_number}</span>
           </KV>
           {full && bank.branch && <KV label={t("account.branch")}>{bank.branch}</KV>}
-          {bank.mobile_wallet && <KV label={t("account.mobile_wallet")}>{bank.mobile_wallet}</KV>}
           {full && bank.instructions && <p className="mt-1.5 border-t pt-2 text-sm text-muted-foreground">{bank.instructions}</p>}
         </div>
       ))}

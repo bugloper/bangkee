@@ -90,7 +90,6 @@ function BillingView({ data }: { data: Billing }) {
               ["Account name", operator.account_name],
               ["Account number", operator.account_number],
               ["Branch", operator.branch],
-              ["Mobile wallet", operator.mobile_wallet],
             ] as const
           )
             .filter(([, value]) => value)

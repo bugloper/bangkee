@@ -85,7 +85,7 @@ func seed() error {
 	must(q.SetShopKind(ctx, store.SetShopKindParams{ID: shopID, Kind: util.Ptr("grocery")}))
 	must(domain.SaveBankAccount(ctx, q, shopID, 0, domain.BankAccountInput{
 		BankName: "Bank of Bhutan", AccountName: "Karma Dorji", AccountNumber: "1023 4567 8901", Branch: "Thimphu Main",
-		MobileWallet: "mBoB 17 55 66 77", Primary: true,
+		Primary:      true,
 		Instructions: "Show me the payment screen in mBoB after transferring.",
 	}))
 	customer := user("dawa@example.bt", "Dawa Tashi", "17 61 23 45", domain.RoleCustomer)

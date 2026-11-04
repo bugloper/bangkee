@@ -62,7 +62,6 @@ type BankAccount struct {
 	AccountName   string
 	AccountNumber string
 	Branch        *string
-	MobileWallet  *string
 	Instructions  *string
 	Primary       bool
 	Active        bool

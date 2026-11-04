@@ -116,7 +116,7 @@ func (s *Server) billing(c *echo.Context) error {
 		"operator": M{
 			"annual_price_cents": operator.AnnualPriceCents(),
 			"bank_name":          operator.BankName, "account_name": operator.AccountName, "account_number": operator.AccountNumber,
-			"branch": operator.Branch, "mobile_wallet": operator.MobileWallet, "instructions": operator.Instructions(),
+			"branch": operator.Branch, "instructions": operator.Instructions(),
 		},
 	})
 }

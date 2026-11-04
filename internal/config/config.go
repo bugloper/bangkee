@@ -60,7 +60,6 @@ type OperatorBilling struct {
 	AccountName   string
 	AccountNumber string
 	Branch        string
-	MobileWallet  string
 	PriceCents    int64
 }
 
@@ -108,7 +107,6 @@ func FromEnv() (Config, error) {
 			AccountName:   or("BANGKEE_ACCOUNT_NAME", "Bangkee"),
 			AccountNumber: or("BANGKEE_ACCOUNT_NUMBER", "1010 2030 4050"),
 			Branch:        or("BANGKEE_BRANCH", "Thimphu Main"),
-			MobileWallet:  or("BANGKEE_WALLET", "mBoB 17 12 34 56"),
 			PriceCents:    30_000, // Nu. 300 a month
 		},
 	}
