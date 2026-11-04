@@ -76,7 +76,7 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
   const subscription = me.subscription
   return (
     <div className="grid gap-6">
-      <section className="relative overflow-hidden rounded-2xl bg-[linear-gradient(135deg,oklch(0.46_0.17_264),oklch(0.34_0.13_268))] p-5 text-white shadow-sm sm:p-7">
+      <section className="relative overflow-hidden rounded-[1.25rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-5 text-white shadow-lg shadow-primary/25 sm:p-7">
         <div aria-hidden="true" className="absolute -top-20 -right-16 size-64 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div>
@@ -84,7 +84,7 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
             <div className="tabular mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{ngultrum(data.total_outstanding_cents)}</div>
             <div className="mt-2 text-sm text-white/75">{pluralize(data.customers_count, "customer")} · updated just now</div>
           </div>
-          <AppLink href="/accounts/new" className={buttonVariants({ size: "lg", className: "bg-white text-[oklch(0.42_0.16_264)] shadow-sm hover:bg-white/90 max-sm:w-full" })}>
+          <AppLink href="/accounts/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90 max-sm:w-full" })}>
             <PlusIcon /> Add customer
           </AppLink>
         </div>
@@ -185,7 +185,7 @@ function Customer({ data }: { data: CustomerDashboard }) {
   const settled = data.total_owed_cents === 0
   return (
     <div className="grid gap-6">
-      <section className={cn("relative overflow-hidden rounded-2xl p-5 shadow-sm sm:p-7", settled ? "bg-[linear-gradient(135deg,oklch(0.52_0.12_158),oklch(0.4_0.1_165))] text-white" : "bg-[linear-gradient(135deg,oklch(0.46_0.17_264),oklch(0.34_0.13_268))] text-white")}>
+      <section className={cn("relative overflow-hidden rounded-[1.25rem] p-5 shadow-lg sm:p-7", settled ? "bg-[linear-gradient(135deg,oklch(0.52_0.12_158),oklch(0.4_0.1_165))] text-white" : "bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] text-white shadow-primary/25")}>
         <div aria-hidden="true" className="absolute -top-20 -right-16 size-64 rounded-full bg-white/10 blur-2xl" />
         <div className="relative">
           <div className="text-sm opacity-75">{t("customer_home.total_label")}</div>

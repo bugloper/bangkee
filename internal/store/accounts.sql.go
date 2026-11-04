@@ -371,6 +371,43 @@ func (q *Queries) EndPinReset(ctx context.Context, id int64) error {
 	return err
 }
 
+const owingAccounts = `-- name: OwingAccounts :many
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts WHERE shop_id = $1 AND balance_cents > 0 ORDER BY balance_cents DESC, id
+`
+
+// Everyone who owes the shop something, most first.
+func (q *Queries) OwingAccounts(ctx context.Context, shopID int64) ([]Account, error) {
+	rows, err := q.db.Query(ctx, owingAccounts, shopID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Account
+	for rows.Next() {
+		var i Account
+		if err := rows.Scan(
+			&i.ID,
+			&i.ShopID,
+			&i.CustomerID,
+			&i.CustomerName,
+			&i.CustomerPhone,
+			&i.InviteToken,
+			&i.PinResetUntil,
+			&i.BalanceCents,
+			&i.LastActivityAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const recentAuditEvents = `-- name: RecentAuditEvents :many
 SELECT e.id, e.action, e.created_at, e.metadata, u.name AS actor_name
 FROM audit_events e LEFT JOIN users u ON u.id = e.actor_id
@@ -421,8 +458,8 @@ func (q *Queries) RecentAuditEvents(ctx context.Context, arg RecentAuditEventsPa
 const recomputeBalance = `-- name: RecomputeBalance :exec
 UPDATE accounts SET
   balance_cents = COALESCE((SELECT SUM(CASE t.kind WHEN 0 THEN t.amount_cents ELSE -t.amount_cents END)
-                            FROM transactions t WHERE t.account_id = $1 AND t.voided_at IS NULL), 0),
-  last_activity_at = (SELECT MAX(t.occurred_at) FROM transactions t WHERE t.account_id = $1 AND t.voided_at IS NULL),
+                            FROM transactions t WHERE t.account_id = $1 AND t.crossed_out_at IS NULL), 0),
+  last_activity_at = (SELECT MAX(t.occurred_at) FROM transactions t WHERE t.account_id = $1 AND t.crossed_out_at IS NULL),
   updated_at = now()
 WHERE accounts.id = $1
 `

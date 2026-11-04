@@ -148,10 +148,10 @@ export interface LedgerEntry {
   payment_method: string | null
   occurred_at: Timestamp
   itemized: boolean
-  voided: boolean
-  voided_at: Timestamp | null
+  crossed_out: boolean
+  crossed_out_at: Timestamp | null
   created_by_name: string
-  running_balance_cents: Cents | null // null for voided rows (BR-11)
+  running_balance_cents: Cents | null // null for crossed-out rows (BR-11)
   line_items: LineItem[]
   screenshot_url: string | null // a payment's photo of the customer's payment screen; /api/attachments/:id
 }
@@ -213,7 +213,7 @@ export type AccountDetail =
   | {
       viewer: "owner"
       account: AccountSummary
-      ledger: LedgerEntry[] // newest first, voided rows included
+      ledger: LedgerEntry[] // newest first, crossed-out rows included
       audit_events: AuditEvent[] // latest 10
       write_locked: boolean
     }
@@ -221,7 +221,7 @@ export type AccountDetail =
       viewer: "customer"
       account: AccountSummary
       shop: { id: number; name: string }
-      ledger: LedgerEntry[] // newest first, voided rows included
+      ledger: LedgerEntry[] // newest first, crossed-out rows included
       bank_accounts: BankAccount[] // active, primary first
     }
 
@@ -242,7 +242,7 @@ export interface CreditInput {
   idempotency_key?: string // stamped by the offline queue
 }
 
-export const PAYMENT_METHODS = ["Cash", "Mobile transfer", "Bank transfer", "Other"] as const
+export const PAYMENT_METHODS = ["Mobile transfer", "Cash", "Other"] as const
 
 /** POST /api/accounts/:id/payments */
 export interface PaymentInput {
@@ -320,6 +320,16 @@ export interface CustomerDashboard {
   spent_month_cents: Cents
   accounts: (AccountSummary & { shop: { id: number; name: string } })[]
   recent_transactions: (LedgerEntry & { account: { id: number; shop_name: string } })[]
+}
+
+/** GET /api/insights?month=YYYY-MM — the owner's book over the last six months. */
+export interface Insights {
+  months: { month: string; label: string; credit_cents: Cents; payment_cents: Cents }[] // oldest first, this month last
+  month: string // the month `entries` are from
+  entries: (LedgerEntry & { account: { id: number; display_name: string } })[] // newest first, crossed-out left out
+  outstanding_cents: Cents
+  owing: AccountSummary[] // everyone who owes, most first
+  overdue_count: number
 }
 
 /** GET /api/dashboard (platform admins use /api/admin/dashboard) */
@@ -465,7 +475,7 @@ export interface AdminShops {
 
 // ------------------------------------------------------------ notifications
 
-export type NotificationKind = "credit" | "payment" | "void" | "overdue" | "sub"
+export type NotificationKind = "credit" | "payment" | "cross_out" | "overdue" | "sub"
 
 export interface AppNotification {
   id: number

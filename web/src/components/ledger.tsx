@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query"
-import { ArrowDownLeftIcon, ArrowUpRightIcon, BanIcon, ChevronDownIcon, PencilIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon, ChevronDownIcon, PencilIcon, StrikethroughIcon } from "lucide-react"
 import { useState } from "react"
 
 import { api } from "@/api/client"
@@ -20,10 +20,10 @@ function titleize(kind: string) {
 
 /** The round glyph that says which way the money went. */
 function KindGlyph({ entry }: { entry: LedgerEntry }) {
-  if (entry.voided) {
+  if (entry.crossed_out) {
     return (
       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <BanIcon className="size-4" />
+        <StrikethroughIcon className="size-4" />
       </span>
     )
   }
@@ -39,8 +39,8 @@ function KindGlyph({ entry }: { entry: LedgerEntry }) {
 /** One entry in the book, as the account screen shows it. */
 export function LedgerRow({ entry, owner, locked }: { entry: LedgerEntry; owner: boolean; locked: boolean }) {
   const [itemsOpen, setItemsOpen] = useState(false)
-  const voidEntry = useMutation({
-    mutationFn: () => api.voidTransaction(entry.id),
+  const crossOutEntry = useMutation({
+    mutationFn: () => api.crossOutTransaction(entry.id),
     onSuccess: async (result) => {
       flashNotice(result.notice)
       await refreshAll()
@@ -49,14 +49,14 @@ export function LedgerRow({ entry, owner, locked }: { entry: LedgerEntry; owner:
 
   const description = entry.description || (entry.kind === "payment" ? "Payment received" : "Goods on credit")
 
-  async function onVoid() {
+  async function onCrossOut() {
     const ok = await confirm(
-      `Void this ${entry.kind}?|${entry.description || titleize(entry.kind)} · ${ngultrum(entry.amount_cents)}. ` +
-        "It stays visible in the history, struck through, and no longer counts in the balance. " +
-        "The void is written to the audit log, and cannot be undone.",
+      `Cross out this ${entry.kind}?|${entry.description || titleize(entry.kind)} · ${ngultrum(entry.amount_cents)}. ` +
+        "It stays in the history with a line through it, and no longer counts in the balance. " +
+        "Crossing out is written to the audit log, and cannot be undone.",
       { danger: true },
     )
-    if (ok) voidEntry.mutate()
+    if (ok) crossOutEntry.mutate()
   }
 
   return (
@@ -66,9 +66,9 @@ export function LedgerRow({ entry, owner, locked }: { entry: LedgerEntry; owner:
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className={cn("text-sm font-medium", entry.voided && "text-muted-foreground line-through decoration-muted-foreground/60")}>{description}</div>
+              <div className={cn("text-sm font-medium", entry.crossed_out && "text-muted-foreground line-through decoration-muted-foreground/60")}>{description}</div>
               <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">
-                {entry.voided && <span className="mr-1.5 inline-flex rounded bg-muted px-1.5 py-px text-[0.625rem] font-semibold tracking-wide uppercase">Voided</span>}
+                {entry.crossed_out && <span className="mr-1.5 inline-flex rounded bg-muted px-1.5 py-px text-[0.625rem] font-semibold tracking-wide uppercase">Crossed out</span>}
                 {dateTime(entry.occurred_at)} · by {entry.created_by_name}
                 {entry.payment_method && ` · ${entry.payment_method}`}
               </div>
@@ -80,10 +80,10 @@ export function LedgerRow({ entry, owner, locked }: { entry: LedgerEntry; owner:
               )}
             </div>
             <div className="shrink-0 text-right">
-              <div className={cn("tabular text-[0.9375rem] font-semibold", entry.voided ? "text-muted-foreground line-through" : entry.kind === "credit" ? "text-owed" : "text-paid")}>
+              <div className={cn("tabular text-[0.9375rem] font-semibold", entry.crossed_out ? "text-muted-foreground line-through" : entry.kind === "credit" ? "text-owed" : "text-paid")}>
                 {ngultrum(entry.signed_amount_cents, true)}
               </div>
-              {!entry.voided && <div className="tabular mt-0.5 text-xs text-muted-foreground">Bal {ngultrum(entry.running_balance_cents)}</div>}
+              {!entry.crossed_out && <div className="tabular mt-0.5 text-xs text-muted-foreground">Bal {ngultrum(entry.running_balance_cents)}</div>}
             </div>
           </div>
 
@@ -114,13 +114,13 @@ export function LedgerRow({ entry, owner, locked }: { entry: LedgerEntry; owner:
             </div>
           )}
 
-          {owner && !entry.voided && !locked && (
+          {owner && !entry.crossed_out && !locked && (
             <div className="mt-2.5 flex gap-1.5">
               <AppLink href={`/transactions/${entry.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <PencilIcon /> Edit
               </AppLink>
-              <button type="button" onClick={onVoid} disabled={voidEntry.isPending} className={buttonVariants({ variant: "destructive", size: "sm" })}>
-                <BanIcon /> Void
+              <button type="button" onClick={onCrossOut} disabled={crossOutEntry.isPending} className={buttonVariants({ variant: "destructive", size: "sm" })}>
+                <StrikethroughIcon /> Cross out
               </button>
             </div>
           )}

@@ -12,7 +12,7 @@ export function ngultrum(cents: number | null | undefined, signed = false): stri
   return `${prefix}${formatted}`
 }
 
-/** What the keypad preview and live totals show for a typed major-unit amount. */
+/** What live totals show for a typed major-unit amount. */
 export function majorAmount(amount: number): string {
   return `Nu. ${amount.toLocaleString("en-US", amount % 1 ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {})}`
 }

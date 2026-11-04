@@ -13,15 +13,15 @@ import (
 )
 
 const accountLedger = `-- name: AccountLedger :many
-SELECT t.id, t.account_id, t.created_by_id, t.voided_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.voided_at, t.created_at, t.updated_at, u.name AS created_by_name
+SELECT t.id, t.account_id, t.created_by_id, t.crossed_out_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.crossed_out_at, t.created_at, t.updated_at, u.name AS created_by_name
 FROM transactions t JOIN users u ON u.id = t.created_by_id
-WHERE t.account_id = $1 AND ($2::boolean OR t.voided_at IS NULL)
+WHERE t.account_id = $1 AND ($2::boolean OR t.crossed_out_at IS NULL)
 ORDER BY t.occurred_at, t.id
 `
 
 type AccountLedgerParams struct {
-	AccountID     int64
-	IncludeVoided bool
+	AccountID         int64
+	IncludeCrossedOut bool
 }
 
 type AccountLedgerRow struct {
@@ -29,9 +29,9 @@ type AccountLedgerRow struct {
 	CreatedByName string
 }
 
-// BR-10: chronological; `include_voided` keeps voided rows on the list.
+// BR-10: chronological; `include_crossed_out` keeps crossed-out rows on the list.
 func (q *Queries) AccountLedger(ctx context.Context, arg AccountLedgerParams) ([]AccountLedgerRow, error) {
-	rows, err := q.db.Query(ctx, accountLedger, arg.AccountID, arg.IncludeVoided)
+	rows, err := q.db.Query(ctx, accountLedger, arg.AccountID, arg.IncludeCrossedOut)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (q *Queries) AccountLedger(ctx context.Context, arg AccountLedgerParams) ([
 			&i.Transaction.ID,
 			&i.Transaction.AccountID,
 			&i.Transaction.CreatedByID,
-			&i.Transaction.VoidedByID,
+			&i.Transaction.CrossedOutByID,
 			&i.Transaction.Kind,
 			&i.Transaction.AmountCents,
 			&i.Transaction.Description,
@@ -52,7 +52,7 @@ func (q *Queries) AccountLedger(ctx context.Context, arg AccountLedgerParams) ([
 			&i.Transaction.Itemized,
 			&i.Transaction.IdempotencyKey,
 			&i.Transaction.OccurredAt,
-			&i.Transaction.VoidedAt,
+			&i.Transaction.CrossedOutAt,
 			&i.Transaction.CreatedAt,
 			&i.Transaction.UpdatedAt,
 			&i.CreatedByName,
@@ -65,6 +65,24 @@ func (q *Queries) AccountLedger(ctx context.Context, arg AccountLedgerParams) ([
 		return nil, err
 	}
 	return items, nil
+}
+
+const crossOutTransaction = `-- name: CrossOutTransaction :execrows
+UPDATE transactions SET crossed_out_at = now(), crossed_out_by_id = $2, updated_at = now()
+WHERE id = $1 AND crossed_out_at IS NULL
+`
+
+type CrossOutTransactionParams struct {
+	ID             int64
+	CrossedOutByID *int64
+}
+
+func (q *Queries) CrossOutTransaction(ctx context.Context, arg CrossOutTransactionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, crossOutTransaction, arg.ID, arg.CrossedOutByID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const insertLineItem = `-- name: InsertLineItem :exec
@@ -172,10 +190,52 @@ func (q *Queries) LineItemsTotal(ctx context.Context, transactionID int64) (int6
 	return column_1, err
 }
 
+const monthlyTotals = `-- name: MonthlyTotals :many
+SELECT to_char(t.occurred_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 0), 0)::bigint AS credit_cents,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 1), 0)::bigint AS payment_cents
+FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL AND t.occurred_at >= $2::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type MonthlyTotalsParams struct {
+	ShopID int64
+	Since  time.Time
+}
+
+type MonthlyTotalsRow struct {
+	Month        string
+	CreditCents  int64
+	PaymentCents int64
+}
+
+// Credit given and payments received per month, months as Bhutan's calendar
+// has them (UTC+6), from `since` on.
+func (q *Queries) MonthlyTotals(ctx context.Context, arg MonthlyTotalsParams) ([]MonthlyTotalsRow, error) {
+	rows, err := q.db.Query(ctx, monthlyTotals, arg.ShopID, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MonthlyTotalsRow
+	for rows.Next() {
+		var i MonthlyTotalsRow
+		if err := rows.Scan(&i.Month, &i.CreditCents, &i.PaymentCents); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const recentAccountsTransactions = `-- name: RecentAccountsTransactions :many
-SELECT t.id, t.account_id, t.created_by_id, t.voided_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.voided_at, t.created_at, t.updated_at, u.name AS created_by_name
+SELECT t.id, t.account_id, t.created_by_id, t.crossed_out_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.crossed_out_at, t.created_at, t.updated_at, u.name AS created_by_name
 FROM transactions t JOIN users u ON u.id = t.created_by_id
-WHERE t.account_id = ANY($1::bigint[]) AND t.voided_at IS NULL
+WHERE t.account_id = ANY($1::bigint[]) AND t.crossed_out_at IS NULL
 ORDER BY t.occurred_at DESC, t.id DESC LIMIT 6
 `
 
@@ -197,7 +257,7 @@ func (q *Queries) RecentAccountsTransactions(ctx context.Context, accountIds []i
 			&i.Transaction.ID,
 			&i.Transaction.AccountID,
 			&i.Transaction.CreatedByID,
-			&i.Transaction.VoidedByID,
+			&i.Transaction.CrossedOutByID,
 			&i.Transaction.Kind,
 			&i.Transaction.AmountCents,
 			&i.Transaction.Description,
@@ -206,7 +266,7 @@ func (q *Queries) RecentAccountsTransactions(ctx context.Context, accountIds []i
 			&i.Transaction.Itemized,
 			&i.Transaction.IdempotencyKey,
 			&i.Transaction.OccurredAt,
-			&i.Transaction.VoidedAt,
+			&i.Transaction.CrossedOutAt,
 			&i.Transaction.CreatedAt,
 			&i.Transaction.UpdatedAt,
 			&i.CreatedByName,
@@ -222,9 +282,9 @@ func (q *Queries) RecentAccountsTransactions(ctx context.Context, accountIds []i
 }
 
 const recentShopTransactions = `-- name: RecentShopTransactions :many
-SELECT t.id, t.account_id, t.created_by_id, t.voided_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.voided_at, t.created_at, t.updated_at, u.name AS created_by_name
+SELECT t.id, t.account_id, t.created_by_id, t.crossed_out_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.crossed_out_at, t.created_at, t.updated_at, u.name AS created_by_name
 FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN users u ON u.id = t.created_by_id
-WHERE a.shop_id = $1 AND t.voided_at IS NULL
+WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL
 ORDER BY t.occurred_at DESC, t.id DESC LIMIT 6
 `
 
@@ -246,7 +306,7 @@ func (q *Queries) RecentShopTransactions(ctx context.Context, shopID int64) ([]R
 			&i.Transaction.ID,
 			&i.Transaction.AccountID,
 			&i.Transaction.CreatedByID,
-			&i.Transaction.VoidedByID,
+			&i.Transaction.CrossedOutByID,
 			&i.Transaction.Kind,
 			&i.Transaction.AmountCents,
 			&i.Transaction.Description,
@@ -255,7 +315,7 @@ func (q *Queries) RecentShopTransactions(ctx context.Context, shopID int64) ([]R
 			&i.Transaction.Itemized,
 			&i.Transaction.IdempotencyKey,
 			&i.Transaction.OccurredAt,
-			&i.Transaction.VoidedAt,
+			&i.Transaction.CrossedOutAt,
 			&i.Transaction.CreatedAt,
 			&i.Transaction.UpdatedAt,
 			&i.CreatedByName,
@@ -273,7 +333,7 @@ func (q *Queries) RecentShopTransactions(ctx context.Context, shopID int64) ([]R
 const repaidSince = `-- name: RepaidSince :one
 SELECT COALESCE(SUM(t.amount_cents), 0)::bigint
 FROM transactions t JOIN accounts a ON a.id = t.account_id
-WHERE a.shop_id = $1 AND t.kind = 1 AND t.voided_at IS NULL AND t.occurred_at >= $2::timestamptz
+WHERE a.shop_id = $1 AND t.kind = 1 AND t.crossed_out_at IS NULL AND t.occurred_at >= $2::timestamptz
 `
 
 type RepaidSinceParams struct {
@@ -288,9 +348,67 @@ func (q *Queries) RepaidSince(ctx context.Context, arg RepaidSinceParams) (int64
 	return column_1, err
 }
 
+const shopTransactionsBetween = `-- name: ShopTransactionsBetween :many
+SELECT t.id, t.account_id, t.created_by_id, t.crossed_out_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.crossed_out_at, t.created_at, t.updated_at, u.name AS created_by_name, a.customer_name AS account_name
+FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN users u ON u.id = t.created_by_id
+WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL
+  AND t.occurred_at >= $2::timestamptz AND t.occurred_at < $3::timestamptz
+ORDER BY t.occurred_at DESC, t.id DESC LIMIT 200
+`
+
+type ShopTransactionsBetweenParams struct {
+	ShopID int64
+	Since  time.Time
+	Until  time.Time
+}
+
+type ShopTransactionsBetweenRow struct {
+	Transaction   Transaction
+	CreatedByName string
+	AccountName   string
+}
+
+func (q *Queries) ShopTransactionsBetween(ctx context.Context, arg ShopTransactionsBetweenParams) ([]ShopTransactionsBetweenRow, error) {
+	rows, err := q.db.Query(ctx, shopTransactionsBetween, arg.ShopID, arg.Since, arg.Until)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ShopTransactionsBetweenRow
+	for rows.Next() {
+		var i ShopTransactionsBetweenRow
+		if err := rows.Scan(
+			&i.Transaction.ID,
+			&i.Transaction.AccountID,
+			&i.Transaction.CreatedByID,
+			&i.Transaction.CrossedOutByID,
+			&i.Transaction.Kind,
+			&i.Transaction.AmountCents,
+			&i.Transaction.Description,
+			&i.Transaction.Notes,
+			&i.Transaction.PaymentMethod,
+			&i.Transaction.Itemized,
+			&i.Transaction.IdempotencyKey,
+			&i.Transaction.OccurredAt,
+			&i.Transaction.CrossedOutAt,
+			&i.Transaction.CreatedAt,
+			&i.Transaction.UpdatedAt,
+			&i.CreatedByName,
+			&i.AccountName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const spentSince = `-- name: SpentSince :one
 SELECT COALESCE(SUM(amount_cents), 0)::bigint FROM transactions
-WHERE account_id = ANY($1::bigint[]) AND kind = 0 AND voided_at IS NULL
+WHERE account_id = ANY($1::bigint[]) AND kind = 0 AND crossed_out_at IS NULL
   AND occurred_at >= $2::timestamptz
 `
 
@@ -307,7 +425,7 @@ func (q *Queries) SpentSince(ctx context.Context, arg SpentSinceParams) (int64, 
 }
 
 const transactionByID = `-- name: TransactionByID :one
-SELECT t.id, t.account_id, t.created_by_id, t.voided_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.voided_at, t.created_at, t.updated_at, u.name AS created_by_name
+SELECT t.id, t.account_id, t.created_by_id, t.crossed_out_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.crossed_out_at, t.created_at, t.updated_at, u.name AS created_by_name
 FROM transactions t JOIN users u ON u.id = t.created_by_id
 WHERE t.id = $1
 `
@@ -324,7 +442,7 @@ func (q *Queries) TransactionByID(ctx context.Context, id int64) (TransactionByI
 		&i.Transaction.ID,
 		&i.Transaction.AccountID,
 		&i.Transaction.CreatedByID,
-		&i.Transaction.VoidedByID,
+		&i.Transaction.CrossedOutByID,
 		&i.Transaction.Kind,
 		&i.Transaction.AmountCents,
 		&i.Transaction.Description,
@@ -333,7 +451,7 @@ func (q *Queries) TransactionByID(ctx context.Context, id int64) (TransactionByI
 		&i.Transaction.Itemized,
 		&i.Transaction.IdempotencyKey,
 		&i.Transaction.OccurredAt,
-		&i.Transaction.VoidedAt,
+		&i.Transaction.CrossedOutAt,
 		&i.Transaction.CreatedAt,
 		&i.Transaction.UpdatedAt,
 		&i.CreatedByName,
@@ -342,7 +460,7 @@ func (q *Queries) TransactionByID(ctx context.Context, id int64) (TransactionByI
 }
 
 const transactionByIdempotencyKey = `-- name: TransactionByIdempotencyKey :one
-SELECT t.id, t.account_id, t.created_by_id, t.voided_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.voided_at, t.created_at, t.updated_at, u.name AS created_by_name
+SELECT t.id, t.account_id, t.created_by_id, t.crossed_out_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.crossed_out_at, t.created_at, t.updated_at, u.name AS created_by_name
 FROM transactions t JOIN users u ON u.id = t.created_by_id
 WHERE t.idempotency_key = $1
 `
@@ -359,7 +477,7 @@ func (q *Queries) TransactionByIdempotencyKey(ctx context.Context, idempotencyKe
 		&i.Transaction.ID,
 		&i.Transaction.AccountID,
 		&i.Transaction.CreatedByID,
-		&i.Transaction.VoidedByID,
+		&i.Transaction.CrossedOutByID,
 		&i.Transaction.Kind,
 		&i.Transaction.AmountCents,
 		&i.Transaction.Description,
@@ -368,7 +486,7 @@ func (q *Queries) TransactionByIdempotencyKey(ctx context.Context, idempotencyKe
 		&i.Transaction.Itemized,
 		&i.Transaction.IdempotencyKey,
 		&i.Transaction.OccurredAt,
-		&i.Transaction.VoidedAt,
+		&i.Transaction.CrossedOutAt,
 		&i.Transaction.CreatedAt,
 		&i.Transaction.UpdatedAt,
 		&i.CreatedByName,
@@ -377,7 +495,7 @@ func (q *Queries) TransactionByIdempotencyKey(ctx context.Context, idempotencyKe
 }
 
 const transactionForOwner = `-- name: TransactionForOwner :one
-SELECT t.id, t.account_id, t.created_by_id, t.voided_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.voided_at, t.created_at, t.updated_at, u.name AS created_by_name
+SELECT t.id, t.account_id, t.created_by_id, t.crossed_out_by_id, t.kind, t.amount_cents, t.description, t.notes, t.payment_method, t.itemized, t.idempotency_key, t.occurred_at, t.crossed_out_at, t.created_at, t.updated_at, u.name AS created_by_name
 FROM transactions t
 JOIN users u ON u.id = t.created_by_id
 JOIN accounts a ON a.id = t.account_id
@@ -402,7 +520,7 @@ func (q *Queries) TransactionForOwner(ctx context.Context, arg TransactionForOwn
 		&i.Transaction.ID,
 		&i.Transaction.AccountID,
 		&i.Transaction.CreatedByID,
-		&i.Transaction.VoidedByID,
+		&i.Transaction.CrossedOutByID,
 		&i.Transaction.Kind,
 		&i.Transaction.AmountCents,
 		&i.Transaction.Description,
@@ -411,7 +529,7 @@ func (q *Queries) TransactionForOwner(ctx context.Context, arg TransactionForOwn
 		&i.Transaction.Itemized,
 		&i.Transaction.IdempotencyKey,
 		&i.Transaction.OccurredAt,
-		&i.Transaction.VoidedAt,
+		&i.Transaction.CrossedOutAt,
 		&i.Transaction.CreatedAt,
 		&i.Transaction.UpdatedAt,
 		&i.CreatedByName,
@@ -464,22 +582,4 @@ func (q *Queries) UpdateTransaction(ctx context.Context, arg UpdateTransactionPa
 		arg.OccurredAt,
 	)
 	return err
-}
-
-const voidTransaction = `-- name: VoidTransaction :execrows
-UPDATE transactions SET voided_at = now(), voided_by_id = $2, updated_at = now()
-WHERE id = $1 AND voided_at IS NULL
-`
-
-type VoidTransactionParams struct {
-	ID         int64
-	VoidedByID *int64
-}
-
-func (q *Queries) VoidTransaction(ctx context.Context, arg VoidTransactionParams) (int64, error) {
-	result, err := q.db.Exec(ctx, voidTransaction, arg.ID, arg.VoidedByID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
 }

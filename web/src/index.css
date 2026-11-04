@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Bangkee's design system: shadcn's theme variables, a calm neutral base and
-   one deep blue accent. Money carries meaning in colour — owed, paid,
+/* Bangkee's design system: shadcn's theme variables, a light grey base with
+   white cards, and one vivid indigo accent. Money carries meaning in colour — owed, paid,
    overdue — and only as text or a faint tint, never as big blocks. */
 
 @theme inline {
@@ -37,55 +37,71 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.985 0.002 264);
-  --foreground: oklch(0.2 0.02 265);
+  --radius: 0.875rem;
+  --background: oklch(0.973 0.002 270);
+  --foreground: oklch(0.19 0.006 270);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 265);
+  --card-foreground: oklch(0.19 0.006 270);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 265);
-  --primary: oklch(0.47 0.17 264);
+  --popover-foreground: oklch(0.19 0.006 270);
+  --primary: oklch(0.51 0.26 277);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.012 264);
-  --secondary-foreground: oklch(0.32 0.1 264);
-  --muted: oklch(0.965 0.004 264);
-  --muted-foreground: oklch(0.52 0.018 265);
-  --accent: oklch(0.955 0.02 264);
-  --accent-foreground: oklch(0.36 0.13 264);
-  --destructive: oklch(0.56 0.2 25);
-  --border: oklch(0.915 0.006 264);
-  --input: oklch(0.89 0.008 264);
-  --ring: oklch(0.6 0.16 264);
-  --sidebar: oklch(0.99 0.002 264);
-  --owed: oklch(0.54 0.19 27);
-  --paid: oklch(0.5 0.12 158);
-  --warn: oklch(0.6 0.14 65);
+  --secondary: oklch(0.955 0.02 277);
+  --secondary-foreground: oklch(0.4 0.2 277);
+  --muted: oklch(0.955 0.003 270);
+  --muted-foreground: oklch(0.54 0.01 270);
+  --accent: oklch(0.95 0.03 277);
+  --accent-foreground: oklch(0.42 0.22 277);
+  --destructive: oklch(0.58 0.21 25);
+  --border: oklch(0.925 0.004 270);
+  --input: oklch(0.9 0.005 270);
+  --ring: oklch(0.6 0.2 277);
+  --sidebar: oklch(0.985 0.002 270);
+  --owed: oklch(0.58 0.2 27);
+  --paid: oklch(0.6 0.13 158);
+  --warn: oklch(0.62 0.14 65);
+  /* Chart slices, in this fixed order (validated: CVD-safe, light and dark). */
+  --series-1: #4f46e5;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-other: #cfd1d8;
+  /* The resting bars of a chart: grey enough to read on a white card. */
+  --bar: oklch(0.91 0.004 270);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: oklch(0.155 0.012 266);
-    --foreground: oklch(0.96 0.004 264);
-    --card: oklch(0.195 0.014 266);
-    --card-foreground: oklch(0.96 0.004 264);
-    --popover: oklch(0.21 0.014 266);
-    --popover-foreground: oklch(0.96 0.004 264);
-    --primary: oklch(0.7 0.14 264);
-    --primary-foreground: oklch(0.16 0.03 266);
-    --secondary: oklch(0.26 0.03 266);
-    --secondary-foreground: oklch(0.88 0.04 264);
-    --muted: oklch(0.24 0.012 266);
-    --muted-foreground: oklch(0.7 0.016 265);
-    --accent: oklch(0.27 0.04 266);
-    --accent-foreground: oklch(0.88 0.05 264);
-    --destructive: oklch(0.68 0.17 25);
-    --border: oklch(1 0 0 / 9%);
+    --background: oklch(0.15 0.006 270);
+    --foreground: oklch(0.96 0.003 270);
+    --card: oklch(0.2 0.008 270);
+    --card-foreground: oklch(0.96 0.003 270);
+    --popover: oklch(0.22 0.008 270);
+    --popover-foreground: oklch(0.96 0.003 270);
+    --primary: oklch(0.65 0.2 277);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.27 0.05 277);
+    --secondary-foreground: oklch(0.88 0.06 277);
+    --muted: oklch(0.25 0.008 270);
+    --muted-foreground: oklch(0.7 0.01 270);
+    --accent: oklch(0.28 0.06 277);
+    --accent-foreground: oklch(0.86 0.08 277);
+    --destructive: oklch(0.68 0.18 25);
+    --border: oklch(1 0 0 / 8%);
     --input: oklch(1 0 0 / 13%);
-    --ring: oklch(0.62 0.14 264);
-    --sidebar: oklch(0.175 0.013 266);
-    --owed: oklch(0.72 0.15 27);
+    --ring: oklch(0.62 0.17 277);
+    --sidebar: oklch(0.175 0.007 270);
+    --owed: oklch(0.72 0.16 27);
     --paid: oklch(0.74 0.13 158);
     --warn: oklch(0.8 0.13 75);
+    --series-1: #7b74f0;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-other: #55565c;
+    --bar: oklch(0.32 0.008 270);
   }
 }
 

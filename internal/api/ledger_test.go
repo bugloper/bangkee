@@ -54,7 +54,7 @@ func TestStateChangingCallsNeedTheAppHeader(t *testing.T) {
 	equal(t, owner.do(forged).Status, 403, "no header")
 }
 
-func TestCreditsAndPaymentsMoveTheBalanceAndVoidsDoNotCount(t *testing.T) {
+func TestCreditsAndPaymentsMoveTheBalanceAndCrossedOutEntriesDoNotCount(t *testing.T) {
 	a := newApp(t)
 	owner := a.browser()
 	owner.openShop("Karma", "karma@shop.bt")
@@ -72,19 +72,19 @@ func TestCreditsAndPaymentsMoveTheBalanceAndVoidsDoNotCount(t *testing.T) {
 
 	// BR-15: a void keeps the row and takes it out of the balance.
 	creditID := credit.num("transaction_id")
-	void := owner.post(fmt.Sprintf("/api/transactions/%d/void", creditID), map[string]any{})
-	equal(t, void.str("notice"), "Transaction voided. It stays on the record.", "void")
-	equal(t, owner.balance(account), -25_050, "balance after void")
-	again := owner.post(fmt.Sprintf("/api/transactions/%d/void", creditID), map[string]any{})
-	equal(t, again.str("error"), "That transaction was already voided.", "void twice")
+	crossed := owner.post(fmt.Sprintf("/api/transactions/%d/cross_out", creditID), map[string]any{})
+	equal(t, crossed.str("notice"), "Entry crossed out. It stays on the record.", "cross out")
+	equal(t, owner.balance(account), -25_050, "balance after crossing out")
+	again := owner.post(fmt.Sprintf("/api/transactions/%d/cross_out", creditID), map[string]any{})
+	equal(t, again.str("error"), "That entry was already crossed out.", "void twice")
 
-	// BR-10/11: newest first, the voided row kept with no running balance.
+	// BR-10/11: newest first, the crossed-out row kept with no running balance.
 	detail := owner.get(fmt.Sprintf("/api/accounts/%d", account))
 	equal(t, detail.len("ledger"), 2, "ledger rows")
 	equal(t, detail.str("ledger.0.kind"), "payment", "newest first")
 	equal(t, detail.num("ledger.0.running_balance_cents"), -25_050, "running balance")
-	equal(t, detail.get("ledger.1.voided"), any(true), "voided row kept")
-	equal(t, detail.get("ledger.1.running_balance_cents"), nil, "voided row has no balance")
+	equal(t, detail.get("ledger.1.crossed_out"), any(true), "crossed-out row kept")
+	equal(t, detail.get("ledger.1.running_balance_cents"), nil, "crossed-out row has no balance")
 	equal(t, detail.str("audit_events.0.action"), "account_created", "audit")
 }
 
@@ -188,14 +188,14 @@ func TestAnAccountWithABalanceCannotBeRemoved(t *testing.T) {
 	equal(t, owner.get(fmt.Sprintf("/api/accounts/%d", account)).Status, 404, "gone")
 }
 
-func TestTheStatementLeavesVoidedEntriesOut(t *testing.T) {
+func TestTheStatementLeavesCrossedOutEntriesOut(t *testing.T) {
 	a := newApp(t)
 	owner := a.browser()
 	owner.openShop("Karma", "karma@shop.bt")
 	account := owner.addCustomer("Sonam")
 	owner.post(fmt.Sprintf("/api/accounts/%d/credits", account), map[string]any{"amount": "750"})
 	mistake := owner.post(fmt.Sprintf("/api/accounts/%d/credits", account), map[string]any{"amount": "99"})
-	owner.post(fmt.Sprintf("/api/transactions/%d/void", mistake.num("transaction_id")), map[string]any{})
+	owner.post(fmt.Sprintf("/api/transactions/%d/cross_out", mistake.num("transaction_id")), map[string]any{})
 	owner.post(fmt.Sprintf("/api/accounts/%d/payments", account), map[string]any{"amount": "250"})
 
 	statement := owner.get(fmt.Sprintf("/api/accounts/%d/statement", account))
@@ -203,4 +203,32 @@ func TestTheStatementLeavesVoidedEntriesOut(t *testing.T) {
 	equal(t, statement.num("debit_cents"), 75_000, "debit")
 	equal(t, statement.num("credit_cents"), 25_000, "credit")
 	equal(t, statement.num("rows.1.running_balance_cents"), 50_000, "running")
+}
+
+func TestInsightsShowTheMonthsAndWhoOwes(t *testing.T) {
+	a := newApp(t)
+	owner := a.browser()
+	owner.openShop("Karma", "karma@shop.bt")
+	pema := owner.addCustomer("Pema")
+	tashi := owner.addCustomer("Tashi")
+	owner.post(fmt.Sprintf("/api/accounts/%d/credits", pema), map[string]any{"amount": "1000"})
+	owner.post(fmt.Sprintf("/api/accounts/%d/payments", pema), map[string]any{"amount": "400"})
+	owner.post(fmt.Sprintf("/api/accounts/%d/credits", tashi), map[string]any{"amount": "250"})
+	crossed := owner.post(fmt.Sprintf("/api/accounts/%d/credits", tashi), map[string]any{"amount": "999"}).num("transaction_id")
+	owner.post(fmt.Sprintf("/api/transactions/%d/cross_out", crossed), map[string]any{})
+
+	insights := owner.get("/api/insights")
+	equal(t, insights.len("months"), 6, "six months")
+	equal(t, insights.num("months.5.credit_cents"), 125_000, "credit this month, crossed-out entries left out")
+	equal(t, insights.num("months.5.payment_cents"), 40_000, "payments this month")
+	equal(t, insights.len("entries"), 3, "this month's entries")
+	equal(t, insights.str("entries.0.account.display_name"), "Tashi", "newest first, with the customer")
+	equal(t, insights.num("outstanding_cents"), 85_000, "owed in all")
+	equal(t, insights.str("owing.0.display_name"), "Pema", "most owed first")
+	equal(t, insights.len("owing"), 2, "everyone owing")
+
+	equal(t, owner.get("/api/insights?month=1999-01").Status, 422, "only the last six months")
+	customer := a.browser()
+	customer.join(owner.invitePath(pema), "Pema", "pema@example.bt")
+	equal(t, customer.get("/api/insights").Status, 403, "owners only")
 }

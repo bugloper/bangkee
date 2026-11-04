@@ -169,7 +169,7 @@ type Transaction struct {
 	ID             int64
 	AccountID      int64
 	CreatedByID    int64
-	VoidedByID     *int64
+	CrossedOutByID *int64
 	Kind           int32
 	AmountCents    int64
 	Description    *string
@@ -178,7 +178,7 @@ type Transaction struct {
 	Itemized       bool
 	IdempotencyKey *string
 	OccurredAt     time.Time
-	VoidedAt       *time.Time
+	CrossedOutAt   *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

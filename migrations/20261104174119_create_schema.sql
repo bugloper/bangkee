@@ -98,7 +98,7 @@ CREATE TABLE transactions (
   id bigserial PRIMARY KEY,
   account_id bigint NOT NULL REFERENCES accounts (id),
   created_by_id bigint NOT NULL REFERENCES users (id),
-  voided_by_id bigint REFERENCES users (id),
+  crossed_out_by_id bigint REFERENCES users (id),
   kind integer NOT NULL DEFAULT 0,
   amount_cents bigint NOT NULL DEFAULT 0,
   description varchar,
@@ -107,7 +107,7 @@ CREATE TABLE transactions (
   itemized boolean NOT NULL DEFAULT false,
   idempotency_key varchar,
   occurred_at timestamptz NOT NULL,
-  voided_at timestamptz,
+  crossed_out_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -116,7 +116,7 @@ CREATE INDEX index_transactions_on_account_id_and_occurred_at ON transactions (a
 CREATE INDEX index_transactions_on_account_id ON transactions (account_id);
 CREATE INDEX index_transactions_on_created_by_id ON transactions (created_by_id);
 CREATE UNIQUE INDEX index_transactions_on_idempotency_key ON transactions (idempotency_key);
-CREATE INDEX index_transactions_on_voided_by_id ON transactions (voided_by_id);
+CREATE INDEX index_transactions_on_crossed_out_by_id ON transactions (crossed_out_by_id);
 
 CREATE TABLE line_items (
   id bigserial PRIMARY KEY,

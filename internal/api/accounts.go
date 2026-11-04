@@ -399,7 +399,7 @@ func (s *Server) createCredit(c *echo.Context) error  { return s.record(c, domai
 func (s *Server) createPayment(c *echo.Context) error { return s.record(c, domain.Payment) }
 
 // statement is the printable page an owner hands over or a customer prints
-// for their own records. Voided entries are left out.
+// for their own records. Crossed-out entries are left out.
 func (s *Server) statement(c *echo.Context) error {
 	account, shop, isOwner, err := s.visibleAccount(c)
 	if err != nil {

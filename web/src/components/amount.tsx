@@ -1,11 +1,7 @@
-import { DeleteIcon } from "lucide-react"
-
-import { pressKey } from "@/lib/keypad"
 import { cn } from "@/lib/utils"
 
-// The amount field — the one input that must never be mistyped — and the
-// on-screen keypad: thumb-sized keys beat a phone keyboard when entering
-// money one-handed behind a counter.
+// The amount field — the one input that must never be mistyped. Large type,
+// and inputMode="decimal" so a phone opens its own number keyboard.
 
 export function AmountField({
   id,
@@ -59,23 +55,6 @@ export function AmountField({
         />
       </div>
       {children}
-    </div>
-  )
-}
-
-export function Keypad({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"]
-  const key = "tabular flex h-14 items-center justify-center rounded-xl bg-muted/70 text-xl font-medium transition-colors select-none hover:bg-muted active:scale-[0.98] active:bg-accent"
-  return (
-    <div className="keypad grid grid-cols-3 gap-2 md:hidden">
-      {keys.map((k) => (
-        <button key={k} type="button" className={key} onClick={() => onChange(pressKey(value, k))}>
-          {k}
-        </button>
-      ))}
-      <button type="button" aria-label="Delete" className={key} onClick={() => onChange(pressKey(value, "back"))}>
-        <DeleteIcon className="size-5" />
-      </button>
     </div>
   )
 }

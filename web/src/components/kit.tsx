@@ -31,11 +31,11 @@ export function Panel({
   id?: string
 }) {
   return (
-    <section id={id} className={cn("overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-xs", className)}>
+    <section id={id} className={cn("overflow-hidden rounded-[1.25rem] border bg-card text-card-foreground", className)}>
       {(title || action) && (
         <header className={cn("flex items-start justify-between gap-3 px-4 pt-4 sm:px-5", flush ? "pb-3" : "pb-0")}>
           <div className="min-w-0">
-            {title && <h2 className="text-[0.9375rem] font-semibold tracking-tight">{title}</h2>}
+            {title && <h2 className="text-base font-semibold tracking-tight">{title}</h2>}
             {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
           </div>
           {action && <div className="shrink-0">{action}</div>}
@@ -133,7 +133,7 @@ export function Stat({ label, value, tone, href, hint }: { label: string; value:
       {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
     </>
   )
-  const classes = "block rounded-2xl border bg-card p-4 shadow-xs"
+  const classes = "block rounded-[1.25rem] border bg-card p-4"
   return href ? (
     <AppLink href={href} className={cn(classes, "transition-colors hover:bg-muted/40")}>
       {body}
@@ -269,10 +269,10 @@ export function Count({ children, tone = "muted" }: { children: React.ReactNode;
 
 // ------------------------------------------------------------------ filters
 
-/** The strip of status filters over a queue: Pending, Confirmed, Rejected, All. */
+/** The strip of filters over a list: a black pill marks the one in use. */
 export function FilterTabs({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <nav aria-label={label} className="flex w-full gap-1 overflow-x-auto rounded-xl bg-muted p-1 sm:w-fit">
+    <nav aria-label={label} className="flex w-full gap-1 overflow-x-auto rounded-full border bg-card p-1 sm:w-fit">
       {children}
     </nav>
   )

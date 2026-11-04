@@ -17,7 +17,9 @@ import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as AdminShopsRouteImport } from './routes/_admin/shops'
 import { Route as AdminSubscription_paymentsRouteImport } from './routes/_admin/subscription_payments'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
+import { Route as AppRecordRouteImport } from './routes/_app/record'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppSubscriptionRouteImport } from './routes/_app/subscription'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app/accounts/index'
@@ -79,9 +81,19 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInsightsRoute = AppInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecordRoute = AppRecordRouteImport.update({
+  id: '/record',
+  path: '/record',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -202,7 +214,9 @@ export interface FileRoutesByFullPath {
   '/shops': typeof AdminShopsRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/insights': typeof AppInsightsRoute
   '/notifications': typeof AppNotificationsRoute
+  '/record': typeof AppRecordRoute
   '/settings': typeof AppSettingsRoute
   '/subscription': typeof AppSubscriptionRoute
   '/accounts/new': typeof AppAccountsNewRoute
@@ -232,7 +246,9 @@ export interface FileRoutesByTo {
   '/shops': typeof AppShopsIndexRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/insights': typeof AppInsightsRoute
   '/notifications': typeof AppNotificationsRoute
+  '/record': typeof AppRecordRoute
   '/settings': typeof AppSettingsRoute
   '/subscription': typeof AppSubscriptionRoute
   '/accounts/new': typeof AppAccountsNewRoute
@@ -265,7 +281,9 @@ export interface FileRoutesById {
   '/_admin/shops': typeof AdminShopsRoute
   '/_admin/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/insights': typeof AppInsightsRoute
   '/_app/notifications': typeof AppNotificationsRoute
+  '/_app/record': typeof AppRecordRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/subscription': typeof AppSubscriptionRoute
   '/_app/accounts/new': typeof AppAccountsNewRoute
@@ -297,7 +315,9 @@ export interface FileRouteTypes {
     | '/shops'
     | '/subscription_payments'
     | '/dashboard'
+    | '/insights'
     | '/notifications'
+    | '/record'
     | '/settings'
     | '/subscription'
     | '/accounts/new'
@@ -327,7 +347,9 @@ export interface FileRouteTypes {
     | '/shops'
     | '/subscription_payments'
     | '/dashboard'
+    | '/insights'
     | '/notifications'
+    | '/record'
     | '/settings'
     | '/subscription'
     | '/accounts/new'
@@ -359,7 +381,9 @@ export interface FileRouteTypes {
     | '/_admin/shops'
     | '/_admin/subscription_payments'
     | '/_app/dashboard'
+    | '/_app/insights'
     | '/_app/notifications'
+    | '/_app/record'
     | '/_app/settings'
     | '/_app/subscription'
     | '/_app/accounts/new'
@@ -450,11 +474,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/insights': {
+      id: '/_app/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AppInsightsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notifications': {
       id: '/_app/notifications'
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/record': {
+      id: '/_app/record'
+      path: '/record'
+      fullPath: '/record'
+      preLoaderRoute: typeof AppRecordRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -628,7 +666,9 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppInsightsRoute: typeof AppInsightsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppRecordRoute: typeof AppRecordRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppAccountsNewRoute: typeof AppAccountsNewRoute
@@ -650,7 +690,9 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppInsightsRoute: AppInsightsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppRecordRoute: AppRecordRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppAccountsNewRoute: AppAccountsNewRoute,

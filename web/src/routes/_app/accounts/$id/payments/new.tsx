@@ -5,9 +5,10 @@ import { useRef, useState } from "react"
 
 import { api } from "@/api/client"
 import { PAYMENT_METHODS, type RecordedEntry } from "@/api/types"
-import { AmountField, Keypad } from "@/components/amount"
+import { AmountField } from "@/components/amount"
 import { AppLink } from "@/components/app-link"
 import { ErrorBox, Field, FormActions, Loading, Segmented } from "@/components/form"
+import { DateTimeField } from "@/components/date-time-field"
 import { Money, Note, Panel } from "@/components/kit"
 import { PaymentScanner } from "@/components/payment-scanner"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -33,7 +34,7 @@ function NewPayment() {
   const account = useQuery({ queryKey: ["account", id], queryFn: () => api.account(id) })
 
   const [amount, setAmount] = useState("")
-  const [method, setMethod] = useState<string>("Cash")
+  const [method, setMethod] = useState<string>("Mobile transfer")
   const [notes, setNotes] = useState("")
   const [occurredAt, setOccurredAt] = useState("")
   const online = useOnline()
@@ -99,7 +100,6 @@ function NewPayment() {
           </div>
         </AmountField>
 
-        <Keypad value={amount} onChange={setAmount} />
 
         <Field label="How did they pay?">
           <Segmented label="How did they pay?" name="payment_method" options={PAYMENT_METHODS} value={method as (typeof PAYMENT_METHODS)[number]} onChange={setMethod} />
@@ -145,8 +145,8 @@ function NewPayment() {
           <Input id="notes" placeholder="e.g. paid at the shop" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
 
-        <Field label="Date" hint="Optional — defaults to now" htmlFor="occurred_at">
-          <Input id="occurred_at" type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
+        <Field label="When" htmlFor="occurred_at">
+          <DateTimeField id="occurred_at" value={occurredAt} onChange={setOccurredAt} />
         </Field>
 
         <FormActions>

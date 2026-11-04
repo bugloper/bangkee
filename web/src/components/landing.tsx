@@ -168,7 +168,7 @@ function HeroVisual() {
           <MiniEntry kind="credit" title="Rice 25 kg, mustard oil" meta="Today · 3 items" amount="+ Nu. 2,150" balance="Nu. 4,250" />
           <MiniEntry kind="payment" title="Payment received" meta="Yesterday · mBoB" amount="− Nu. 1,000" balance="Nu. 2,100" />
           <MiniEntry kind="credit" title="Milk, eggs, bread" meta="12 Oct" amount="+ Nu. 640" balance="Nu. 3,100" />
-          <MiniEntry kind="voided" title="Sugar 5 kg" meta="11 Oct · voided" amount="+ Nu. 310" />
+          <MiniEntry kind="crossed_out" title="Sugar 5 kg" meta="11 Oct · crossed out" amount="+ Nu. 310" />
         </div>
       </PhoneFrame>
 
@@ -214,7 +214,7 @@ function PhoneFrame({ children, className }: { children: React.ReactNode; classN
   )
 }
 
-function MiniEntry({ kind, title, meta, amount, balance }: { kind: "credit" | "payment" | "voided"; title: string; meta: string; amount: string; balance?: string }) {
+function MiniEntry({ kind, title, meta, amount, balance }: { kind: "credit" | "payment" | "crossed_out"; title: string; meta: string; amount: string; balance?: string }) {
   const Icon = kind === "payment" ? ArrowDownLeftIcon : ArrowUpRightIcon
   return (
     <div className="flex items-center gap-2.5 px-4 py-2.5">
@@ -223,17 +223,17 @@ function MiniEntry({ kind, title, meta, amount, balance }: { kind: "credit" | "p
           "flex size-7 shrink-0 items-center justify-center rounded-full",
           kind === "credit" && "bg-owed/10 text-owed",
           kind === "payment" && "bg-paid/10 text-paid",
-          kind === "voided" && "bg-muted text-muted-foreground",
+          kind === "crossed_out" && "bg-muted text-muted-foreground",
         )}
       >
         <Icon className="size-3.5" />
       </span>
       <div className="min-w-0 flex-1">
-        <div className={cn("truncate text-xs font-medium", kind === "voided" && "text-muted-foreground line-through")}>{title}</div>
+        <div className={cn("truncate text-xs font-medium", kind === "crossed_out" && "text-muted-foreground line-through")}>{title}</div>
         <div className="text-[0.6875rem] text-muted-foreground">{meta}</div>
       </div>
       <div className="text-right">
-        <div className={cn("tabular text-xs font-semibold", kind === "credit" && "text-owed", kind === "payment" && "text-paid", kind === "voided" && "text-muted-foreground line-through")}>{amount}</div>
+        <div className={cn("tabular text-xs font-semibold", kind === "credit" && "text-owed", kind === "payment" && "text-paid", kind === "crossed_out" && "text-muted-foreground line-through")}>{amount}</div>
         {balance && <div className="tabular text-[0.625rem] text-muted-foreground">Bal {balance}</div>}
       </div>
     </div>
@@ -286,7 +286,7 @@ function Problem() {
 
 const STEPS: [string, string][] = [
   ["Add your customers", "Type a name and phone number, then share their invite link by WhatsApp, SMS or however you talk. They join free."],
-  ["Record as you go", "Tap Credit or Payment, enter the amount on the big keypad — or list the items. It takes a few seconds, even without signal."],
+  ["Record as you go", "Tap Credit or Payment, type the amount — or pick the items. It takes a few seconds, even without signal."],
   ["Both sides stay in step", "The customer sees the new balance on their phone straight away. When they pay by mBoB or mPay, you photograph the payment screen with the payment."],
 ]
 
@@ -321,7 +321,7 @@ const FEATURES: [LucideIcon, string, string][] = [
   [BellRingIcon, "Push notifications", "Customers hear about every new entry. You hear when a customer joins and when balances run late."],
   [PrinterIcon, "Printable statements", "The whole account on one clean page — every entry, totals and balance — ready to print or save as a PDF."],
   [FileClockIcon, "Overdue reminders", "Late balances are flagged on your home screen, and both you and the customer get a reminder — so you don't have to bring it up."],
-  [HistoryIcon, "A full audit trail", "Nothing is ever deleted. A mistake is voided, struck through and logged — the history stays honest."],
+  [HistoryIcon, "A full audit trail", "Nothing is ever deleted. A mistake is crossed out and logged — the history stays honest."],
 ]
 
 function Features() {

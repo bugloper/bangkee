@@ -29,6 +29,7 @@ const en = {
   "shops.card_body": "See what shops near you sell, and at what price.",
   "nav.customers": "Customers",
   "nav.settings": "Settings",
+  "nav.profile": "Profile",
   "nav.notifications": "Notifications",
   "nav.your_account": "Your account",
   "nav.sign_out": "Sign out",

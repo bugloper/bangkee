@@ -82,6 +82,8 @@ export const api = {
   // home
   dashboard: () => get<T.Dashboard>("/api/dashboard"),
 
+  insights: (month?: string) => get<T.Insights>(`/api/insights${qs({ month })}`),
+
   // accounts & ledger
   accounts: (params: { q?: string; filter?: string }) => get<T.AccountList>(`/api/accounts${qs(params)}`),
   createAccount: (input: T.AccountInput) => post<T.Notice & { account_id: number }>("/api/accounts", input),
@@ -98,7 +100,7 @@ export const api = {
 
   transaction: (id: number) => get<T.TransactionDetail>(`/api/transactions/${id}`),
   updateTransaction: (id: number, input: T.TransactionUpdateInput) => patch<T.Notice & { account_id: number }>(`/api/transactions/${id}`, input),
-  voidTransaction: (id: number) => post<T.Notice & { account_id: number }>(`/api/transactions/${id}/void`),
+  crossOutTransaction: (id: number) => post<T.Notice & { account_id: number }>(`/api/transactions/${id}/cross_out`),
 
   bankAccounts: () => get<{ bank_accounts: T.BankAccount[] }>("/api/bank_accounts"),
   bankAccount: (id: number) => get<T.BankAccount>(`/api/bank_accounts/${id}`),

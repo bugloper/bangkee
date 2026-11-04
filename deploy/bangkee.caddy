@@ -1,0 +1,14 @@
+# Bangkee's site on the VM's shared Caddy: the app and the operator console,
+# which the server tells apart by host. BANGKEE_DOMAIN is set in the proxy's .env.
+{$BANGKEE_DOMAIN}, admin.{$BANGKEE_DOMAIN} {
+	encode zstd gzip
+	# Photos are capped at 8 MB by the app; leave room for the rest of the form.
+	request_body {
+		max_size 12MB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	reverse_proxy bangkee:3000
+}

@@ -32,8 +32,8 @@ UPDATE accounts SET customer_name = $2, customer_phone = $3, updated_at = now() 
 -- BR-6/BR-7: cached on the row so lists don't aggregate per customer.
 UPDATE accounts SET
   balance_cents = COALESCE((SELECT SUM(CASE t.kind WHEN 0 THEN t.amount_cents ELSE -t.amount_cents END)
-                            FROM transactions t WHERE t.account_id = $1 AND t.voided_at IS NULL), 0),
-  last_activity_at = (SELECT MAX(t.occurred_at) FROM transactions t WHERE t.account_id = $1 AND t.voided_at IS NULL),
+                            FROM transactions t WHERE t.account_id = $1 AND t.crossed_out_at IS NULL), 0),
+  last_activity_at = (SELECT MAX(t.occurred_at) FROM transactions t WHERE t.account_id = $1 AND t.crossed_out_at IS NULL),
   updated_at = now()
 WHERE accounts.id = $1;
 
@@ -81,3 +81,7 @@ UPDATE accounts SET invite_token = $2, pin_reset_until = $3, updated_at = now() 
 
 -- name: EndPinReset :exec
 UPDATE accounts SET pin_reset_until = NULL, updated_at = now() WHERE id = $1;
+
+-- name: OwingAccounts :many
+-- Everyone who owes the shop something, most first.
+SELECT * FROM accounts WHERE shop_id = $1 AND balance_cents > 0 ORDER BY balance_cents DESC, id;

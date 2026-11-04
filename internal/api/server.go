@@ -120,6 +120,7 @@ func (s *Server) routes(g *echo.Group) {
 	g.POST("/invitations/:token/pin", s.newPIN)
 	// home
 	g.GET("/dashboard", s.dashboard)
+	g.GET("/insights", s.insights)
 	// accounts & ledger
 	g.GET("/accounts", s.accounts)
 	g.POST("/accounts", s.createAccount)
@@ -133,7 +134,7 @@ func (s *Server) routes(g *echo.Group) {
 	g.POST("/accounts/:id/pin_reset", s.pinReset)
 	g.GET("/transactions/:id", s.transaction)
 	g.PATCH("/transactions/:id", s.updateTransaction)
-	g.POST("/transactions/:id/void", s.voidTransaction)
+	g.POST("/transactions/:id/cross_out", s.crossOutTransaction)
 	// bank details
 	g.GET("/bank_accounts", s.bankAccounts)
 	g.POST("/bank_accounts", s.createBankAccount)

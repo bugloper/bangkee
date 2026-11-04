@@ -24,7 +24,7 @@ const (
 	NotFound
 	// Validation: messages are full sentences ("Customer name can't be blank").
 	Validation
-	// Rule: a business rule said no ("That transaction was already voided.").
+	// Rule: a business rule said no ("That entry was already crossed out.").
 	Rule
 	RateLimited
 )

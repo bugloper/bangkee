@@ -132,10 +132,10 @@ func seed() error {
 		LineItems: []domain.LineInput{{Name: "Rice 25 kg", Quantity: "1", UnitPrice: "620"}, {Name: "Cooking oil 1 L", Quantity: "2", UnitPrice: "95"}, {Name: "Salt 1 kg", Quantity: "2", UnitPrice: "70"}},
 	})
 	must(err)
-	// A voided entry, so the void treatment is visible.
-	voided, err := domain.RecordEntry(ctx, q, tashi.ID, owner.ID, domain.EntryInput{Kind: domain.Credit, Amount: "400", Description: "School supplies", OccurredAt: ago(11)})
+	// A crossed-out entry, so that look is on screen.
+	crossed, err := domain.RecordEntry(ctx, q, tashi.ID, owner.ID, domain.EntryInput{Kind: domain.Credit, Amount: "400", Description: "School supplies", OccurredAt: ago(11)})
 	must(err)
-	_, err = domain.VoidTransaction(ctx, q, voided.Entry, owner.ID)
+	_, err = domain.CrossOutTransaction(ctx, q, crossed.Entry, owner.ID)
 	must(err)
 
 	// A transfer paid at the counter, with the photo the shop took of the

@@ -106,7 +106,7 @@ function StatementScreen() {
       </Panel>
 
       <p className="text-[0.8125rem] text-muted-foreground">
-        Voided entries are excluded. Amounts in Ngultrum.
+        Crossed-out entries are left out. Amounts in Ngultrum.
         {data.viewer === "owner" && ` Questions about this statement go to ${shop.name}.`}
       </p>
     </div>

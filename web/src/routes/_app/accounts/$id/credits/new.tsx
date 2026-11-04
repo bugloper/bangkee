@@ -5,9 +5,10 @@ import { useState } from "react"
 
 import { api } from "@/api/client"
 import type { LineItemInput, MenuItem, RecordedEntry } from "@/api/types"
-import { AmountField, Keypad } from "@/components/amount"
+import { AmountField } from "@/components/amount"
 import { AppLink } from "@/components/app-link"
 import { ErrorBox, Field, FormActions, Loading } from "@/components/form"
+import { DateTimeField } from "@/components/date-time-field"
 import { ItemChooser } from "@/components/item-chooser"
 import { Panel } from "@/components/kit"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -147,7 +148,6 @@ function NewCredit() {
         ) : (
           <>
             <AmountField label={`Amount given on credit to ${name}`} tone="credit" value={amount} onChange={setAmount} autoFocus />
-            <Keypad value={amount} onChange={setAmount} />
             <Field label="What was taken" hint="Optional" htmlFor="description">
               <Input id="description" placeholder="e.g. Groceries, rice, oil" value={description} onChange={(e) => setDescription(e.target.value)} />
             </Field>
@@ -159,8 +159,8 @@ function NewCredit() {
           </>
         )}
 
-        <Field label="Date" hint="Optional — defaults to now" htmlFor="occurred_at">
-          <Input id="occurred_at" type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
+        <Field label="When" htmlFor="occurred_at">
+          <DateTimeField id="occurred_at" value={occurredAt} onChange={setOccurredAt} />
         </Field>
 
         <FormActions>

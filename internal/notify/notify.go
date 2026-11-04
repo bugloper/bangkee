@@ -121,13 +121,13 @@ func (n *Notifier) PaymentRecorded(ctx context.Context, accountID, amountCents i
 	})
 }
 
-func (n *Notifier) TransactionVoided(ctx context.Context, accountID int64, kind string, amountCents int64) {
+func (n *Notifier) TransactionCrossedOut(ctx context.Context, accountID int64, kind string, amountCents int64) {
 	label := "Payment"
 	if kind == "credit" {
 		label = "Credit"
 	}
 	n.toCustomer(ctx, accountID, func(c *accountContext) note {
-		return note{kind: "void", title: "Entry voided at " + c.shopName,
+		return note{kind: "cross_out", title: "Entry crossed out at " + c.shopName,
 			body: fmt.Sprintf("%s of %s no longer counts", label, money.Ngultrum(amountCents, false)), path: accountPath(accountID)}
 	})
 }

@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_app/notifications")({ component: Notific
 const DOT: Record<NotificationKind, string> = {
   credit: "bg-primary",
   payment: "bg-paid",
-  void: "bg-muted-foreground",
+  cross_out: "bg-muted-foreground",
   overdue: "bg-owed",
   sub: "bg-paid",
 }

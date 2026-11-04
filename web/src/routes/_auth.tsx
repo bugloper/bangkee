@@ -10,7 +10,7 @@ import { isAdminHost } from "@/lib/host"
 // Bangkee is; on a phone it is just the form.
 export const Route = createFileRoute("/_auth")({ component: AuthLayout })
 
-const POINTS = ["Every credit and payment, on both phones", "A photo of every mBoB or mPay transfer", "Nothing is ever deleted — voids stay in the history"]
+const POINTS = ["Every credit and payment, on both phones", "A photo of every mBoB or mPay transfer", "Nothing is ever deleted — crossed-out entries stay in the history"]
 
 function AuthLayout() {
   const admin = isAdminHost()

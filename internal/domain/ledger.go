@@ -16,7 +16,7 @@ import (
 )
 
 // Transactions are the entries in the book. A credit adds to what is owed, a
-// payment subtracts (BR-9); entries are never deleted, only voided, and the
+// payment subtracts (BR-9); entries are never deleted, only crossed out, and the
 // void is on the record (BR-15/BR-16). Kind is ActiveRecord's enum: credit 0,
 // payment 1.
 
@@ -71,8 +71,8 @@ type LedgerEntry struct {
 	PaymentMethod       *string       `json:"payment_method"`
 	OccurredAt          time.Time     `json:"occurred_at"`
 	Itemized            bool          `json:"itemized"`
-	Voided              bool          `json:"voided"`
-	VoidedAt            *time.Time    `json:"voided_at"`
+	CrossedOut          bool          `json:"crossed_out"`
+	CrossedOutAt        *time.Time    `json:"crossed_out_at"`
 	CreatedByName       string        `json:"created_by_name"`
 	RunningBalanceCents *int64        `json:"running_balance_cents"`
 	LineItems           []LineItemDTO `json:"line_items"`
@@ -101,7 +101,7 @@ func entryView(e Entry, running *int64, lines []LineItemDTO, screenshot *string)
 	return LedgerEntry{
 		ID: e.ID, Kind: KindKey(e.Kind), AmountCents: e.AmountCents, SignedAmountCents: SignedAmount(e.Transaction),
 		Description: e.Description, Notes: e.Notes, PaymentMethod: e.PaymentMethod, OccurredAt: e.OccurredAt,
-		Itemized: e.Itemized, Voided: e.VoidedAt != nil, VoidedAt: e.VoidedAt, CreatedByName: e.CreatedByName,
+		Itemized: e.Itemized, CrossedOut: e.CrossedOutAt != nil, CrossedOutAt: e.CrossedOutAt, CreatedByName: e.CreatedByName,
 		RunningBalanceCents: running, LineItems: lines, ScreenshotURL: screenshot,
 	}
 }
@@ -128,11 +128,11 @@ func Entries(ctx context.Context, q *store.Queries, entries []Entry) ([]LedgerEn
 }
 
 // Ledger is BR-10: chronological, each row annotated with the balance after
-// it applies. Voided entries never affect the running balance (BR-11); with
-// includeVoided they are listed anyway, with no balance of their own — the
+// it applies. Crossed-out entries never affect the running balance (BR-11); with
+// includeCrossedOut they are listed anyway, with no balance of their own — the
 // ledger screen keeps them visible, struck through.
-func Ledger(ctx context.Context, q *store.Queries, accountID int64, includeVoided bool) ([]LedgerEntry, error) {
-	rows, err := q.AccountLedger(ctx, store.AccountLedgerParams{AccountID: accountID, IncludeVoided: includeVoided})
+func Ledger(ctx context.Context, q *store.Queries, accountID int64, includeCrossedOut bool) ([]LedgerEntry, error) {
+	rows, err := q.AccountLedger(ctx, store.AccountLedgerParams{AccountID: accountID, IncludeCrossedOut: includeCrossedOut})
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func Ledger(ctx context.Context, q *store.Queries, accountID int64, includeVoide
 	out := make([]LedgerEntry, 0, len(rows))
 	for _, row := range rows {
 		var balance *int64
-		if row.Transaction.VoidedAt == nil {
+		if row.Transaction.CrossedOutAt == nil {
 			running += SignedAmount(row.Transaction)
 			balance = util.Ptr(running)
 		}
@@ -381,15 +381,15 @@ func EditTransaction(ctx context.Context, q *store.Queries, t Entry, by int64, i
 	return Audit(ctx, q, TransactionRecordType, t.ID, "edited", &by, map[string]any{"amount_cents": amount})
 }
 
-// VoidTransaction is BR-15: never deleted. The row stays, marked, and out of
-// the balance. False when it was already voided.
-func VoidTransaction(ctx context.Context, q *store.Queries, t Entry, by int64) (bool, error) {
-	voided, err := q.VoidTransaction(ctx, store.VoidTransactionParams{ID: t.ID, VoidedByID: &by})
-	if err != nil || voided == 0 {
+// CrossOutTransaction is BR-15: never deleted. The row stays, marked, and out of
+// the balance. False when it was already crossed out.
+func CrossOutTransaction(ctx context.Context, q *store.Queries, t Entry, by int64) (bool, error) {
+	crossed, err := q.CrossOutTransaction(ctx, store.CrossOutTransactionParams{ID: t.ID, CrossedOutByID: &by})
+	if err != nil || crossed == 0 {
 		return false, err
 	}
 	if err := q.RecomputeBalance(ctx, t.AccountID); err != nil {
 		return false, err
 	}
-	return true, Audit(ctx, q, TransactionRecordType, t.ID, "voided", &by, map[string]any{"amount_cents": t.AmountCents, "kind": KindKey(t.Kind)})
+	return true, Audit(ctx, q, TransactionRecordType, t.ID, "crossed_out", &by, map[string]any{"amount_cents": t.AmountCents, "kind": KindKey(t.Kind)})
 }

@@ -295,7 +295,7 @@ func CreateShop(ctx context.Context, q *store.Queries, ownerID int64, name strin
 
 // Audit appends to the trail (BR-17). Events are written explicitly with
 // their own metadata rather than derived from column diffs, so the log says
-// what happened in domain terms ("voided"), not which columns moved.
+// what happened in domain terms ("crossed_out"), not which columns moved.
 // auditableType holds the Rails class name so rows from either server read
 // the same.
 func Audit(ctx context.Context, q *store.Queries, auditableType string, id int64, action string, actor *int64, metadata map[string]any) error {

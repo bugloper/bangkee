@@ -40,6 +40,32 @@ relative to it. In production the server serves `web/dist` itself; the
 `Dockerfile` builds both and `render.yaml` deploys them as one service. Point
 both `bangkee.bt` and `admin.bangkee.bt` at it.
 
+## Deploying
+
+On a VM, `docker-compose.yml` runs the server and its PostgreSQL. HTTPS comes from the VM's shared
+Caddy at `/opt/proxy` — one proxy for every app on the machine, set up once as described in
+xpensiv's README — which reaches Bangkee over the `edge` Docker network. Bangkee's site on that
+proxy is `deploy/bangkee.caddy`: the app host and `admin.` in front of it for the console.
+
+Once, on the server: add `BANGKEE_DOMAIN` to `/opt/proxy/.env` (an [sslip.io](https://sslip.io)
+name works without DNS, e.g. `bangkee.203.0.113.10.sslip.io`), and give `/opt/bangkee/.env` the
+same `BANGKEE_DOMAIN` plus a `SECRET_KEY_BASE` and a `POSTGRES_PASSWORD`
+(`openssl rand -hex 32` for each).
+
+To deploy or redeploy, from the repository root. The tree is cleared first (keeping `.env`) so a
+file deleted here does not linger there:
+
+```sh
+ssh myserver 'mkdir -p /opt/bangkee && find /opt/bangkee -mindepth 1 -maxdepth 1 ! -name .env -exec rm -rf {} +'
+git archive HEAD | ssh myserver 'tar -x -C /opt/bangkee'
+ssh myserver 'cd /opt/bangkee && docker compose up -d --build'
+ssh myserver 'cp /opt/bangkee/deploy/bangkee.caddy /opt/proxy/sites/ && docker exec caddy caddy reload --config /etc/caddy/Caddyfile'
+```
+
+Migrations run when the server starts. The database and uploaded photos live in the
+`bangkee-db` and `bangkee-storage` volumes and survive rebuilds. For a server that is only for
+trying Bangkee out, `docker compose exec bangkee ./seed` loads the demo data.
+
 ## Tests
 
 ```sh

@@ -8,6 +8,7 @@ import { PAYMENT_METHODS, type TransactionDetail } from "@/api/types"
 import { AmountField } from "@/components/amount"
 import { AppLink } from "@/components/app-link"
 import { ErrorBox, Field, FormActions, Loading } from "@/components/form"
+import { DateTimeField } from "@/components/date-time-field"
 import { Note, Panel } from "@/components/kit"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -87,8 +88,8 @@ function EditForm({ detail }: { detail: TransactionDetail }) {
             <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
 
-          <Field label="Date" htmlFor="occurred_at">
-            <Input id="occurred_at" type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
+          <Field label="When" htmlFor="occurred_at">
+            <DateTimeField id="occurred_at" value={occurredAt} onChange={setOccurredAt} allowNow={false} />
           </Field>
 
           <FormActions>

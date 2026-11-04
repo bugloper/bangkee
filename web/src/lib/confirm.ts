@@ -1,5 +1,5 @@
 // Turbo's confirm, rendered as the design's bottom sheet instead of
-// window.confirm — voiding a transaction deserves a sentence of explanation.
+// window.confirm — crossing out an entry deserves a sentence of explanation.
 // Messages keep the Rails "Title|Body" form.
 
 import { createStore } from "@/lib/store"

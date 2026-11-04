@@ -11,7 +11,7 @@ import (
 	"bangkee/internal/store"
 )
 
-// Transactions after the fact (edit, void), and the shop's published bank
+// Transactions after the fact (edit, cross out), and the shop's published bank
 // details.
 
 func toMap(view any) M {
@@ -70,9 +70,9 @@ func (s *Server) updateTransaction(c *echo.Context) error {
 	return notice(c, "Transaction updated.", M{"account_id": accountID})
 }
 
-// voidTransaction is BR-15: never deleted. The row stays, marked, and out of
+// crossOutTransaction is BR-15: never deleted. The row stays, marked, and out of
 // the balance.
-func (s *Server) voidTransaction(c *echo.Context) error {
+func (s *Server) crossOutTransaction(c *echo.Context) error {
 	o, err := s.owner(c)
 	if err != nil {
 		return err
@@ -87,17 +87,17 @@ func (s *Server) voidTransaction(c *echo.Context) error {
 		if err != nil {
 			return err
 		}
-		voided, err := domain.VoidTransaction(ctx, q, entry, o.User.ID)
-		if err == nil && !voided {
-			err = apperr.NewRule("That transaction was already voided.")
+		crossed, err := domain.CrossOutTransaction(ctx, q, entry, o.User.ID)
+		if err == nil && !crossed {
+			err = apperr.NewRule("That entry was already crossed out.")
 		}
 		return err
 	})
 	if err != nil {
 		return err
 	}
-	s.Notify.TransactionVoided(ctx, entry.AccountID, domain.KindKey(entry.Kind), entry.AmountCents)
-	return notice(c, "Transaction voided. It stays on the record.", M{"account_id": entry.AccountID})
+	s.Notify.TransactionCrossedOut(ctx, entry.AccountID, domain.KindKey(entry.Kind), entry.AmountCents)
+	return notice(c, "Entry crossed out. It stays on the record.", M{"account_id": entry.AccountID})
 }
 
 // ----------------------------------------------------------- bank details

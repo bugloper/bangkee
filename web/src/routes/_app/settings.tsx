@@ -4,7 +4,8 @@ import {
   BellIcon,
   BellRingIcon,
   CheckIcon,
-  CreditCardIcon,
+  ChevronRightIcon,
+  CrownIcon,
   LandmarkIcon,
   LogOutIcon,
   MonitorSmartphoneIcon,
@@ -16,7 +17,8 @@ import {
 
 import { api } from "@/api/client"
 import type { Locale } from "@/api/types"
-import { Initial, Panel, Row, Rows } from "@/components/kit"
+import { AppLink } from "@/components/app-link"
+import { Panel, Row, Rows } from "@/components/kit"
 import { InstallCard } from "@/components/pwa"
 import { Button } from "@/components/ui/button"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
@@ -35,17 +37,28 @@ export const Route = createFileRoute("/_app/settings")({ component: Settings })
 
 function Tile({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-      <Icon className="size-[1.125rem]" />
+    <span className="flex size-9 shrink-0 items-center justify-center text-foreground">
+      <Icon className="size-5" strokeWidth={1.75} />
     </span>
   )
 }
 
-// One screen for everything that isn't the ledger: the shop, billing, bank
-// details, notifications, installing the app, and signing out. In the
+/** A group's heading, above its card. */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="grid gap-2.5">
+      <h2 className="px-1 text-base font-semibold tracking-tight">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+// The person's own screen — Profile in the tab bar: who they are, then
+// everything that isn't the ledger: billing, the shop, its items and bank
+// details, language, notifications, installing the app, and signing out. In the
 // console it is only the person: who they are, their language, signing out.
 function Settings() {
-  usePage("Settings", undefined, { narrow: true })
+  usePage(isAdminHost() ? "Settings" : "Profile", undefined, { narrow: true })
   const me = useMe()
   const t = useT()
   const current = useLocale()
@@ -83,102 +96,136 @@ function Settings() {
 
   return (
     <div className="grid gap-5">
-      <Panel>
-        <div className="flex items-center gap-4">
-          <Initial text={user.initial} size="xl" />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-lg font-semibold tracking-tight">{user.display_name}</div>
-            <div className="truncate text-sm text-muted-foreground">{user.email_address ?? user.phone}</div>
-            <div className="mt-1 text-[0.8125rem] text-muted-foreground">{user.platform_admin ? "Bangkee operator" : shop ? `${shop.name} · shop owner` : "Customer"}</div>
-          </div>
-        </div>
-      </Panel>
+      <div className="flex flex-col items-center pt-2 text-center">
+        <span className="rounded-full p-1 ring-1 ring-border">
+          <span className="flex size-24 items-center justify-center rounded-full bg-accent text-4xl font-semibold text-accent-foreground">{user.initial}</span>
+        </span>
+        <div className="mt-4 text-xl font-semibold tracking-tight">{user.display_name}</div>
+        <div className="mt-0.5 text-sm text-muted-foreground">{user.email_address ?? user.phone}</div>
+        <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{user.platform_admin ? "Bangkee operator" : shop ? `${shop.name} · shop owner` : "Customer"}</div>
+      </div>
+
+      {shop && !console && (
+        <AppLink
+          href="/subscription"
+          className="relative flex items-center gap-3 overflow-hidden rounded-[1.25rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-4 text-white shadow-lg shadow-primary/25"
+        >
+          <span aria-hidden="true" className="absolute -top-10 -right-6 size-32 rounded-full bg-white/15 blur-2xl" />
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
+            <CrownIcon className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2 font-semibold">
+              Bangkee for {shop.name}
+              {subscription && <span className="rounded-md bg-white px-1.5 py-0.5 text-[0.625rem] font-bold tracking-wide text-primary uppercase">{subscription.status_label}</span>}
+            </span>
+            <span className="block truncate text-sm text-white/80">{subscription?.summary ?? "Billing and payments"}</span>
+          </span>
+          <ChevronRightIcon className="size-5 shrink-0" />
+        </AppLink>
+      )}
 
       {!console && <InstallCard />}
 
       {shop && !console && (
-        <Panel flush title="Shop">
-          <Rows>
-            <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
-              <Tile icon={StoreIcon} />
-              <label htmlFor="shop_kind" className="min-w-0 flex-1">
-                <span className="block text-sm font-medium">Type of business</span>
-                <span className="block text-[0.8125rem] text-muted-foreground">Customers find you by it when they browse shops</span>
-              </label>
-              <NativeSelect id="shop_kind" className="w-36" value={shop.kind ?? ""} disabled={kind.isPending} onChange={(e) => kind.mutate(e.target.value)}>
-                <NativeSelectOption value="">Choose…</NativeSelectOption>
-                {(info.data?.shop_kinds ?? []).map((k) => (
-                  <NativeSelectOption key={k.key} value={k.key}>
-                    {k.label}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-            <Row href="/subscription" leading={<Tile icon={CreditCardIcon} />} title="Billing" subtitle={subscription ? `${subscription.status_label} · ${subscription.summary}` : "No subscription"} chevron />
-            <Row href="/menu_items" leading={<Tile icon={NotebookTextIcon} />} title="Items" subtitle={`${pluralize(info.data?.menu_items_count ?? 0, "item")} you sell`} chevron />
-            <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
-          </Rows>
-        </Panel>
+        <Section title="Shop">
+          <Panel flush>
+            <Rows>
+              <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
+                <Tile icon={StoreIcon} />
+                <label htmlFor="shop_kind" className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">Type of business</span>
+                  <span className="block text-[0.8125rem] text-muted-foreground">Customers find you by it when they browse shops</span>
+                </label>
+                <NativeSelect id="shop_kind" className="w-36" value={shop.kind ?? ""} disabled={kind.isPending} onChange={(e) => kind.mutate(e.target.value)}>
+                  <NativeSelectOption value="">Choose…</NativeSelectOption>
+                  {(info.data?.shop_kinds ?? []).map((k) => (
+                    <NativeSelectOption key={k.key} value={k.key}>
+                      {k.label}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
+              <Row href="/menu_items" leading={<Tile icon={NotebookTextIcon} />} title="Items" subtitle={`${pluralize(info.data?.menu_items_count ?? 0, "item")} you sell`} chevron />
+              <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
+            </Rows>
+          </Panel>
+        </Section>
       )}
 
-      <Panel flush title={t("language.choose")}>
-        <div role="radiogroup" aria-label={t("language.choose")} className="divide-y">
-          {LOCALES.map((locale) => {
-            const selected = current === locale
-            return (
-              <button
-                key={locale}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 sm:px-5"
-                onClick={() => language.mutate(locale)}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium">{languageName(locale)}</span>
-                  {locale === "dz" && <span className="mt-0.5 block text-[0.8125rem] text-muted-foreground">{translate(current, "language.hint")}</span>}
-                </span>
-                <span className={cn("flex size-5 items-center justify-center rounded-full border", selected && "border-primary bg-primary text-primary-foreground")}>
-                  {selected && <CheckIcon className="size-3" strokeWidth={3} />}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </Panel>
-
-      <Panel flush title="Notifications">
-        <Rows>
-          <Row
-            leading={<Tile icon={BellRingIcon} />}
-            title="Push notifications"
-            subtitle={<span className="whitespace-normal">{pushStatus ?? pushText}</span>}
-            trailing={
-              push.configured && (
-                <Button variant="outline" size="sm" onClick={() => void enablePush()}>
-                  {push.devices > 0 ? "Add this device" : "Turn on"}
-                </Button>
+      <Section title={t("language.choose")}>
+        <Panel flush>
+          <div role="radiogroup" aria-label={t("language.choose")} className="divide-y">
+            {LOCALES.map((locale) => {
+              const selected = current === locale
+              return (
+                <button
+                  key={locale}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 sm:px-5"
+                  onClick={() => language.mutate(locale)}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{languageName(locale)}</span>
+                    {locale === "dz" && <span className="mt-0.5 block text-[0.8125rem] text-muted-foreground">{translate(current, "language.hint")}</span>}
+                  </span>
+                  <span className={cn("flex size-5 items-center justify-center rounded-full border", selected && "border-primary bg-primary text-primary-foreground")}>
+                    {selected && <CheckIcon className="size-3" strokeWidth={3} />}
+                  </span>
+                </button>
               )
-            }
-          />
-          <Row href="/notifications" leading={<Tile icon={BellIcon} />} title="Notification centre" subtitle={me.unread_notifications > 0 ? `${me.unread_notifications} unread` : "Everything read"} chevron />
-        </Rows>
-      </Panel>
-
-      {!console && (
-        <Panel flush title="Installing Bangkee">
-          <div className="divide-y">
-            <Guide icon={SmartphoneIcon} title="On Android">
-              Chrome menu → “Install app” — or use the Install button when it appears.
-            </Guide>
-            <Guide icon={MonitorSmartphoneIcon} title="On iPhone">
-              Safari cannot install by itself: tap Share, then “Add to Home Screen”. Notifications on iOS only work once Bangkee is on the home screen.
-            </Guide>
+            })}
           </div>
         </Panel>
+      </Section>
+
+      <Section title="Notifications">
+        <Panel flush>
+          <Rows>
+            <Row
+              leading={<Tile icon={BellRingIcon} />}
+              title="Push notifications"
+              subtitle={<span className="whitespace-normal">{pushStatus ?? pushText}</span>}
+              trailing={
+                push.configured && (
+                  <Button variant="outline" size="sm" onClick={() => void enablePush()}>
+                    {push.devices > 0 ? "Add this device" : "Turn on"}
+                  </Button>
+                )
+              }
+            />
+            <Row
+              href="/notifications"
+              leading={<Tile icon={BellIcon} />}
+              title="Notification centre"
+              subtitle={me.unread_notifications > 0 ? `${me.unread_notifications} unread` : "Everything read"}
+              trailing={
+                me.unread_notifications > 0 && <span className="tabular flex size-6 items-center justify-center rounded-full bg-owed text-xs font-semibold text-white">{me.unread_notifications}</span>
+              }
+              chevron
+            />
+          </Rows>
+        </Panel>
+      </Section>
+
+      {!console && (
+        <Section title="Installing Bangkee">
+          <Panel flush>
+            <div className="divide-y">
+              <Guide icon={SmartphoneIcon} title="On Android">
+                Chrome menu → “Install app” — or use the Install button when it appears.
+              </Guide>
+              <Guide icon={MonitorSmartphoneIcon} title="On iPhone">
+                Safari cannot install by itself: tap Share, then “Add to Home Screen”. Notifications on iOS only work once Bangkee is on the home screen.
+              </Guide>
+            </div>
+          </Panel>
+        </Section>
       )}
 
-      <Button variant="outline" size="lg" className="w-full text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => void signOut()}>
+      <Button variant="outline" size="xl" className="w-full text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => void signOut()}>
         <LogOutIcon /> Sign out
       </Button>
     </div>

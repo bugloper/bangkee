@@ -1,4 +1,4 @@
-import { BellIcon, HouseIcon, LayoutGridIcon, PackageIcon, ReceiptTextIcon, SettingsIcon, StoreIcon, UsersIcon, type LucideIcon } from "lucide-react"
+import { BarChart3Icon, BellIcon, HouseIcon, LayoutGridIcon, ReceiptTextIcon, SettingsIcon, StoreIcon, UserRoundIcon, UsersIcon, type LucideIcon } from "lucide-react"
 
 import type { Me } from "@/api/types"
 import { isAdminHost } from "@/lib/host"
@@ -13,7 +13,8 @@ export interface NavItem {
 }
 
 // The destinations in the sidebar and the bottom tab bar — the same list, so
-// the two navigations can never drift apart.
+// the two navigations can never drift apart. A shop owner's tab bar also has
+// the round + in its middle (shell.tsx): recording is what they do most.
 export function navItems(me: Me): NavItem[] {
   if (isAdminHost()) {
     return [
@@ -27,8 +28,8 @@ export function navItems(me: Me): NavItem[] {
     return [
       { label: "Home", icon: HouseIcon, path: "/dashboard", key: "dashboard" },
       { label: "Customers", icon: UsersIcon, path: "/accounts", key: "accounts" },
-      { label: "Items", icon: PackageIcon, path: "/menu_items", key: "menu_items" },
-      { label: "Settings", icon: SettingsIcon, path: "/settings", key: "settings" },
+      { label: "Insights", icon: BarChart3Icon, path: "/insights", key: "insights" },
+      { label: "Profile", icon: UserRoundIcon, path: "/settings", key: "settings" },
     ]
   }
   const locale = me.user.locale ?? "en"
@@ -36,6 +37,7 @@ export function navItems(me: Me): NavItem[] {
     { label: translate(locale, "nav.home"), icon: HouseIcon, path: "/dashboard", key: "dashboard" },
     { label: translate(locale, "nav.shops"), icon: StoreIcon, path: "/shops", key: "shops" },
     { label: translate(locale, "nav.alerts"), icon: BellIcon, path: "/notifications", key: "notifications", badge: me.unread_notifications },
+    { label: translate(locale, "nav.profile"), icon: UserRoundIcon, path: "/settings", key: "settings" },
   ]
 }
 
@@ -45,7 +47,9 @@ const NAV_ROOTS: Record<string, string> = {
   dashboard: "dashboard",
   accounts: "accounts",
   transactions: "accounts",
-  menu_items: "menu_items",
+  insights: "insights",
+  record: "accounts",
+  menu_items: "settings",
   settings: "settings",
   bank_accounts: "settings",
   subscription: "settings",

@@ -18,6 +18,9 @@ COPY internal/ internal/
 COPY migrations/ migrations/
 # Static, so the runtime image needs nothing but CA certificates.
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /bangkee ./cmd/bangkee
+# The demo data, for a server that is only for trying Bangkee out:
+#   docker compose exec bangkee ./seed
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /seed ./cmd/seed
 
 # --------------------------------------------------------------------- runtime
 FROM debian:trixie-slim
@@ -25,6 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /app
 COPY --from=server /bangkee ./bangkee
 COPY --from=web /web/dist ./web/dist
+COPY --from=server /seed ./seed
+COPY db/seed_assets ./db/seed_assets
 RUN useradd --create-home bangkee && mkdir storage && chown bangkee storage
 USER bangkee
 EXPOSE 3000

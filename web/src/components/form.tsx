@@ -65,13 +65,13 @@ export function Segmented<T extends string>({
   label?: string
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1 rounded-xl bg-muted p-1">
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1 rounded-3xl border bg-card p-1">
       {options.map((option) => (
         <label
           key={option}
           className={cn(
-            "relative flex min-h-9 flex-1 cursor-pointer items-center justify-center rounded-lg px-3 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors select-none",
-            "has-checked:bg-card has-checked:text-foreground has-checked:shadow-sm has-checked:ring-1 has-checked:ring-foreground/5",
+            "relative flex min-h-10 flex-1 cursor-pointer items-center justify-center rounded-full px-3.5 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors select-none",
+            "has-checked:bg-foreground has-checked:text-background",
             "has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
           )}
         >
