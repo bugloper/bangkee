@@ -20,3 +20,53 @@ export function matches(needle: string, ...fields: (string | null | undefined)[]
   const n = needle.trim().toLowerCase()
   return !n || fields.some((field) => field?.toLowerCase().includes(n))
 }
+
+/**
+ * Categories most small and medium shops here sell under, offered when an
+ * owner files an item. A bar sells food and a grocery sells drinks, so every
+ * shop gets the whole list; an owner can still type their own.
+ */
+export const COMMON_CATEGORIES: { group: string; categories: string[] }[] = [
+  { group: "Food", categories: ["Meals", "Momos", "Noodles & Thukpa", "Soups", "Snacks", "Fried items", "Bakery", "Sweets & Desserts"] },
+  { group: "Drinks", categories: ["Tea & Coffee", "Soft drinks", "Juice", "Water", "Energy drinks", "Beer", "Wine", "Spirits"] },
+  {
+    group: "Groceries",
+    categories: [
+      "Rice & Grains",
+      "Flour & Atta",
+      "Dal & Pulses",
+      "Cooking oil",
+      "Spices & Masala",
+      "Salt & Sugar",
+      "Vegetables",
+      "Fruits",
+      "Meat",
+      "Fish",
+      "Eggs",
+      "Dairy & Cheese",
+      "Instant noodles",
+      "Biscuits & Chips",
+      "Chocolates & Candy",
+      "Packaged food",
+    ],
+  },
+  {
+    group: "Household & general",
+    categories: [
+      "Doma & Paan",
+      "Household",
+      "Cleaning",
+      "Personal care",
+      "Baby care",
+      "Medicines",
+      "Stationery",
+      "Mobile recharge",
+      "Gas & Fuel",
+      "Hardware",
+      "Electricals",
+      "Clothing",
+      "Games & Table time",
+      "Other",
+    ],
+  },
+]
