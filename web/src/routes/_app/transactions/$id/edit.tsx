@@ -7,12 +7,12 @@ import { api } from "@/api/client"
 import { PAYMENT_METHODS, type TransactionDetail } from "@/api/types"
 import { AmountField } from "@/components/amount"
 import { AppLink } from "@/components/app-link"
+import { ChoiceField } from "@/components/choice-field"
 import { ErrorBox, Field, FormActions, Loading } from "@/components/form"
 import { DateTimeField } from "@/components/date-time-field"
 import { Note, Panel } from "@/components/kit"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
@@ -76,11 +76,7 @@ function EditForm({ detail }: { detail: TransactionDetail }) {
             </Field>
           ) : (
             <Field label="How they paid" htmlFor="payment_method">
-              <NativeSelect id="payment_method" value={method} onChange={(e) => setMethod(e.target.value)}>
-                {PAYMENT_METHODS.map((option) => (
-                  <NativeSelectOption key={option}>{option}</NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <ChoiceField id="payment_method" title="How they paid" value={method} onChange={setMethod} groups={[{ choices: PAYMENT_METHODS.map((m) => ({ value: m, label: m })) }]} />
             </Field>
           )}
 

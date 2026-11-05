@@ -5,13 +5,13 @@ import { useState } from "react"
 
 import { api } from "@/api/client"
 import type { Billing } from "@/api/types"
+import { ChoiceField } from "@/components/choice-field"
 import { ErrorBox, Field, FormActions, Loading } from "@/components/form"
 import { Empty, KV, Panel, Row, Rows } from "@/components/kit"
 import { ScreenshotInput } from "@/components/screenshot-input"
 import { Badge, type BadgeVariant } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { reviewBadge } from "@/lib/ledger"
@@ -119,12 +119,13 @@ function BillingView({ data }: { data: Billing }) {
               </div>
             </Field>
             <Field label="How you paid" htmlFor="method">
-              <NativeSelect id="method" value={method} onChange={(e) => setMethod(e.target.value)}>
-                <NativeSelectOption value="">Choose</NativeSelectOption>
-                {["Bank transfer", "Mobile wallet", "Cash"].map((option) => (
-                  <NativeSelectOption key={option}>{option}</NativeSelectOption>
-                ))}
-              </NativeSelect>
+              <ChoiceField
+                id="method"
+                title="How you paid"
+                value={method}
+                onChange={setMethod}
+                groups={[{ choices: ["Bank transfer", "Mobile wallet", "Cash"].map((m) => ({ value: m, label: m })) }]}
+              />
             </Field>
           </div>
           <Field label="Reference number" hint="Optional" htmlFor="reference">

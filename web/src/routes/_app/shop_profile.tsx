@@ -6,11 +6,11 @@ import { useState } from "react"
 import { api } from "@/api/client"
 import type { ShopProfileForm } from "@/api/types"
 import { AppLink } from "@/components/app-link"
+import { ChoiceField } from "@/components/choice-field"
 import { ErrorBox, Field, Loading } from "@/components/form"
 import { Panel } from "@/components/kit"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
@@ -62,14 +62,7 @@ function ProfileForm({ data }: { data: ShopProfileForm }) {
             <Input id="shop_name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           <Field label="Type of business" hint="Customers find you by it" htmlFor="shop_kind">
-            <NativeSelect id="shop_kind" value={kind} onChange={(e) => setKind(e.target.value)}>
-              <NativeSelectOption value="">Choose…</NativeSelectOption>
-              {data.kinds.map((k) => (
-                <NativeSelectOption key={k.key} value={k.key}>
-                  {k.label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+            <ChoiceField id="shop_kind" title="Type of business" value={kind} onChange={setKind} groups={[{ choices: data.kinds.map((k) => ({ value: k.key, label: k.label })) }]} />
           </Field>
           <Field label="About" hint={`${about.trim().length}/300`} htmlFor="shop_about">
             <Textarea id="shop_about" rows={3} maxLength={300} placeholder="What you sell, what you're known for" value={about} onChange={(e) => setAbout(e.target.value)} />
