@@ -48,15 +48,16 @@ SELECT (SELECT COUNT(*) FROM shops)::bigint AS shops,
 SELECT s.id, s.name, u.name AS owner_name, u.email_address AS owner_email
 FROM shops s JOIN users u ON u.id = s.owner_id ORDER BY s.name, s.id;
 
--- name: SetShopKind :exec
-UPDATE shops SET kind = $2, updated_at = now() WHERE id = $1;
+-- name: UpdateShopProfile :exec
+UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, hours = $7, updated_at = now()
+WHERE id = $1;
 
 -- name: ShopDirectory :many
--- Every shop with something to show a customer: at least one item available.
-SELECT s.id, s.name, s.kind,
-       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id AND m.available)::bigint AS items_count
+-- Every shop with something to show a customer: at least one item listed.
+SELECT s.id, s.name, s.kind, s.location,
+       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count
 FROM shops s
-WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id AND m.available)
+WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
   AND (sqlc.narg(kind)::varchar IS NULL OR s.kind = sqlc.narg(kind))
   AND (sqlc.narg(search)::varchar IS NULL OR s.name ILIKE '%' || sqlc.narg(search) || '%')
 ORDER BY s.name, s.id

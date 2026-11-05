@@ -360,7 +360,7 @@ export interface MenuBoard {
 
 export interface MenuGroup {
   category: string
-  items: { id: number; name: string; price_cents: Cents; image_url: string | null }[]
+  items: { id: number; name: string; price_cents: Cents; available: boolean; image_url: string | null }[]
 }
 
 /** A sort of business customers browse by. */
@@ -371,21 +371,48 @@ export interface ShopKind {
 
 /** GET /api/shops?kind=&q= — every shop with items to show. */
 export interface ShopDirectory {
-  shops: { id: number; name: string; kind: string | null; kind_label: string; items_count: number }[]
+  shops: { id: number; name: string; kind: string | null; kind_label: string; location: string | null; items_count: number }[]
   kinds: ShopKind[]
 }
 
-/** GET /api/shops/:id — a shop's available items, as customers read them. */
+/** What customers read about a shop, above its items. */
+export interface ShopProfile {
+  id: number
+  name: string
+  kind: string | null
+  kind_label: string
+  about: string | null
+  location: string | null
+  phone: string | null
+  hours: string | null
+}
+
+export interface ShopProfileInput {
+  name: string
+  kind: string
+  about: string
+  location: string
+  phone: string
+  hours: string
+}
+
+/** GET /api/shop/profile — the owner's own, to edit. */
+export interface ShopProfileForm {
+  shop: ShopProfile
+  kinds: ShopKind[]
+}
+
+/** GET /api/shops/:id — a shop's profile and items, as customers read them. */
 export interface ShopPage {
-  shop: { id: number; name: string; kind: string | null; kind_label: string }
+  shop: ShopProfile
   menu: MenuGroup[]
+  mine: boolean // the viewer owns it: a preview
 }
 
 // ---------------------------------------------------------------- settings
 
 /** GET /api/settings */
 export interface SettingsInfo {
-  shop_kinds: ShopKind[] // the types of business an owner picks from
   menu_items_count: number
   bank_accounts_count: number
 }

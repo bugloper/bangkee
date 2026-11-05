@@ -76,8 +76,10 @@ func TestACustomerBrowsesShopsAndTheirItems(t *testing.T) {
 	a := newApp(t)
 	owner := a.browser()
 	owner.openShop("Karma", "karma@shop.bt")
-	equal(t, owner.patch("/api/shop/kind", map[string]any{"kind": "spaceship"}).Status, 422, "unknown type")
-	owner.patch("/api/shop/kind", map[string]any{"kind": "restaurant"})
+	equal(t, owner.patch("/api/shop/profile", map[string]any{"name": "Karma's Shop", "kind": "spaceship"}).Status, 422, "unknown type")
+	equal(t, owner.patch("/api/shop/profile", map[string]any{"name": "", "kind": "restaurant"}).Status, 422, "a name is needed")
+	owner.patch("/api/shop/profile", map[string]any{"name": "Karma's Shop", "kind": "restaurant", "location": "Paro Town", "phone": "08 271 234", "hours": "9 – 9"})
+	equal(t, owner.get("/api/shop/profile").str("shop.location"), "Paro Town", "profile saved")
 	owner.post("/api/menu_items", map[string]any{"name": "Momo", "category": "Food", "price": "80", "available": true})
 	owner.post("/api/menu_items", map[string]any{"name": "Thukpa", "price": "100", "available": false})
 	// A shop with nothing to show is not listed.
@@ -90,7 +92,8 @@ func TestACustomerBrowsesShopsAndTheirItems(t *testing.T) {
 	equal(t, shops.len("shops"), 1, "only shops with items")
 	equal(t, shops.str("shops.0.name"), "Karma's Shop", "listed")
 	equal(t, shops.str("shops.0.kind_label"), "Restaurant", "type")
-	equal(t, shops.num("shops.0.items_count"), 1, "available items counted")
+	equal(t, shops.num("shops.0.items_count"), 2, "items counted")
+	equal(t, shops.str("shops.0.location"), "Paro Town", "where it is")
 	equal(t, dawa.get("/api/shops?kind=grocery").len("shops"), 0, "filtered by type")
 	equal(t, dawa.get("/api/shops?q=karma").len("shops"), 1, "searched by name")
 
@@ -98,7 +101,10 @@ func TestACustomerBrowsesShopsAndTheirItems(t *testing.T) {
 	equal(t, page.str("menu.0.category"), "Food", "grouped")
 	equal(t, page.str("menu.0.items.0.name"), "Momo", "available items")
 	equal(t, page.num("menu.0.items.0.price_cents"), 8_000, "with prices")
-	equal(t, page.len("menu"), 1, "nothing unavailable")
+	equal(t, page.str("shop.hours"), "9 – 9", "the profile")
+	equal(t, page.str("menu.1.items.0.name"), "Thukpa", "out of stock still listed")
+	equal(t, page.get("menu.1.items.0.available"), any(false), "marked out of stock")
+	equal(t, page.get("mine"), any(false), "not the owner")
 	equal(t, a.browser().get("/api/shops").Status, 401, "signed in only")
 }
 

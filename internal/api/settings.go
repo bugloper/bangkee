@@ -38,7 +38,6 @@ func (s *Server) settings(c *echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, M{
 		"menu_items_count": counts.MenuItems, "bank_accounts_count": counts.BankAccounts,
-		"shop_kinds": domain.ShopKinds,
 	})
 }
 

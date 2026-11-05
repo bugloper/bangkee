@@ -20,3 +20,7 @@ WHERE id = $1;
 
 -- name: DeleteMenuItem :exec
 DELETE FROM menu_items WHERE id = $1;
+
+-- name: NextMenuPosition :one
+-- Where a new item goes: after everything already listed.
+SELECT (COALESCE(MAX(position), -1) + 1)::integer FROM menu_items WHERE shop_id = $1;

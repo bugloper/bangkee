@@ -23,11 +23,13 @@ import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppRecordRouteImport } from './routes/_app/record'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppShop_profileRouteImport } from './routes/_app/shop_profile'
 import { Route as AppSubscriptionRouteImport } from './routes/_app/subscription'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app/accounts/index'
 import { Route as AppAccountsNewRouteImport } from './routes/_app/accounts/new'
 import { Route as AppBank_accountsIndexRouteImport } from './routes/_app/bank_accounts/index'
 import { Route as AppMenu_itemsIndexRouteImport } from './routes/_app/menu_items/index'
+import { Route as AppMenu_itemsNewRouteImport } from './routes/_app/menu_items/new'
 import { Route as AppShopsIndexRouteImport } from './routes/_app/shops/index'
 import { Route as AppShopsIdRouteImport } from './routes/_app/shops/$id'
 import { Route as AuthJoinTokenRouteImport } from './routes/_auth/join/$token'
@@ -113,6 +115,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppShop_profileRoute = AppShop_profileRouteImport.update({
+  id: '/shop_profile',
+  path: '/shop_profile',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   id: '/subscription',
   path: '/subscription',
@@ -136,6 +143,11 @@ const AppBank_accountsIndexRoute = AppBank_accountsIndexRouteImport.update({
 const AppMenu_itemsIndexRoute = AppMenu_itemsIndexRouteImport.update({
   id: '/menu_items/',
   path: '/menu_items/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMenu_itemsNewRoute = AppMenu_itemsNewRouteImport.update({
+  id: '/menu_items/new',
+  path: '/menu_items/new',
   getParentRoute: () => AppRoute,
 } as any)
 const AppShopsIndexRoute = AppShopsIndexRouteImport.update({
@@ -232,8 +244,10 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/record': typeof AppRecordRoute
   '/settings': typeof AppSettingsRoute
+  '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
   '/accounts/new': typeof AppAccountsNewRoute
+  '/menu_items/new': typeof AppMenu_itemsNewRoute
   '/shops/$id': typeof AppShopsIdRoute
   '/join/$token': typeof AuthJoinTokenRoute
   '/passwords/new': typeof AuthPasswordsNewRoute
@@ -266,8 +280,10 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/record': typeof AppRecordRoute
   '/settings': typeof AppSettingsRoute
+  '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
   '/accounts/new': typeof AppAccountsNewRoute
+  '/menu_items/new': typeof AppMenu_itemsNewRoute
   '/shops/$id': typeof AppShopsIdRoute
   '/join/$token': typeof AuthJoinTokenRoute
   '/passwords/new': typeof AuthPasswordsNewRoute
@@ -303,8 +319,10 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/record': typeof AppRecordRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/shop_profile': typeof AppShop_profileRoute
   '/_app/subscription': typeof AppSubscriptionRoute
   '/_app/accounts/new': typeof AppAccountsNewRoute
+  '/_app/menu_items/new': typeof AppMenu_itemsNewRoute
   '/_app/shops/$id': typeof AppShopsIdRoute
   '/_auth/join/$token': typeof AuthJoinTokenRoute
   '/_auth/passwords/new': typeof AuthPasswordsNewRoute
@@ -339,8 +357,10 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/record'
     | '/settings'
+    | '/shop_profile'
     | '/subscription'
     | '/accounts/new'
+    | '/menu_items/new'
     | '/shops/$id'
     | '/join/$token'
     | '/passwords/new'
@@ -373,8 +393,10 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/record'
     | '/settings'
+    | '/shop_profile'
     | '/subscription'
     | '/accounts/new'
+    | '/menu_items/new'
     | '/shops/$id'
     | '/join/$token'
     | '/passwords/new'
@@ -409,8 +431,10 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/record'
     | '/_app/settings'
+    | '/_app/shop_profile'
     | '/_app/subscription'
     | '/_app/accounts/new'
+    | '/_app/menu_items/new'
     | '/_app/shops/$id'
     | '/_auth/join/$token'
     | '/_auth/passwords/new'
@@ -540,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/shop_profile': {
+      id: '/_app/shop_profile'
+      path: '/shop_profile'
+      fullPath: '/shop_profile'
+      preLoaderRoute: typeof AppShop_profileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/subscription': {
       id: '/_app/subscription'
       path: '/subscription'
@@ -573,6 +604,13 @@ declare module '@tanstack/react-router' {
       path: '/menu_items'
       fullPath: '/menu_items/'
       preLoaderRoute: typeof AppMenu_itemsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/menu_items/new': {
+      id: '/_app/menu_items/new'
+      path: '/menu_items/new'
+      fullPath: '/menu_items/new'
+      preLoaderRoute: typeof AppMenu_itemsNewRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/shops/': {
@@ -711,8 +749,10 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppRecordRoute: typeof AppRecordRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppShop_profileRoute: typeof AppShop_profileRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppAccountsNewRoute: typeof AppAccountsNewRoute
+  AppMenu_itemsNewRoute: typeof AppMenu_itemsNewRoute
   AppShopsIdRoute: typeof AppShopsIdRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
   AppBank_accountsIndexRoute: typeof AppBank_accountsIndexRoute
@@ -736,8 +776,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppRecordRoute: AppRecordRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppShop_profileRoute: AppShop_profileRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppAccountsNewRoute: AppAccountsNewRoute,
+  AppMenu_itemsNewRoute: AppMenu_itemsNewRoute,
   AppShopsIdRoute: AppShopsIdRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
   AppBank_accountsIndexRoute: AppBank_accountsIndexRoute,

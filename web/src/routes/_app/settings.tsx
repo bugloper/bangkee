@@ -22,7 +22,6 @@ import { AppLink } from "@/components/app-link"
 import { Panel, Row, Rows } from "@/components/kit"
 import { InstallCard } from "@/components/pwa"
 import { Button } from "@/components/ui/button"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { flashNotice } from "@/lib/flash"
 import { isAdminHost } from "@/lib/host"
 import { languageName, LOCALES, storeLocale, translate, useLocale, useT } from "@/lib/i18n"
@@ -66,14 +65,6 @@ function Settings() {
   const console = isAdminHost()
   const info = useQuery({ queryKey: ["settings"], queryFn: api.settings, enabled: !console })
   const pushStatus = pushStatusStore.use()
-
-  const kind = useMutation({
-    mutationFn: (value: string) => api.setShopKind(value),
-    onSuccess: async (result) => {
-      flashNotice(result.notice)
-      await refreshAll()
-    },
-  })
 
   const language = useMutation({
     mutationFn: (locale: Locale) => {
@@ -132,21 +123,13 @@ function Settings() {
         <Section title="Shop">
           <Panel flush>
             <Rows>
-              <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
-                <Tile icon={StoreIcon} />
-                <label htmlFor="shop_kind" className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium">Type of business</span>
-                  <span className="block text-[0.8125rem] text-muted-foreground">Customers find you by it when they browse shops</span>
-                </label>
-                <NativeSelect id="shop_kind" className="w-36" value={shop.kind ?? ""} disabled={kind.isPending} onChange={(e) => kind.mutate(e.target.value)}>
-                  <NativeSelectOption value="">Choose…</NativeSelectOption>
-                  {(info.data?.shop_kinds ?? []).map((k) => (
-                    <NativeSelectOption key={k.key} value={k.key}>
-                      {k.label}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </div>
+              <Row
+                href="/shop_profile"
+                leading={<Tile icon={StoreIcon} />}
+                title="Shop profile"
+                subtitle={shop.kind ? "What customers read about your shop" : "Add your type, location and hours"}
+                chevron
+              />
               <Row href="/menu_items" leading={<Tile icon={NotebookTextIcon} />} title="Items" subtitle={`${pluralize(info.data?.menu_items_count ?? 0, "item")} you sell`} chevron />
               <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
             </Rows>

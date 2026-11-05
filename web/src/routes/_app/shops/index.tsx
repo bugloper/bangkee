@@ -4,12 +4,12 @@ import { SearchIcon, StoreIcon } from "lucide-react"
 import { useState } from "react"
 
 import { api } from "@/api/client"
+import { Chips } from "@/components/catalog"
 import { Loading } from "@/components/form"
 import { Empty, Initial, Panel, Row, Rows } from "@/components/kit"
 import { Input } from "@/components/ui/input"
 import { pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
-import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_app/shops/")({ component: Shops })
 
@@ -28,25 +28,7 @@ function Shops() {
         <Input type="search" aria-label="Search shops" placeholder="Search shops" className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      {data && (
-        <div role="radiogroup" aria-label="Type of business" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          {[{ key: "", label: "All" }, ...data.kinds].map((k) => (
-            <button
-              key={k.key}
-              type="button"
-              role="radio"
-              aria-checked={kind === k.key}
-              onClick={() => setKind(k.key)}
-              className={cn(
-                "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
-                kind === k.key ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {k.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {data && <Chips label="Type of business" chips={[{ key: "", label: "All" }, ...data.kinds]} value={kind} onChange={setKind} />}
 
       {!data ? (
         <Loading />
@@ -59,7 +41,8 @@ function Shops() {
                 href={`/shops/${shop.id}`}
                 leading={<Initial text={shop.name} />}
                 title={shop.name}
-                subtitle={`${shop.kind_label} · ${pluralize(shop.items_count, "item")}`}
+                subtitle={[shop.kind_label, shop.location].filter(Boolean).join(" · ")}
+                trailing={<span className="text-xs text-muted-foreground">{pluralize(shop.items_count, "item")}</span>}
                 chevron
               />
             ))}

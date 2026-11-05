@@ -113,7 +113,8 @@ func (s *Server) routes(g *echo.Group) {
 	// the shops catalog
 	g.GET("/shops", s.shopDirectory)
 	g.GET("/shops/:id", s.shopPage)
-	g.PATCH("/shop/kind", s.setShopKind)
+	g.GET("/shop/profile", s.shopProfile)
+	g.PATCH("/shop/profile", s.updateShopProfile)
 
 	g.GET("/invitations/:token", s.invitation)
 	g.POST("/invitations/:token/join", s.joinWithPIN)

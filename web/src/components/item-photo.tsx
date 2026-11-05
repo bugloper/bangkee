@@ -61,7 +61,7 @@ export function ItemPhoto({
       <div className="min-w-0 flex-1 text-sm">
         <div className="font-medium">{shown ? "Photo" : "Add a photo"}</div>
         <div className={problem ? "text-destructive" : "text-muted-foreground"}>
-          {problem ?? (busy ? "Preparing it…" : shown ? "Tap it to choose another" : "Optional — customers see it on the menu")}
+          {problem ?? (busy ? "Preparing it…" : shown ? "Tap it to choose another" : "Optional — customers see it on your shop page")}
         </div>
       </div>
       {shown && (

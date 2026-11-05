@@ -23,7 +23,6 @@ import (
 	"bangkee/internal/domain"
 	"bangkee/internal/storage"
 	"bangkee/internal/store"
-	"bangkee/internal/util"
 )
 
 const password = "password"
@@ -82,7 +81,10 @@ func seed() error {
 	owner := user("karma@shop.bt", "Karma Dorji", "17 55 66 77", domain.RoleShopOwner)
 	shopID, err := domain.CreateShop(ctx, q, owner.ID, "Karma General Shop", cfg.Operator.PriceCents)
 	must(err)
-	must(q.SetShopKind(ctx, store.SetShopKindParams{ID: shopID, Kind: util.Ptr("grocery")}))
+	must(domain.UpdateShopProfile(ctx, q, shopID, domain.ShopProfileInput{
+		Name: "Karma General Shop", Kind: "grocery", About: "Groceries, household goods and fresh vegetables. Credit for regulars.",
+		Location: "Norzin Lam, Thimphu", Phone: "17 55 66 77", Hours: "8 am – 9 pm, every day",
+	}))
 	must(domain.SaveBankAccount(ctx, q, shopID, 0, domain.BankAccountInput{
 		BankName: "Bank of Bhutan", AccountName: "Karma Dorji", AccountNumber: "1023 4567 8901", Branch: "Thimphu Main",
 		Primary:      true,

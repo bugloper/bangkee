@@ -14,7 +14,6 @@ import (
 
 	"bangkee/internal/domain"
 	"bangkee/internal/store"
-	"bangkee/internal/util"
 )
 
 const perKind = 20
@@ -66,6 +65,9 @@ var demoNames = []string{
 	"Namgay", "Phuntsho", "Lhakhang View", "Dochula", "Thimphu Town", "Paro Valley", "Punakha", "Bumthang", "Gakyid", "Tendrel",
 }
 
+// Where the demo shops are.
+var demoTowns = []string{"Norzin Lam, Thimphu", "Changzamtog, Thimphu", "Paro Town", "Phuentsholing", "Punakha", "Wangdue", "Bumthang", "Gelephu"}
+
 // Owners' names, one per shop of a type.
 var demoOwners = []string{
 	"Tshering Wangchuk", "Pema Lhamo", "Kinley Dorji", "Sonam Choden", "Ugyen Tenzin", "Dechen Wangmo", "Karma Tshering",
@@ -107,11 +109,13 @@ func seedDirectory(ctx context.Context, db *pgxpool.Pool, priceCents int64) erro
 			if err != nil {
 				return err
 			}
-			shopID, err := domain.CreateShop(ctx, q, ownerID, demoNames[i]+" "+kind.suffix, priceCents)
+			name := demoNames[i] + " " + kind.suffix
+			shopID, err := domain.CreateShop(ctx, q, ownerID, name, priceCents)
 			if err != nil {
 				return err
 			}
-			if err := q.SetShopKind(ctx, store.SetShopKindParams{ID: shopID, Kind: util.Ptr(kind.key)}); err != nil {
+			profile := domain.ShopProfileInput{Name: name, Kind: kind.key, Location: demoTowns[(i+k)%len(demoTowns)], Phone: phone}
+			if err := domain.UpdateShopProfile(ctx, q, shopID, profile); err != nil {
 				return err
 			}
 			for p, item := range kind.items {

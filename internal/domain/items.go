@@ -182,7 +182,11 @@ func SaveMenuItem(ctx context.Context, q *store.Queries, shopID int64, item *sto
 	}
 	name := strings.TrimSpace(in.Name)
 	if item == nil {
-		position := int32(0)
+		// Last in the list, unless the caller placed it.
+		position, err := q.NextMenuPosition(ctx, shopID)
+		if err != nil {
+			return 0, "", err
+		}
 		if in.Position != nil {
 			position = *in.Position
 		}

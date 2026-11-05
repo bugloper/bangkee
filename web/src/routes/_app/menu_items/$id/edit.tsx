@@ -34,7 +34,7 @@ function EditMenuItem() {
       <Panel>
         <MenuForm item={data} />
       </Panel>
-      <Panel title="Remove this item" description="Tabs and orders already placed keep their own copy of the name and price.">
+      <Panel title="Remove this item" description="Credits already recorded keep their own copy of the name and price.">
         <Button
           variant="destructive"
           disabled={remove.isPending}

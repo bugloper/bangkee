@@ -147,6 +147,10 @@ type Shop struct {
 	CreditDueDays int32
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	About         *string
+	Location      *string
+	Phone         *string
+	Hours         *string
 }
 
 type Subscription struct {

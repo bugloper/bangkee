@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"net/http"
-	"slices"
 
 	"github.com/labstack/echo/v5"
 
@@ -16,9 +15,10 @@ import (
 // The shops catalog: customers browse Bangkee's shops by type and read each
 // one's items and prices. Ordering happens at the counter, not here.
 
-// menuFor is a shop's available items, grouped as the customer reads them.
+// menuFor is a shop's items, grouped as the customer reads them. Items the
+// shop has marked out of stock stay listed, so a customer can see that.
 func (s *Server) menuFor(ctx context.Context, shopID int64) ([]M, error) {
-	items, err := s.Q.MenuItemsOrdered(ctx, store.MenuItemsOrderedParams{ShopID: shopID, AvailableOnly: true})
+	items, err := s.Q.MenuItemsOrdered(ctx, store.MenuItemsOrderedParams{ShopID: shopID, AvailableOnly: false})
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (s *Server) menuFor(ctx context.Context, shopID int64) ([]M, error) {
 			if url, ok := images[item.ID]; ok {
 				image = &url
 			}
-			lines = append(lines, M{"id": item.ID, "name": item.Name, "price_cents": item.PriceCents, "image_url": image})
+			lines = append(lines, M{"id": item.ID, "name": item.Name, "price_cents": item.PriceCents, "available": item.Available, "image_url": image})
 		}
 		menu = append(menu, M{"category": group.Category, "items": lines})
 	}
@@ -55,15 +55,18 @@ func (s *Server) shopDirectory(c *echo.Context) error {
 	shops := make([]M, 0, len(rows))
 	for _, row := range rows {
 		shops = append(shops, M{
-			"id": row.ID, "name": row.Name, "kind": row.Kind, "kind_label": domain.ShopKindLabel(row.Kind), "items_count": row.ItemsCount,
+			"id": row.ID, "name": row.Name, "kind": row.Kind, "kind_label": domain.ShopKindLabel(row.Kind),
+			"location": row.Location, "items_count": row.ItemsCount,
 		})
 	}
 	return c.JSON(http.StatusOK, M{"shops": shops, "kinds": domain.ShopKinds})
 }
 
-// shopPage is one shop's items as a customer reads them, with prices.
+// shopPage is one shop's profile and items as a customer reads them. Its
+// owner sees it too, as a preview, even before listing anything.
 func (s *Server) shopPage(c *echo.Context) error {
-	if _, err := s.currentUser(c); err != nil {
+	cur, err := s.currentUser(c)
+	if err != nil {
 		return err
 	}
 	ctx := c.Request().Context()
@@ -75,33 +78,33 @@ func (s *Server) shopPage(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	if len(menu) == 0 {
+	mine := shop.OwnerID == cur.User.ID
+	if len(menu) == 0 && !mine {
 		return apperr.ErrNotFound
 	}
-	return c.JSON(http.StatusOK, M{
-		"shop": M{"id": shop.ID, "name": shop.Name, "kind": shop.Kind, "kind_label": domain.ShopKindLabel(shop.Kind)},
-		"menu": menu,
-	})
+	return c.JSON(http.StatusOK, M{"shop": domain.ShopProfileView(shop), "menu": menu, "mine": mine})
 }
 
-// setShopKind: the owner says what sort of business this is, so customers
-// can find it among the restaurants or the groceries.
-func (s *Server) setShopKind(c *echo.Context) error {
+// shopProfile is the owner's own profile, to edit.
+func (s *Server) shopProfile(c *echo.Context) error {
 	o, err := s.owner(c)
 	if err != nil {
 		return err
 	}
-	var in struct {
-		Kind string `json:"kind"`
+	return c.JSON(http.StatusOK, M{"shop": domain.ShopProfileView(o.Shop), "kinds": domain.ShopKinds})
+}
+
+func (s *Server) updateShopProfile(c *echo.Context) error {
+	o, err := s.owner(c)
+	if err != nil {
+		return err
 	}
+	var in domain.ShopProfileInput
 	if err := decode(c, &in); err != nil {
 		return err
 	}
-	if in.Kind != "" && !slices.ContainsFunc(domain.ShopKinds, func(k domain.ShopKind) bool { return k.Key == in.Kind }) {
-		return apperr.NewRule("Choose one of the types listed.")
-	}
-	if err := s.Q.SetShopKind(c.Request().Context(), store.SetShopKindParams{ID: o.Shop.ID, Kind: util.Presence(in.Kind)}); err != nil {
+	if err := domain.UpdateShopProfile(c.Request().Context(), s.Q, o.Shop.ID, in); err != nil {
 		return err
 	}
-	return notice(c, "Saved.", nil)
+	return notice(c, "Shop profile saved.", nil)
 }

@@ -131,6 +131,18 @@ func (q *Queries) MenuItemsOrdered(ctx context.Context, arg MenuItemsOrderedPara
 	return items, nil
 }
 
+const nextMenuPosition = `-- name: NextMenuPosition :one
+SELECT (COALESCE(MAX(position), -1) + 1)::integer FROM menu_items WHERE shop_id = $1
+`
+
+// Where a new item goes: after everything already listed.
+func (q *Queries) NextMenuPosition(ctx context.Context, shopID int64) (int32, error) {
+	row := q.db.QueryRow(ctx, nextMenuPosition, shopID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const updateMenuItem = `-- name: UpdateMenuItem :exec
 UPDATE menu_items SET name = $2, category = $3, price_cents = $4, available = $5, position = $6, updated_at = now()
 WHERE id = $1

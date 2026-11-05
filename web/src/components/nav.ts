@@ -51,6 +51,7 @@ const NAV_ROOTS: Record<string, string> = {
   insights: "insights",
   record: "accounts",
   menu_items: "settings",
+  shop_profile: "settings",
   settings: "settings",
   bank_accounts: "settings",
   subscription: "settings",
