@@ -184,6 +184,12 @@ func (n *Notifier) SubscriptionPaymentSubmitted(ctx context.Context, shopName st
 	}
 }
 
+// TrialEnding is the owner's note a few days before their free trial ends.
+func (n *Notifier) TrialEnding(ctx context.Context, ownerID int64, days int64, annualCents int64) {
+	n.deliver(ctx, note{userID: ownerID, kind: "sub", title: fmt.Sprintf("Your free trial ends in %d days", days),
+		body: fmt.Sprintf("Pay %s for a year by bank transfer to keep recording credits and payments.", money.Ngultrum(annualCents, false)), path: "/subscription"})
+}
+
 func (n *Notifier) SubscriptionPaymentApproved(ctx context.Context, submittedBy int64, paidThrough time.Time) {
 	n.deliver(ctx, note{userID: submittedBy, kind: "sub", title: "Subscription payment approved",
 		body: "Paid through " + util.LongDate(paidThrough), path: "/subscription"})

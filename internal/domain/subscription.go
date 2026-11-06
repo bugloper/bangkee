@@ -17,8 +17,11 @@ import (
 // so a clock on the client can never buy anyone an extra day.
 
 const (
-	TrialDays = 14
-	GraceDays = 14
+	// A new shop's free trial, in calendar months.
+	TrialMonths = 3
+	GraceDays   = 14
+	// The owner is told this many days before the free trial ends.
+	TrialEndingDays = 3
 )
 
 type SubStatus int32

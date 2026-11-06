@@ -279,7 +279,7 @@ func TestOnePlanBilledAnnually(t *testing.T) {
 	pricing := a.browser().get("/api/public/pricing")
 	equal(t, pricing.num("monthly_price_cents"), 30_000, "monthly")
 	equal(t, pricing.num("annual_price_cents"), 360_000, "annual")
-	equal(t, pricing.num("trial_days"), 14, "trial")
+	equal(t, pricing.num("trial_months"), 3, "trial")
 
 	owner := a.browser()
 	owner.openShop("Karma", "karma@shop.bt")

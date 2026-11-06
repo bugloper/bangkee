@@ -4,9 +4,11 @@ package api_test
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestSignedOutPeopleGet401AndBadPasswordsAreRefused(t *testing.T) {
@@ -26,7 +28,9 @@ func TestSignedOutPeopleGet401AndBadPasswordsAreRefused(t *testing.T) {
 	me := visitor.get("/api/me")
 	equal(t, me.str("user.role"), "shop_owner", "role")
 	equal(t, me.str("subscription.status"), "trialing", "subscription")
-	equal(t, me.str("subscription.summary"), "14 days of free trial left", "summary")
+	// Three calendar months from today, counted in whole days.
+	trialDays := int(math.Ceil(time.Until(time.Now().AddDate(0, 3, 0)).Hours() / 24))
+	equal(t, me.str("subscription.summary"), fmt.Sprintf("%d days of free trial left", trialDays), "summary")
 
 	equal(t, visitor.delete("/api/session").Status, 200, "sign out")
 	equal(t, visitor.get("/api/me").Status, 401, "signed out again")

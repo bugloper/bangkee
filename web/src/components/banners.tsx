@@ -41,9 +41,20 @@ export function OfflineBanner() {
   )
 }
 
+// As internal/domain TrialEndingDays: when the trial-ending note goes out.
+const TRIAL_ENDING_DAYS = 3
+
 export function SubscriptionBanner({ me }: { me: Me }) {
   const subscription = me.subscription
   if (!subscription) return null
+  // The last few days of the free trial: time to pay before it lapses.
+  if (subscription.status === "trialing" && subscription.days_remaining <= TRIAL_ENDING_DAYS) {
+    return (
+      <Banner tone="warn" icon={ClockAlertIcon} action={<Link to="/subscription">Pay now</Link>}>
+        Your free trial ends in <strong className="font-semibold">{pluralize(subscription.days_remaining, "day")}</strong>. Pay for a year to keep recording.
+      </Banner>
+    )
+  }
   if (subscription.status === "past_due") {
     return (
       <Banner tone="warn" icon={ClockAlertIcon} action={<Link to="/subscription">Pay now</Link>}>

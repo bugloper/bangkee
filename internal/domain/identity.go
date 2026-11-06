@@ -290,7 +290,7 @@ func CreateShop(ctx context.Context, q *store.Queries, ownerID int64, name strin
 	if err != nil {
 		return 0, err
 	}
-	periodEnd := time.Now().UTC().AddDate(0, 0, TrialDays)
+	periodEnd := time.Now().UTC().AddDate(0, TrialMonths, 0)
 	err = q.ProvisionSubscription(ctx, store.ProvisionSubscriptionParams{
 		ShopID: id, CurrentPeriodEnd: periodEnd, GraceUntil: util.Ptr(periodEnd.AddDate(0, 0, GraceDays)), PriceCents: priceCents,
 	})

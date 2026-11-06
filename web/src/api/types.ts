@@ -463,7 +463,7 @@ export interface Billing {
 export interface PublicPricing {
   monthly_price_cents: Cents // 15000 = Nu. 150 a month
   annual_price_cents: Cents // 180000 = Nu. 1,800, paid once a year
-  trial_days: number // 14
+  trial_months: number // 3: a new shop's free trial
 }
 
 // -------------------------------------------------------------------- admin

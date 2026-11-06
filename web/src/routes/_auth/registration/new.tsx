@@ -48,7 +48,7 @@ function Register() {
   return (
     <AuthFrame
       title={invited ? "Create your account" : "Create your shop account"}
-      description={invited ? "So you can see your balance whenever you want." : "Free for 14 days. No card needed."}
+      description={invited ? "So you can see your balance whenever you want." : "Free for 3 months. Nothing to pay to start."}
       footer={
         <>
           Already have an account?{" "}

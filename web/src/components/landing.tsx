@@ -104,7 +104,7 @@ function SiteHeader() {
 function Hero() {
   const { data } = useQuery({ queryKey: ["pricing"], queryFn: api.pricing, staleTime: Infinity })
   const points = [
-    data ? `${data.trial_days}-day free trial` : "Free trial",
+    data ? `${data.trial_months}-month free trial` : "Free trial",
     data ? `Then ${ngultrum(data.monthly_price_cents)} a month` : "One simple price",
     "Customers join free",
     "English & Dzongkha",
@@ -542,7 +542,7 @@ function Pricing() {
             <div className="relative">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold tracking-tight">Bangkee for shops</h3>
-                {data && <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">{data.trial_days}-day free trial</span>}
+                {data && <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">{data.trial_months}-month free trial</span>}
               </div>
               {data ? (
                 <>
@@ -564,7 +564,7 @@ function Pricing() {
               <Link to="/registration/new" className={buttonVariants({ size: "xl", className: "mt-7 w-full" })}>
                 Start your free trial <ArrowRightIcon />
               </Link>
-              <p className="mt-3 text-center text-xs text-muted-foreground">{data ? `${data.trial_days} days free` : "Free to start"} · Nothing to pay to start · Pay by bank transfer when you're ready</p>
+              <p className="mt-3 text-center text-xs text-muted-foreground">{data ? `${data.trial_months} months free` : "Free to start"} · Nothing to pay to start · Pay by bank transfer when you're ready</p>
               <div className="mt-7 border-t pt-6">
                 <div className="text-sm font-semibold">Everything included</div>
                 <ul className="mt-3 grid gap-2.5 text-sm">

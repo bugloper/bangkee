@@ -45,7 +45,7 @@ func (s *Server) settings(c *echo.Context) error {
 func (s *Server) pricing(c *echo.Context) error {
 	operator := s.Cfg.Operator
 	return c.JSON(http.StatusOK, M{
-		"monthly_price_cents": operator.PriceCents, "annual_price_cents": operator.AnnualPriceCents(), "trial_days": domain.TrialDays,
+		"monthly_price_cents": operator.PriceCents, "annual_price_cents": operator.AnnualPriceCents(), "trial_months": domain.TrialMonths,
 	})
 }
 
