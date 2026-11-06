@@ -138,41 +138,60 @@ const VIBRATION: Record<string, number[]> = {
   default: [120, 70, 120],
 }
 
+type PushPayload = { id?: number; title?: string; body?: string | null; tag?: string; kind?: string; path?: string | null }
+
+function windows() {
+  return sw.clients.matchAll({ type: "window", includeUncontrolled: true }) as Promise<readonly WindowClient[]>
+}
+
 sw.addEventListener("push", (event) => {
-  let payload: { title?: string; body?: string; tag?: string; kind?: string; path?: string } = {}
+  let payload: PushPayload = {}
   try {
     payload = event.data ? event.data.json() : {}
   } catch {
     payload = {}
   }
-
-  const options: NotificationOptions & { renotify?: boolean; vibrate?: number[] } = {
-    body: payload.body || "",
-    icon: "/icon-192.png",
-    badge: "/icon-badge.png",
-    tag: payload.tag || "bangkee",
-    // Without this, a notification sharing a tag replaces the last one in
-    // silence — two payments a minute apart would alert once.
-    renotify: true,
-    vibrate: VIBRATION[payload.kind ?? ""] || VIBRATION.default,
-    data: { path: payload.path || "/" },
-    requireInteraction: false,
-  }
-  event.waitUntil(sw.registration.showNotification(payload.title || "Bangkee", options))
+  event.waitUntil(
+    windows().then((clients) => {
+      // Bangkee is on screen: the page shows it, with its own chime, instead
+      // of a system notification on top of the app (src/lib/live.ts).
+      const onScreen = clients.filter((client) => client.visibilityState === "visible")
+      if (onScreen.length > 0 && payload.id) {
+        for (const client of onScreen) client.postMessage({ type: "notification", notification: payload })
+        return
+      }
+      const options: NotificationOptions & { renotify?: boolean; vibrate?: number[] } = {
+        body: payload.body || "",
+        icon: "/icon-192.png",
+        badge: "/icon-badge.png",
+        tag: payload.tag || "bangkee",
+        // Without this, a notification sharing a tag replaces the last one in
+        // silence — two payments a minute apart would alert once.
+        renotify: true,
+        vibrate: VIBRATION[payload.kind ?? ""] || VIBRATION.default,
+        data: { id: payload.id, path: payload.path || "/" },
+        requireInteraction: false,
+      }
+      return sw.registration.showNotification(payload.title || "Bangkee", options)
+    }),
+  )
 })
 
+// A tap opens what the notification is about (the entry, for a credit or a
+// payment) and marks it read, as tapping it in the bell does.
 sw.addEventListener("notificationclick", (event) => {
   event.notification.close()
-  const path = (event.notification.data && event.notification.data.path) || "/"
+  const { id, path = "/" } = (event.notification.data ?? {}) as { id?: number; path?: string }
+  const read = id
+    ? fetch(`/api/notifications/${id}/read`, { method: "POST", credentials: "same-origin", headers: { "X-Requested-With": "bangkee" } }).catch(() => undefined)
+    : Promise.resolve()
   event.waitUntil(
-    sw.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if (new URL(client.url).origin === sw.location.origin && "focus" in client) {
-          void (client as WindowClient).navigate(path)
-          return (client as WindowClient).focus()
-        }
-      }
-      return sw.clients.openWindow(path)
+    read.then(async () => {
+      const open = (await windows()).find((client) => new URL(client.url).origin === sw.location.origin)
+      if (!open) return void (await sw.clients.openWindow(path))
+      // The app moves itself (src/lib/live.ts), without reloading.
+      await open.focus()
+      open.postMessage({ type: "open", path })
     }),
   )
 })

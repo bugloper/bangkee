@@ -96,7 +96,7 @@ func (s *Server) crossOutTransaction(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	s.Notify.TransactionCrossedOut(ctx, entry.AccountID, domain.KindKey(entry.Kind), entry.AmountCents)
+	s.Notify.TransactionCrossedOut(ctx, entry.AccountID, entry.ID, domain.KindKey(entry.Kind), entry.AmountCents)
 	return notice(c, "Entry crossed out. It stays on the record.", M{"account_id": entry.AccountID})
 }
 

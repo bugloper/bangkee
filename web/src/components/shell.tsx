@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { go } from "@/lib/go"
 import { isAdminHost } from "@/lib/host"
+import { useLive } from "@/lib/live"
 import { pageStore } from "@/lib/page"
 import { signOut } from "@/lib/session"
 import { cn } from "@/lib/utils"
@@ -164,6 +165,7 @@ export function Shell({ me, children }: { me: Me; children: React.ReactNode }) {
   const active = navRoot(pathname, me)
   const [recording, setRecording] = useState(false)
   const record = me.user.role === "shop_owner" && !isAdminHost() ? () => setRecording(true) : undefined
+  useLive(me.user.id)
 
   return (
     <div className="min-h-dvh">

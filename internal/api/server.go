@@ -172,6 +172,7 @@ func (s *Server) routes(g *echo.Group) {
 	g.GET("/notifications", s.notifications)
 	g.POST("/notifications/read_all", s.readAllNotifications)
 	g.POST("/notifications/:id/read", s.readNotification)
+	g.GET("/live", s.live)
 	g.POST("/push_subscription", s.subscribePush)
 	g.DELETE("/push_subscription", s.unsubscribePush)
 	// files

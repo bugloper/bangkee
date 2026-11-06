@@ -58,7 +58,7 @@ export default defineConfig({
   server: {
     allowedHosts: ["admin.localhost"],
     proxy: {
-      "/api": { target: api, changeOrigin: false },
+      "/api": { target: api, changeOrigin: false, ws: true },
       "/up": { target: api, changeOrigin: false },
     },
   },

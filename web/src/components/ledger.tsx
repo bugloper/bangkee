@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { ArrowDownLeftIcon, ArrowUpRightIcon, ChevronDownIcon, PencilIcon, StrikethroughIcon } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { api } from "@/api/client"
 import type { LedgerEntry } from "@/api/types"
@@ -37,8 +37,13 @@ function KindGlyph({ entry }: { entry: LedgerEntry }) {
 }
 
 /** One entry in the book, as the account screen shows it. */
-export function LedgerRow({ entry, owner, locked }: { entry: LedgerEntry; owner: boolean; locked: boolean }) {
+export function LedgerRow({ entry, owner, locked, highlight = false }: { entry: LedgerEntry; owner: boolean; locked: boolean; highlight?: boolean }) {
   const [itemsOpen, setItemsOpen] = useState(false)
+  // The entry a notification was about: brought into view and marked.
+  const row = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (highlight) row.current?.scrollIntoView({ block: "center", behavior: "smooth" })
+  }, [highlight])
   const crossOutEntry = useMutation({
     mutationFn: () => api.crossOutTransaction(entry.id),
     onSuccess: async (result) => {
@@ -60,7 +65,7 @@ export function LedgerRow({ entry, owner, locked }: { entry: LedgerEntry; owner:
   }
 
   return (
-    <div className="px-4 py-3.5 sm:px-5">
+    <div ref={row} className={cn("px-4 py-3.5 transition-colors sm:px-5", highlight && "bg-accent")} aria-current={highlight || undefined}>
       <div className="flex items-start gap-3">
         <KindGlyph entry={entry} />
         <div className="min-w-0 flex-1">

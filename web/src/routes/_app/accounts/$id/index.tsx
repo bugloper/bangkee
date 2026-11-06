@@ -20,7 +20,13 @@ import { offerNotifications } from "@/lib/pwa"
 import { dateTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-export const Route = createFileRoute("/_app/accounts/$id/")({ component: AccountScreen })
+// ?entry= is where a notification opens the account: that entry is highlighted.
+type Search = { entry?: number }
+
+export const Route = createFileRoute("/_app/accounts/$id/")({
+  validateSearch: (search: Record<string, unknown>): Search => ({ entry: Number(search.entry) || undefined }),
+  component: AccountScreen,
+})
 
 function AccountScreen() {
   const id = Number(Route.useParams().id)
@@ -196,6 +202,7 @@ function OwnerView({ data }: { data: OwnerData }) {
 function CustomerView({ data }: { data: CustomerData }) {
   const t = useT()
   const { account, shop } = data
+  const { entry: highlighted } = Route.useSearch()
   usePage(shop.name, "/dashboard")
   // A customer never records anything, so opening their account at a shop is
   // the moment to offer notifications (once, until they answer).
@@ -235,7 +242,7 @@ function CustomerView({ data }: { data: CustomerData }) {
         {data.ledger.length > 0 ? (
           <div className="divide-y">
             {data.ledger.map((entry) => (
-              <LedgerRow key={entry.id} entry={entry} owner={false} locked={false} />
+              <LedgerRow key={entry.id} entry={entry} owner={false} locked={false} highlight={entry.id === highlighted} />
             ))}
           </div>
         ) : (

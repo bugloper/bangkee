@@ -387,9 +387,9 @@ func (s *Server) record(c *echo.Context, kind int32) error {
 	noun := "Payment"
 	if credit {
 		noun = "Credit"
-		s.Notify.CreditRecorded(ctx, accountID, entry.AmountCents, entry.Description)
+		s.Notify.CreditRecorded(ctx, accountID, entry.ID, entry.AmountCents, entry.Description)
 	} else {
-		s.Notify.PaymentRecorded(ctx, accountID, entry.AmountCents)
+		s.Notify.PaymentRecorded(ctx, accountID, entry.ID, entry.AmountCents)
 	}
 	return notice(c, noun+" of "+money.Ngultrum(entry.AmountCents, false)+" recorded.",
 		M{"account_id": accountID, "transaction_id": entry.ID, "duplicate": false})

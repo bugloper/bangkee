@@ -34,7 +34,7 @@ func adminHostFor(c *echo.Context) string { return "admin." + strings.ToLower(c.
 // the screenshots it reviews, and the bell.
 var adminHostAPI = []string{
 	"/api/me", "/api/session", "/api/passwords", "/api/admin/", "/api/attachments/",
-	"/api/notifications", "/api/push_subscription", "/api/language",
+	"/api/notifications", "/api/push_subscription", "/api/language", "/api/live",
 }
 
 // hostGate keeps each host to its own API: everything else is a 404, the

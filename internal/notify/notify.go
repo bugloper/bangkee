@@ -1,6 +1,6 @@
 // Package notify knows who cares about what. Every event writes an in-app
-// notification (the bell) and hands it to Web Push and email, so the three
-// never disagree.
+// notification (the bell) and hands it to the person's open tabs, Web Push
+// and email, so they never disagree.
 //
 // It is called after the request's database work has committed: a mail
 // server that is down or a push endpoint that is gone can never stop the
@@ -35,12 +35,14 @@ type Notifier struct {
 	db  *pgxpool.Pool
 	q   *store.Queries
 	cfg config.Config
+	// Live is who has Bangkee open; the API's /live socket subscribes to it.
+	Live *Live
 	// Deliveries run in the background; Wait lets tests and shutdown let them finish.
 	pending sync.WaitGroup
 }
 
 func New(db *pgxpool.Pool, cfg config.Config) *Notifier {
-	return &Notifier{db: db, q: store.New(db), cfg: cfg}
+	return &Notifier{db: db, q: store.New(db), cfg: cfg, Live: newLive()}
 }
 
 // Wait blocks until every delivery started so far has finished.
@@ -61,6 +63,7 @@ func (n *Notifier) deliver(ctx context.Context, notes ...note) {
 			slog.Error("could not write a notification", "error", err)
 			continue
 		}
+		n.Live.publish(nt.userID, message(id, nt.kind, nt.title, util.Presence(nt.body), util.Presence(nt.path)))
 		n.pending.Add(1)
 		go func() {
 			defer n.pending.Done()
@@ -73,6 +76,17 @@ func (n *Notifier) deliver(ctx context.Context, notes ...note) {
 }
 
 func accountPath(id int64) string { return fmt.Sprintf("/accounts/%d", id) }
+
+// entryPath opens the account at one entry, which the account screen highlights.
+func entryPath(accountID, entryID int64) string { return fmt.Sprintf("/accounts/%d?entry=%d", accountID, entryID) }
+
+// message is a notification as an open tab and the service worker read it.
+func message(id int64, kind, title string, body, path *string) []byte {
+	payload, _ := json.Marshal(map[string]any{
+		"id": id, "title": title, "body": body, "path": path, "kind": kind, "tag": pushTag(id, kind, path),
+	})
+	return payload
+}
 
 type accountContext struct {
 	account  store.Account
@@ -103,32 +117,32 @@ func (n *Notifier) toCustomer(ctx context.Context, accountID int64, build func(*
 	n.deliver(ctx, nt)
 }
 
-func (n *Notifier) CreditRecorded(ctx context.Context, accountID, amountCents int64, description *string) {
+func (n *Notifier) CreditRecorded(ctx context.Context, accountID, entryID, amountCents int64, description *string) {
 	n.toCustomer(ctx, accountID, func(c *accountContext) note {
 		body := money.Ngultrum(amountCents, false)
 		if description != nil && *description != "" {
 			body += " · " + *description
 		}
-		return note{kind: "credit", title: "New credit at " + c.shopName, body: body, path: accountPath(accountID)}
+		return note{kind: "credit", title: "New credit at " + c.shopName, body: body, path: entryPath(accountID, entryID)}
 	})
 }
 
-func (n *Notifier) PaymentRecorded(ctx context.Context, accountID, amountCents int64) {
+func (n *Notifier) PaymentRecorded(ctx context.Context, accountID, entryID, amountCents int64) {
 	n.toCustomer(ctx, accountID, func(c *accountContext) note {
 		return note{kind: "payment", title: "Payment recorded at " + c.shopName,
 			body: fmt.Sprintf("%s — your balance is now %s", money.Ngultrum(amountCents, false), money.Ngultrum(c.account.BalanceCents, false)),
-			path: accountPath(accountID)}
+			path: entryPath(accountID, entryID)}
 	})
 }
 
-func (n *Notifier) TransactionCrossedOut(ctx context.Context, accountID int64, kind string, amountCents int64) {
+func (n *Notifier) TransactionCrossedOut(ctx context.Context, accountID, entryID int64, kind string, amountCents int64) {
 	label := "Payment"
 	if kind == "credit" {
 		label = "Credit"
 	}
 	n.toCustomer(ctx, accountID, func(c *accountContext) note {
 		return note{kind: "cross_out", title: "Entry crossed out at " + c.shopName,
-			body: fmt.Sprintf("%s of %s no longer counts", label, money.Ngultrum(amountCents, false)), path: accountPath(accountID)}
+			body: fmt.Sprintf("%s of %s no longer counts", label, money.Ngultrum(amountCents, false)), path: entryPath(accountID, entryID)}
 	})
 }
 
@@ -236,10 +250,7 @@ func (n *Notifier) push(ctx context.Context, notificationID int64) {
 		return
 	}
 	// What the service worker reads in its push handler.
-	payload, _ := json.Marshal(map[string]any{
-		"title": notification.Title, "body": notification.Body, "path": notification.Path, "kind": notification.Kind,
-		"tag": pushTag(notification.ID, notification.Kind, notification.Path),
-	})
+	payload := message(notification.ID, notification.Kind, notification.Title, notification.Body, notification.Path)
 	subscriptions, err := n.q.PushSubscriptionsFor(ctx, notification.UserID)
 	if err != nil {
 		return
