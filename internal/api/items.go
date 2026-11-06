@@ -191,15 +191,20 @@ func (s *Server) removeItemImage(c *echo.Context) error {
 }
 
 // itemImage serves an item's photo to anyone: it is shown on the shop's
-// page. Only item photos come this way — nothing else stored is public. A
-// new photo is a new attachment, so the URL can be cached for good.
-func (s *Server) itemImage(c *echo.Context) error {
+// page. Only item and shop photos come this way — nothing else stored is
+// public. A new photo is a new attachment, so the URL can be cached for good.
+func (s *Server) itemImage(c *echo.Context) error { return s.publicPhoto(c, domain.MenuItemRecordType) }
+
+// shopPhoto serves a shop's photo to anyone, for its page and the homepage.
+func (s *Server) shopPhoto(c *echo.Context) error { return s.publicPhoto(c, domain.ShopRecordType) }
+
+func (s *Server) publicPhoto(c *echo.Context, recordType string) error {
 	ctx := c.Request().Context()
 	row, err := s.Q.AttachmentWithBlob(ctx, paramID(c))
 	if err != nil {
 		return err
 	}
-	if row.RecordType != domain.MenuItemRecordType {
+	if row.RecordType != recordType {
 		return apperr.ErrNotFound
 	}
 	data, err := s.Files.Get(ctx, row.Key)

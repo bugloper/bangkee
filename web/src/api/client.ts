@@ -125,6 +125,8 @@ export const api = {
   // the shops catalog
   shopDirectory: (kind: string, q: string) => get<T.ShopDirectory>(`/api/shops?${new URLSearchParams({ kind, q })}`),
   shopPage: (id: number) => get<T.ShopPage>(`/api/shops/${id}`),
+  publicShops: () => get<T.ShopDirectory>("/api/public/shops"),
+  publicShopPage: (id: number) => get<T.ShopPage>(`/api/public/shops/${id}`),
   shopProfile: () => get<T.ShopProfileForm>("/api/shop/profile"),
   updateShopProfile: (input: T.ShopProfileInput) => patch<T.Notice>("/api/shop/profile", input),
 

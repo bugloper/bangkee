@@ -25,6 +25,7 @@ import { Route as AppRecordRouteImport } from './routes/_app/record'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShop_profileRouteImport } from './routes/_app/shop_profile'
 import { Route as AppSubscriptionRouteImport } from './routes/_app/subscription'
+import { Route as ShopIdRouteImport } from './routes/shop.$id'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app/accounts/index'
 import { Route as AppAccountsNewRouteImport } from './routes/_app/accounts/new'
 import { Route as AppBank_accountsIndexRouteImport } from './routes/_app/bank_accounts/index'
@@ -124,6 +125,11 @@ const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   id: '/subscription',
   path: '/subscription',
   getParentRoute: () => AppRoute,
+} as any)
+const ShopIdRoute = ShopIdRouteImport.update({
+  id: '/shop/$id',
+  path: '/shop/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppAccountsIndexRoute = AppAccountsIndexRouteImport.update({
   id: '/accounts/',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
+  '/shop/$id': typeof ShopIdRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/menu_items/new': typeof AppMenu_itemsNewRoute
   '/shops/$id': typeof AppShopsIdRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
+  '/shop/$id': typeof ShopIdRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/menu_items/new': typeof AppMenu_itemsNewRoute
   '/shops/$id': typeof AppShopsIdRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shop_profile': typeof AppShop_profileRoute
   '/_app/subscription': typeof AppSubscriptionRoute
+  '/shop/$id': typeof ShopIdRoute
   '/_app/accounts/new': typeof AppAccountsNewRoute
   '/_app/menu_items/new': typeof AppMenu_itemsNewRoute
   '/_app/shops/$id': typeof AppShopsIdRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop_profile'
     | '/subscription'
+    | '/shop/$id'
     | '/accounts/new'
     | '/menu_items/new'
     | '/shops/$id'
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop_profile'
     | '/subscription'
+    | '/shop/$id'
     | '/accounts/new'
     | '/menu_items/new'
     | '/shops/$id'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/shop_profile'
     | '/_app/subscription'
+    | '/shop/$id'
     | '/_app/accounts/new'
     | '/_app/menu_items/new'
     | '/_app/shops/$id'
@@ -462,6 +474,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   OfflineRoute: typeof OfflineRoute
+  ShopIdRoute: typeof ShopIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -577,6 +590,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/subscription'
       preLoaderRoute: typeof AppSubscriptionRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/shop/$id': {
+      id: '/shop/$id'
+      path: '/shop/$id'
+      fullPath: '/shop/$id'
+      preLoaderRoute: typeof ShopIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/accounts/': {
       id: '/_app/accounts/'
@@ -822,6 +842,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   OfflineRoute: OfflineRoute,
+  ShopIdRoute: ShopIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

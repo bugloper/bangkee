@@ -46,6 +46,14 @@ func (s *Server) shopDirectory(c *echo.Context) error {
 	if _, err := s.currentUser(c); err != nil {
 		return err
 	}
+	return s.directory(c)
+}
+
+// publicShopDirectory is the same list for the homepage, signed in or not:
+// what a shop shows customers is its own advertisement.
+func (s *Server) publicShopDirectory(c *echo.Context) error { return s.directory(c) }
+
+func (s *Server) directory(c *echo.Context) error {
 	kind := util.Presence(c.QueryParam("kind"))
 	search := util.Presence(c.QueryParam("q"))
 	rows, err := s.Q.ShopDirectory(c.Request().Context(), store.ShopDirectoryParams{Kind: kind, Search: search})
@@ -78,6 +86,14 @@ func (s *Server) shopPage(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
+	return s.page(c, &cur.User.ID)
+}
+
+// publicShopPage is a shop's page for anyone, signed in or not.
+func (s *Server) publicShopPage(c *echo.Context) error { return s.page(c, nil) }
+
+// page is a shop's profile and items; viewer is who is looking, when signed in.
+func (s *Server) page(c *echo.Context, viewer *int64) error {
 	ctx := c.Request().Context()
 	shop, err := s.Q.ShopByID(ctx, paramID(c))
 	if err != nil {
@@ -87,7 +103,7 @@ func (s *Server) shopPage(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	mine := shop.OwnerID == cur.User.ID
+	mine := viewer != nil && shop.OwnerID == *viewer
 	if len(menu) == 0 && !mine {
 		return apperr.ErrNotFound
 	}

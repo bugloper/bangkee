@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
+import { useState } from "react"
 import {
   ArrowDownLeftIcon,
   ArrowRightIcon,
@@ -28,9 +29,13 @@ import {
 
 import { api } from "@/api/client"
 import { Logo, LogoMark } from "@/components/brand"
+import { Chips } from "@/components/catalog"
+import { ShopCard } from "@/components/shop-view"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { matches } from "@/lib/catalog"
 import { ngultrum } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { cn } from "@/lib/utils"
@@ -51,6 +56,7 @@ export function Landing() {
         <Hero />
         <Problem />
         <HowItWorks />
+        <Shops />
         <Compare />
         <Features />
         <Preview />
@@ -67,12 +73,13 @@ export function Landing() {
 
 const SECTIONS = [
   ["How it works", "how"],
+  ["Shops", "shops"],
   ["Features", "features"],
   ["Pricing", "pricing"],
   ["FAQ", "faq"],
 ] as const
 
-function SiteHeader() {
+export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-transparent bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/65 [&:has(+main)]:border-border/60">
       <div className={cn(container, "flex h-16 items-center gap-6")}>
@@ -81,7 +88,7 @@ function SiteHeader() {
         </Link>
         <nav aria-label="Sections" className="hidden items-center gap-1 md:flex">
           {SECTIONS.map(([label, id]) => (
-            <a key={id} href={`#${id}`} className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            <a key={id} href={`/#${id}`} className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               {label}
             </a>
           ))}
@@ -326,6 +333,83 @@ function HowItWorks() {
             </li>
           ))}
         </ol>
+      </div>
+    </section>
+  )
+}
+
+// ------------------------------------------------------------------- shops
+
+const SHOPS_PAGE = 9
+
+// The shops on Bangkee, for anyone: find one by name, type or town, and open
+// it to see what it sells and where it is. No account needed.
+function Shops() {
+  const { data } = useQuery({ queryKey: ["public_shops"], queryFn: api.publicShops, staleTime: 60_000 })
+  const [q, setQ] = useState("")
+  const [kind, setKind] = useState("")
+  const [limit, setLimit] = useState(SHOPS_PAGE)
+  if (data && data.shops.length === 0) return null
+
+  // Only the types some shop actually is.
+  const kinds = data ? data.kinds.filter((k) => data.shops.some((shop) => shop.kind === k.key)) : []
+  const found = (data?.shops ?? []).filter((shop) => (!kind || shop.kind === kind) && matches(q, shop.name, shop.kind_label, shop.location))
+
+  return (
+    <section id="shops" className="scroll-mt-16 border-t bg-muted/40 py-20 sm:py-28">
+      <div className={container}>
+        <SectionIntro eyebrow="Shops on Bangkee" title="See what shops near you sell — and at what price.">
+          Browse the shops on Bangkee: their items and prices, what is out of stock, their hours and where to find them. No account needed.
+        </SectionIntro>
+        <div className="mt-10 grid gap-4">
+          <div className="relative max-w-xl">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              aria-label="Search shops"
+              placeholder="Search by name, type or town"
+              className="h-11 bg-card pl-9"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value)
+                setLimit(SHOPS_PAGE)
+              }}
+            />
+          </div>
+          {kinds.length > 1 && (
+            <Chips
+              label="Type of business"
+              chips={[{ key: "", label: "All" }, ...kinds]}
+              value={kind}
+              onChange={(key) => {
+                setKind(key)
+                setLimit(SHOPS_PAGE)
+              }}
+            />
+          )}
+          {!data ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3" aria-label="Loading shops">
+              {Array.from({ length: 3 }, (_, i) => (
+                <Skeleton key={i} className="h-24 rounded-[1.25rem]" />
+              ))}
+            </div>
+          ) : found.length > 0 ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {found.slice(0, limit).map((shop) => (
+                  <ShopCard key={shop.id} shop={shop} href={`/shop/${shop.id}`} />
+                ))}
+              </div>
+              {found.length > limit && (
+                <button type="button" onClick={() => setLimit((n) => n + SHOPS_PAGE)} className={buttonVariants({ variant: "outline", size: "lg", className: "mx-auto bg-card" })}>
+                  Show more shops <span className="tabular text-muted-foreground">{found.length - limit} more</span>
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="rounded-2xl border bg-card px-5 py-8 text-center text-muted-foreground">No shop matches that. Try another name, type or town.</p>
+          )}
+        </div>
       </div>
     </section>
   )
@@ -686,7 +770,7 @@ function FinalCta() {
 
 // ------------------------------------------------------------------ footer
 
-function SiteFooter() {
+export function SiteFooter() {
   return (
     <footer className="border-t">
       <div className={cn(container, "flex flex-col gap-6 py-10 sm:flex-row sm:items-center sm:justify-between")}>
@@ -695,10 +779,10 @@ function SiteFooter() {
           <p className="mt-2 text-sm text-muted-foreground">The shared credit book for shops in Bhutan.</p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          <a href="#pricing" className="hover:text-foreground">
+          <a href="/#pricing" className="hover:text-foreground">
             Pricing
           </a>
-          <a href="#faq" className="hover:text-foreground">
+          <a href="/#faq" className="hover:text-foreground">
             FAQ
           </a>
           <Link to="/session/new" className="hover:text-foreground">

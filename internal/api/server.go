@@ -156,6 +156,9 @@ func (s *Server) routes(g *echo.Group) {
 	g.DELETE("/menu_items/:id", s.destroyMenuItem)
 	g.GET("/public/pricing", s.pricing)
 	g.GET("/public/item_images/:id", s.itemImage)
+	g.GET("/public/shop_photos/:id", s.shopPhoto)
+	g.GET("/public/shops", s.publicShopDirectory)
+	g.GET("/public/shops/:id", s.publicShopPage)
 	// settings & billing
 	g.GET("/settings", s.settings)
 	g.PATCH("/language", s.setLanguage)
