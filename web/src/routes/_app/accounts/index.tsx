@@ -97,7 +97,7 @@ function Accounts() {
                   className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_7rem_8rem] items-center gap-4 border-b px-5 py-3 text-sm transition-colors last:border-b-0 hover:bg-muted/50"
                 >
                   <span role="cell" className="flex min-w-0 items-center gap-3">
-                    <Initial text={account.display_name} size="sm" tone={account.overdue ? "owed" : "brand"} />
+                    <Initial text={account.display_name} size="sm" tone={account.overdue ? "owed" : "brand"} src={account.customer_photo_url} />
                     <span className="truncate font-medium">{account.display_name}</span>
                   </span>
                   <span role="cell" className="tabular truncate text-muted-foreground">
@@ -120,7 +120,7 @@ function Accounts() {
                 <Row
                   key={account.id}
                   href={`/accounts/${account.id}`}
-                  leading={<Initial text={account.display_name} tone={account.overdue ? "owed" : "brand"} />}
+                  leading={<Initial text={account.display_name} tone={account.overdue ? "owed" : "brand"} src={account.customer_photo_url} />}
                   title={account.display_name}
                   subtitle={account.customer_phone || "No phone"}
                   trailing={

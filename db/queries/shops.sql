@@ -49,12 +49,13 @@ SELECT s.id, s.name, u.name AS owner_name, u.email_address AS owner_email
 FROM shops s JOIN users u ON u.id = s.owner_id ORDER BY s.name, s.id;
 
 -- name: UpdateShopProfile :exec
-UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, hours = $7, updated_at = now()
+UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, hours = $7,
+  latitude = $8, longitude = $9, updated_at = now()
 WHERE id = $1;
 
 -- name: ShopDirectory :many
 -- Every shop with something to show a customer: at least one item listed.
-SELECT s.id, s.name, s.kind, s.location,
+SELECT s.id, s.name, s.kind, s.location, s.latitude, s.longitude,
        (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count
 FROM shops s
 WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)

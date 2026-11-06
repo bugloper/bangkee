@@ -115,6 +115,10 @@ func (s *Server) routes(g *echo.Group) {
 	g.GET("/shops/:id", s.shopPage)
 	g.GET("/shop/profile", s.shopProfile)
 	g.PATCH("/shop/profile", s.updateShopProfile)
+	g.POST("/shop/photo", s.setShopPhoto)
+	g.DELETE("/shop/photo", s.removeShopPhoto)
+	g.POST("/me/photo", s.setMyPhoto)
+	g.DELETE("/me/photo", s.removeMyPhoto)
 
 	g.GET("/invitations/:token", s.invitation)
 	g.POST("/invitations/:token/join", s.joinWithPIN)

@@ -36,6 +36,7 @@ type UserDTO struct {
 	Locale        *string `json:"locale"`
 	DisplayName   string  `json:"display_name"`
 	Initial       string  `json:"initial"`
+	PhotoURL      *string `json:"photo_url"` // their profile photo, if they added one
 }
 
 func DisplayName(u store.User) string {
@@ -251,9 +252,14 @@ type ShopKind struct {
 	Label string `json:"label"`
 }
 
+// The keys are stored; new kinds go anywhere in the list, "other" stays last.
 var ShopKinds = []ShopKind{
-	{"restaurant", "Restaurant"}, {"cafe", "Café"}, {"bar", "Bar"}, {"snooker", "Snooker"},
-	{"grocery", "Grocery"}, {"pharmacy", "Pharmacy"}, {"other", "Other"},
+	{"restaurant", "Restaurant"}, {"cafe", "Café"}, {"bakery", "Bakery"}, {"bar", "Bar"}, {"snooker", "Snooker"},
+	{"grocery", "Grocery"}, {"general_store", "General store"}, {"vegetables", "Vegetables & fruits"}, {"meat", "Meat shop"},
+	{"pharmacy", "Pharmacy"}, {"hardware", "Hardware"}, {"electronics", "Electronics & mobile"},
+	{"clothing", "Clothing & shoes"}, {"tailor", "Tailor"}, {"salon", "Salon & beauty"},
+	{"stationery", "Stationery & books"}, {"hotel", "Hotel & homestay"}, {"fuel", "Fuel & gas"},
+	{"other", "Other"},
 }
 
 // ShopKindLabel is how a kind reads; a shop that has not picked one is "Shop".

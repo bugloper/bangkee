@@ -20,6 +20,7 @@ import { api } from "@/api/client"
 import type { Locale } from "@/api/types"
 import { AppLink } from "@/components/app-link"
 import { Panel, Row, Rows } from "@/components/kit"
+import { PhotoUpload } from "@/components/photo-upload"
 import { InstallCard } from "@/components/pwa"
 import { Button } from "@/components/ui/button"
 import { flashNotice } from "@/lib/flash"
@@ -91,10 +92,8 @@ function Settings() {
     <div className="mx-auto grid w-full max-w-2xl gap-5 xl:max-w-none xl:grid-cols-[22rem_minmax(0,1fr)] xl:items-start xl:gap-8">
       <div className="grid gap-5 xl:sticky xl:top-24">
         <div className="flex flex-col items-center pt-2 text-center xl:rounded-[1.25rem] xl:border xl:bg-card xl:px-5 xl:pt-8 xl:pb-6">
-          <span className="rounded-full p-1 ring-1 ring-border">
-            <span className="flex size-24 items-center justify-center rounded-full bg-accent text-4xl font-semibold text-accent-foreground">{user.initial}</span>
-          </span>
-          <div className="mt-4 text-xl font-semibold tracking-tight">{user.display_name}</div>
+          <PhotoUpload current={user.photo_url} fallback={user.initial} label="a profile photo" className="size-24 text-base" onSave={api.setMyPhoto} onRemove={api.removeMyPhoto} />
+          <div className="mt-3 text-xl font-semibold tracking-tight">{user.display_name}</div>
           <div className="mt-0.5 text-sm text-muted-foreground">{user.email_address ?? user.phone}</div>
           <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{user.platform_admin ? "Bangkee operator" : shop ? `${shop.name} · shop owner` : "Customer"}</div>
         </div>

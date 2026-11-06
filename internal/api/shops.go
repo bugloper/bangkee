@@ -52,11 +52,20 @@ func (s *Server) shopDirectory(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
+	ids := make([]int64, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ID
+	}
+	photos, err := domain.ShopPhotoURLs(c.Request().Context(), s.Q, ids)
+	if err != nil {
+		return err
+	}
 	shops := make([]M, 0, len(rows))
 	for _, row := range rows {
 		shops = append(shops, M{
 			"id": row.ID, "name": row.Name, "kind": row.Kind, "kind_label": domain.ShopKindLabel(row.Kind),
-			"location": row.Location, "items_count": row.ItemsCount,
+			"location": row.Location, "items_count": row.ItemsCount, "photo_url": domain.PhotoURL(photos, &row.ID),
+			"latitude": row.Latitude, "longitude": row.Longitude,
 		})
 	}
 	return c.JSON(http.StatusOK, M{"shops": shops, "kinds": domain.ShopKinds})
@@ -82,7 +91,11 @@ func (s *Server) shopPage(c *echo.Context) error {
 	if len(menu) == 0 && !mine {
 		return apperr.ErrNotFound
 	}
-	return c.JSON(http.StatusOK, M{"shop": domain.ShopProfileView(shop), "menu": menu, "mine": mine})
+	view, err := s.shopProfileView(ctx, shop)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, M{"shop": view, "menu": menu, "mine": mine})
 }
 
 // shopProfile is the owner's own profile, to edit.
@@ -91,7 +104,16 @@ func (s *Server) shopProfile(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(http.StatusOK, M{"shop": domain.ShopProfileView(o.Shop), "kinds": domain.ShopKinds})
+	view, err := s.shopProfileView(c.Request().Context(), o.Shop)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, M{"shop": view, "kinds": domain.ShopKinds})
+}
+
+func (s *Server) shopProfileView(ctx context.Context, shop store.Shop) (domain.ShopProfile, error) {
+	photos, err := domain.ShopPhotoURLs(ctx, s.Q, []int64{shop.ID})
+	return domain.ShopProfileView(shop, photos), err
 }
 
 func (s *Server) updateShopProfile(c *echo.Context) error {

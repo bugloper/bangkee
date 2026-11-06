@@ -116,6 +116,10 @@ export const api = {
   /** The photo goes up as form data, field "image". */
   setItemImage: (id: number, form: FormData) => post<T.Notice>(`/api/menu_items/${id}/image`, form),
   removeItemImage: (id: number) => del<T.Notice>(`/api/menu_items/${id}/image`),
+  setShopPhoto: (form: FormData) => post<T.Notice>("/api/shop/photo", form),
+  removeShopPhoto: () => del<T.Notice>("/api/shop/photo"),
+  setMyPhoto: (form: FormData) => post<T.Notice>("/api/me/photo", form),
+  removeMyPhoto: () => del<T.Notice>("/api/me/photo"),
   deleteMenuItem: (id: number) => del<T.Notice>(`/api/menu_items/${id}`),
 
   // the shops catalog

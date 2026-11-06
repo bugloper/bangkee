@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { ClockIcon, MapPinIcon, PencilIcon, PhoneIcon, SearchIcon } from "lucide-react"
-import { useState } from "react"
+import { ClockIcon, MapPinIcon, NavigationIcon, PencilIcon, PhoneIcon, SearchIcon } from "lucide-react"
+import { lazy, Suspense, useState } from "react"
 
 import { api } from "@/api/client"
 import type { MenuGroup, ShopProfile } from "@/api/types"
@@ -16,6 +16,14 @@ import { matches } from "@/lib/catalog"
 import { ngultrum } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { cn } from "@/lib/utils"
+
+// Leaflet loads only when a shop has a pin to show.
+const ShopMap = lazy(() => import("@/components/shop-map").then((m) => ({ default: m.ShopMap })))
+
+/** Directions in the phone's maps app (Google Maps, or the browser's). */
+function directionsURL(latitude: number, longitude: number) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+}
 
 export const Route = createFileRoute("/_app/shops/$id")({ component: ShopScreen })
 
@@ -94,7 +102,7 @@ function ShopHeader({ shop, mine }: { shop: ShopProfile; mine: boolean }) {
         </div>
       )}
       <div className="flex items-center gap-3.5">
-        <Initial text={shop.name} size="xl" />
+        <Initial text={shop.name} size="xl" src={shop.photo_url} />
         <div className="min-w-0">
           <h1 className="text-xl font-semibold tracking-tight">{shop.name}</h1>
           <div className="text-sm text-muted-foreground">{shop.kind_label}</div>
@@ -115,10 +123,26 @@ function ShopHeader({ shop, mine }: { shop: ShopProfile; mine: boolean }) {
           )}
         </div>
       )}
-      {shop.phone && (
-        <a href={`tel:${shop.phone.replace(/\s/g, "")}`} className={cn(buttonVariants({ variant: "outline" }), "mt-4 w-full")}>
-          <PhoneIcon /> Call {shop.phone}
-        </a>
+      {shop.latitude != null && shop.longitude != null && (
+        <div className="mt-4">
+          <Suspense fallback={<div className="h-44 animate-pulse rounded-2xl bg-muted" />}>
+            <ShopMap pin={{ latitude: shop.latitude, longitude: shop.longitude }} name={shop.name} />
+          </Suspense>
+        </div>
+      )}
+      {(shop.phone || shop.latitude != null) && (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+          {shop.latitude != null && shop.longitude != null && (
+            <a href={directionsURL(shop.latitude, shop.longitude)} target="_blank" rel="noreferrer" className={buttonVariants()}>
+              <NavigationIcon /> Directions
+            </a>
+          )}
+          {shop.phone && (
+            <a href={`tel:${shop.phone.replace(/\s/g, "")}`} className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+              <PhoneIcon /> Call {shop.phone}
+            </a>
+          )}
+        </div>
       )}
     </Panel>
   )

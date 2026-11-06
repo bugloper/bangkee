@@ -78,7 +78,9 @@ func (n *Notifier) deliver(ctx context.Context, notes ...note) {
 func accountPath(id int64) string { return fmt.Sprintf("/accounts/%d", id) }
 
 // entryPath opens the account at one entry, which the account screen highlights.
-func entryPath(accountID, entryID int64) string { return fmt.Sprintf("/accounts/%d?entry=%d", accountID, entryID) }
+func entryPath(accountID, entryID int64) string {
+	return fmt.Sprintf("/accounts/%d?entry=%d", accountID, entryID)
+}
 
 // message is a notification as an open tab and the service worker read it.
 func message(id int64, kind, title string, body, path *string) []byte {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { EyeIcon } from "lucide-react"
-import { useState } from "react"
+import { lazy, Suspense, useState } from "react"
 
 import { api } from "@/api/client"
 import type { ShopProfileForm } from "@/api/types"
@@ -9,6 +9,8 @@ import { AppLink } from "@/components/app-link"
 import { ChoiceField } from "@/components/choice-field"
 import { ErrorBox, Field, Loading } from "@/components/form"
 import { Panel } from "@/components/kit"
+import { PhotoUpload } from "@/components/photo-upload"
+import type { Pin } from "@/components/shop-map"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -19,6 +21,9 @@ import { usePage } from "@/lib/page"
 import { refreshAll } from "@/lib/query"
 
 export const Route = createFileRoute("/_app/shop_profile")({ component: ShopProfileScreen })
+
+// Leaflet loads only on the screens with a map.
+const PinPicker = lazy(() => import("@/components/shop-map").then((m) => ({ default: m.PinPicker })))
 
 // Profile → Shop profile: what customers read above the shop's items when
 // they browse shops. Only the name is needed.
@@ -37,9 +42,10 @@ function ProfileForm({ data }: { data: ShopProfileForm }) {
   const [location, setLocation] = useState(shop.location ?? "")
   const [phone, setPhone] = useState(shop.phone ?? "")
   const [hours, setHours] = useState(shop.hours ?? "")
+  const [pin, setPin] = useState<Pin | null>(shop.latitude != null && shop.longitude != null ? { latitude: shop.latitude, longitude: shop.longitude } : null)
 
   const save = useMutation({
-    mutationFn: () => api.updateShopProfile({ name, kind, about, location, phone, hours }),
+    mutationFn: () => api.updateShopProfile({ name, kind, about, location, phone, hours, latitude: pin?.latitude ?? null, longitude: pin?.longitude ?? null }),
     onSuccess: async (result) => {
       flashNotice(result.notice)
       await refreshAll()
@@ -49,6 +55,9 @@ function ProfileForm({ data }: { data: ShopProfileForm }) {
 
   return (
     <div className="grid gap-4">
+      <Panel>
+        <PhotoUpload current={shop.photo_url} fallback={shop.name} label="a shop photo" shape="square" className="size-28" onSave={api.setShopPhoto} onRemove={api.removeShopPhoto} />
+      </Panel>
       <Panel>
         <form
           className="grid gap-4"
@@ -69,6 +78,11 @@ function ProfileForm({ data }: { data: ShopProfileForm }) {
           </Field>
           <Field label="Location" htmlFor="shop_location">
             <Input id="shop_location" maxLength={120} placeholder="Norzin Lam, Thimphu" value={location} onChange={(e) => setLocation(e.target.value)} />
+          </Field>
+          <Field label="On the map" hint="Optional — customers get directions to the pin">
+            <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-muted sm:h-72" />}>
+              <PinPicker value={pin} onChange={setPin} />
+            </Suspense>
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Phone" htmlFor="shop_phone">

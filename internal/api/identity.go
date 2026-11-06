@@ -70,8 +70,14 @@ func (s *Server) me(c *echo.Context) error {
 	if s.Cfg.Vapid != nil {
 		publicKey = &s.Cfg.Vapid.PublicKey
 	}
+	photos, err := domain.AvatarURLs(ctx, q, []int64{user.ID})
+	if err != nil {
+		return err
+	}
+	userView := domain.UserView(user)
+	userView.PhotoURL = domain.PhotoURL(photos, &user.ID)
 	return c.JSON(http.StatusOK, M{
-		"user":                 domain.UserView(user),
+		"user":                 userView,
 		"shop":                 shopView,
 		"subscription":         subView,
 		"badges":               M{"admin_payments": adminPayments, "admin_feedback": adminFeedback},

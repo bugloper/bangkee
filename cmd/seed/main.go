@@ -84,6 +84,7 @@ func seed() error {
 	must(domain.UpdateShopProfile(ctx, q, shopID, domain.ShopProfileInput{
 		Name: "Karma General Shop", Kind: "grocery", About: "Groceries, household goods and fresh vegetables. Credit for regulars.",
 		Location: "Norzin Lam, Thimphu", Phone: "17 55 66 77", Hours: "8 am – 9 pm, every day",
+		Latitude: new(27.4728), Longitude: new(89.6390),
 	}))
 	must(domain.SaveBankAccount(ctx, q, shopID, 0, domain.BankAccountInput{
 		BankName: "Bank of Bhutan", AccountName: "Karma Dorji", AccountNumber: "1023 4567 8901", Branch: "Thimphu Main",

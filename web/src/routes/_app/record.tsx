@@ -52,7 +52,7 @@ function Record() {
               <Row
                 key={account.id}
                 href={next(account.id)}
-                leading={<Initial text={account.display_name} tone={account.overdue ? "owed" : "brand"} />}
+                leading={<Initial text={account.display_name} tone={account.overdue ? "owed" : "brand"} src={account.customer_photo_url} />}
                 title={account.display_name}
                 subtitle={account.customer_phone ?? "No phone"}
                 trailing={<Money cents={account.balance_cents} tone="auto" />}

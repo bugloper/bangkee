@@ -23,6 +23,8 @@ type AccountSummary struct {
 	DaysOverdue    int64      `json:"days_overdue"`
 	Joined         bool       `json:"joined"`
 	LastActivityAt *time.Time `json:"last_activity_at"`
+	// The customer's own profile photo, once they have joined and added one.
+	CustomerPhotoURL *string `json:"customer_photo_url"`
 }
 
 // Overdue is BR-19: owed money, and nothing has happened for longer than the

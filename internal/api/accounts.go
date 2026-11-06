@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,6 +22,24 @@ func paramInt(c *echo.Context, name string) int64 {
 }
 
 func paramID(c *echo.Context) int64 { return paramInt(c, "id") }
+
+// customerPhotos is the profile photo of each account's customer, by user.
+func (s *Server) customerPhotos(ctx context.Context, accounts []store.Account) (map[int64]string, error) {
+	ids := make([]int64, 0, len(accounts))
+	for _, a := range accounts {
+		if a.CustomerID != nil {
+			ids = append(ids, *a.CustomerID)
+		}
+	}
+	return domain.AvatarURLs(ctx, s.Q, ids)
+}
+
+// accountView is the account as listed, with its customer's photo.
+func accountView(a store.Account, creditDueDays int32, photos map[int64]string) domain.AccountSummary {
+	view := domain.AccountView(a, creditDueDays)
+	view.CustomerPhotoURL = domain.PhotoURL(photos, a.CustomerID)
+	return view
+}
 
 // ------------------------------------------------------------- dashboard
 
@@ -78,12 +97,16 @@ func (s *Server) dashboard(c *echo.Context) error {
 		for i, entry := range ledger {
 			recent = append(recent, withField(entry, "account", M{"id": accountIDs[i], "display_name": nameOf[accountIDs[i]]}))
 		}
+		photos, err := s.customerPhotos(ctx, overdue)
+		if err != nil {
+			return err
+		}
 		overdueViews := make([]domain.AccountSummary, 0, 5)
 		for i, a := range overdue {
 			if i == 5 {
 				break
 			}
-			overdueViews = append(overdueViews, domain.AccountView(a, shop.CreditDueDays))
+			overdueViews = append(overdueViews, accountView(a, shop.CreditDueDays, photos))
 		}
 		outstanding, err := q.TotalOutstanding(ctx, shop.ID)
 		if err != nil {
@@ -102,6 +125,14 @@ func (s *Server) dashboard(c *echo.Context) error {
 		return err
 	}
 	ids := make([]int64, len(accounts))
+	shopIDs := make([]int64, len(accounts))
+	for i, a := range accounts {
+		shopIDs[i] = a.Account.ShopID
+	}
+	shopPhotos, err := domain.ShopPhotoURLs(ctx, q, shopIDs)
+	if err != nil {
+		return err
+	}
 	shopOf := map[int64]string{}
 	var totalOwed int64
 	accountViews := make([]M, 0, len(accounts))
@@ -109,7 +140,8 @@ func (s *Server) dashboard(c *echo.Context) error {
 		ids[i] = a.Account.ID
 		shopOf[a.Account.ID] = a.ShopName
 		totalOwed += max(a.Account.BalanceCents, 0)
-		accountViews = append(accountViews, withField(domain.AccountView(a.Account, a.CreditDueDays), "shop", M{"id": a.Account.ShopID, "name": a.ShopName}))
+		shop := M{"id": a.Account.ShopID, "name": a.ShopName, "photo_url": domain.PhotoURL(shopPhotos, &a.Account.ShopID)}
+		accountViews = append(accountViews, withField(domain.AccountView(a.Account, a.CreditDueDays), "shop", shop))
 	}
 	spent, err := q.SpentSince(ctx, store.SpentSinceParams{AccountIds: ids, Since: monthStart})
 	if err != nil {
@@ -164,6 +196,10 @@ func (s *Server) accounts(c *echo.Context) error {
 		return err
 	}
 	days := o.Shop.CreditDueDays
+	photos, err := s.customerPhotos(ctx, accounts)
+	if err != nil {
+		return err
+	}
 	views := make([]domain.AccountSummary, 0, len(accounts))
 	for _, a := range accounts {
 		keep := true
@@ -176,7 +212,7 @@ func (s *Server) accounts(c *echo.Context) error {
 			keep = a.BalanceCents <= 0
 		}
 		if keep {
-			views = append(views, domain.AccountView(a, days))
+			views = append(views, accountView(a, days, photos))
 		}
 	}
 	return c.JSON(http.StatusOK, M{"accounts": views})
@@ -245,7 +281,11 @@ func (s *Server) account(c *echo.Context) error {
 	for i, j := 0, len(ledger)-1; i < j; i, j = i+1, j-1 {
 		ledger[i], ledger[j] = ledger[j], ledger[i]
 	}
-	summary := domain.AccountView(account, shop.CreditDueDays)
+	photos, err := s.customerPhotos(ctx, []store.Account{account})
+	if err != nil {
+		return err
+	}
+	summary := accountView(account, shop.CreditDueDays, photos)
 
 	if isOwner {
 		audit, err := domain.RecentAudit(ctx, q, "Account", account.ID, 10)
@@ -266,8 +306,12 @@ func (s *Server) account(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
+	shopPhotos, err := domain.ShopPhotoURLs(ctx, q, []int64{shop.ID})
+	if err != nil {
+		return err
+	}
 	return c.JSON(http.StatusOK, M{
-		"viewer": "customer", "account": summary, "shop": M{"id": shop.ID, "name": shop.Name}, "ledger": ledger,
+		"viewer": "customer", "account": summary, "shop": M{"id": shop.ID, "name": shop.Name, "photo_url": domain.PhotoURL(shopPhotos, &shop.ID)}, "ledger": ledger,
 		"bank_accounts": banks,
 	})
 }

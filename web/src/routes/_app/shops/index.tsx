@@ -43,7 +43,7 @@ function Shops() {
                 href={`/shops/${shop.id}`}
                 className="group flex items-center gap-3 rounded-[1.25rem] border bg-card p-4 transition-colors hover:border-foreground/20 hover:bg-muted/40"
               >
-                <Initial text={shop.name} size="lg" />
+                <Initial text={shop.name} size="lg" src={shop.photo_url} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{shop.name}</span>
                   <span className="block truncate text-sm text-muted-foreground">{shop.kind_label}</span>
@@ -68,7 +68,7 @@ function Shops() {
                 <Row
                   key={shop.id}
                   href={`/shops/${shop.id}`}
-                  leading={<Initial text={shop.name} />}
+                  leading={<Initial text={shop.name} src={shop.photo_url} />}
                   title={shop.name}
                   subtitle={[shop.kind_label, shop.location].filter(Boolean).join(" · ")}
                   trailing={<span className="text-xs text-muted-foreground">{pluralize(shop.items_count, "item")}</span>}

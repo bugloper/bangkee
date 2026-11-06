@@ -9,6 +9,7 @@ sql:
       - migrations/20261104192839_drop_mobile_wallet_from_bank_accounts.sql
       - migrations/20261104193414_create_feedback.sql
       - migrations/20261105041340_add_profile_to_shops.sql
+      - migrations/20261106101222_add_coordinates_to_shops.sql
     queries: db/queries
     gen:
       go:

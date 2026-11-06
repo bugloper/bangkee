@@ -151,6 +151,8 @@ type Shop struct {
 	Location      *string
 	Phone         *string
 	Hours         *string
+	Latitude      *float64
+	Longitude     *float64
 }
 
 type Subscription struct {

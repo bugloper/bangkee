@@ -68,7 +68,7 @@ function Sidebar({ me, active, onRecord }: { me: Me; active?: string; onRecord?:
       <div className="border-t p-3">
         <DropdownMenu>
           <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted data-popup-open:bg-muted">
-            <Initial text={me.user.initial} size="sm" />
+            <Initial text={me.user.initial} size="sm" src={me.user.photo_url} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">{me.user.display_name}</span>
               <span className="block truncate text-xs text-muted-foreground">{me.user.email_address ?? me.user.phone}</span>
@@ -103,7 +103,7 @@ function Topbar({ me }: { me: Me }) {
         </Link>
       ) : (
         <Link to="/settings" aria-label="Your account" className="rounded-full md:invisible">
-          <Initial text={me.user.initial} size="lg" />
+          <Initial text={me.user.initial} size="lg" src={me.user.photo_url} />
         </Link>
       )}
       <div className="min-w-0 truncate text-center text-lg font-semibold tracking-tight">{page.title ?? "Bangkee"}</div>

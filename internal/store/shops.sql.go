@@ -69,7 +69,7 @@ func (q *Queries) AdminStats(ctx context.Context, monthStart time.Time) (AdminSt
 }
 
 const allShops = `-- name: AllShops :many
-SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours FROM shops ORDER BY id
+SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude FROM shops ORDER BY id
 `
 
 func (q *Queries) AllShops(ctx context.Context) ([]Shop, error) {
@@ -93,6 +93,8 @@ func (q *Queries) AllShops(ctx context.Context) ([]Shop, error) {
 			&i.Location,
 			&i.Phone,
 			&i.Hours,
+			&i.Latitude,
+			&i.Longitude,
 		); err != nil {
 			return nil, err
 		}
@@ -217,7 +219,7 @@ func (q *Queries) SetSubscriptionStatus(ctx context.Context, arg SetSubscription
 }
 
 const shopByID = `-- name: ShopByID :one
-SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours FROM shops WHERE id = $1
+SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude FROM shops WHERE id = $1
 `
 
 func (q *Queries) ShopByID(ctx context.Context, id int64) (Shop, error) {
@@ -235,6 +237,8 @@ func (q *Queries) ShopByID(ctx context.Context, id int64) (Shop, error) {
 		&i.Location,
 		&i.Phone,
 		&i.Hours,
+		&i.Latitude,
+		&i.Longitude,
 	)
 	return i, err
 }
@@ -259,7 +263,7 @@ func (q *Queries) ShopCounts(ctx context.Context, shopID int64) (ShopCountsRow, 
 }
 
 const shopDirectory = `-- name: ShopDirectory :many
-SELECT s.id, s.name, s.kind, s.location,
+SELECT s.id, s.name, s.kind, s.location, s.latitude, s.longitude,
        (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count
 FROM shops s
 WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
@@ -279,6 +283,8 @@ type ShopDirectoryRow struct {
 	Name       string
 	Kind       *string
 	Location   *string
+	Latitude   *float64
+	Longitude  *float64
 	ItemsCount int64
 }
 
@@ -297,6 +303,8 @@ func (q *Queries) ShopDirectory(ctx context.Context, arg ShopDirectoryParams) ([
 			&i.Name,
 			&i.Kind,
 			&i.Location,
+			&i.Latitude,
+			&i.Longitude,
 			&i.ItemsCount,
 		); err != nil {
 			return nil, err
@@ -310,7 +318,7 @@ func (q *Queries) ShopDirectory(ctx context.Context, arg ShopDirectoryParams) ([
 }
 
 const shopForOwner = `-- name: ShopForOwner :one
-SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours FROM shops WHERE owner_id = $1 ORDER BY id LIMIT 1
+SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude FROM shops WHERE owner_id = $1 ORDER BY id LIMIT 1
 `
 
 func (q *Queries) ShopForOwner(ctx context.Context, ownerID int64) (Shop, error) {
@@ -328,6 +336,8 @@ func (q *Queries) ShopForOwner(ctx context.Context, ownerID int64) (Shop, error)
 		&i.Location,
 		&i.Phone,
 		&i.Hours,
+		&i.Latitude,
+		&i.Longitude,
 	)
 	return i, err
 }
@@ -366,18 +376,21 @@ func (q *Queries) TotalOutstanding(ctx context.Context, shopID int64) (int64, er
 }
 
 const updateShopProfile = `-- name: UpdateShopProfile :exec
-UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, hours = $7, updated_at = now()
+UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, hours = $7,
+  latitude = $8, longitude = $9, updated_at = now()
 WHERE id = $1
 `
 
 type UpdateShopProfileParams struct {
-	ID       int64
-	Name     string
-	Kind     *string
-	About    *string
-	Location *string
-	Phone    *string
-	Hours    *string
+	ID        int64
+	Name      string
+	Kind      *string
+	About     *string
+	Location  *string
+	Phone     *string
+	Hours     *string
+	Latitude  *float64
+	Longitude *float64
 }
 
 func (q *Queries) UpdateShopProfile(ctx context.Context, arg UpdateShopProfileParams) error {
@@ -389,6 +402,8 @@ func (q *Queries) UpdateShopProfile(ctx context.Context, arg UpdateShopProfilePa
 		arg.Location,
 		arg.Phone,
 		arg.Hours,
+		arg.Latitude,
+		arg.Longitude,
 	)
 	return err
 }

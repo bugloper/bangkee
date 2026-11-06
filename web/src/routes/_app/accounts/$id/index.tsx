@@ -73,7 +73,7 @@ function OwnerView({ data }: { data: OwnerData }) {
             href={`/accounts/${other.id}`}
             className={cn("flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors", other.id === account.id ? "bg-accent text-accent-foreground" : "hover:bg-muted")}
           >
-            <Initial text={other.display_name} size="sm" />
+            <Initial text={other.display_name} size="sm" src={other.customer_photo_url} />
             <span className="min-w-0 flex-1 truncate font-medium">{other.display_name}</span>
             <Money cents={other.balance_cents} tone="auto" className="text-xs" />
           </AppLink>
@@ -83,7 +83,7 @@ function OwnerView({ data }: { data: OwnerData }) {
       <div className="grid gap-6">
         <Panel>
           <div className="flex items-center gap-3">
-            <Initial text={account.display_name} size="lg" />
+            <Initial text={account.display_name} size="lg" src={account.customer_photo_url} />
             <div className="min-w-0 flex-1">
               <div className="truncate text-lg font-semibold tracking-tight">{account.display_name}</div>
               <div className="text-sm text-muted-foreground">
@@ -214,7 +214,7 @@ function CustomerView({ data }: { data: CustomerData }) {
       <div className="grid gap-6 xl:sticky xl:top-24">
       <Panel>
         <div className="flex items-center gap-3">
-          <Initial text={shop.name} size="lg" />
+          <Initial text={shop.name} size="lg" src={shop.photo_url} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-lg font-semibold tracking-tight">{shop.name}</div>
             <div className="text-sm text-muted-foreground">Your credit account</div>

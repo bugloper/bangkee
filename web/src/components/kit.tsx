@@ -173,12 +173,13 @@ export function KV({ label, children, className }: { label: React.ReactNode; chi
 // ------------------------------------------------------------------- people
 
 /** A round initial standing in for a person, a shop or a table. */
-export function Initial({ text, size = "md", tone = "brand" }: { text: string; size?: "sm" | "md" | "lg" | "xl"; tone?: "brand" | "owed" | "muted" }) {
+/** Someone's or a shop's photo when there is one, its first letter when not. */
+export function Initial({ text, size = "md", tone = "brand", src }: { text: string; size?: "sm" | "md" | "lg" | "xl"; tone?: "brand" | "owed" | "muted"; src?: string | null }) {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full font-semibold select-none",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold select-none",
         size === "sm" && "size-8 text-xs",
         size === "md" && "size-10 text-sm",
         size === "lg" && "size-12 text-base",
@@ -188,7 +189,7 @@ export function Initial({ text, size = "md", tone = "brand" }: { text: string; s
         tone === "muted" && "bg-muted text-muted-foreground",
       )}
     >
-      {text.charAt(0).toUpperCase()}
+      {src ? <img src={src} alt="" loading="lazy" className="size-full object-cover" /> : text.charAt(0).toUpperCase()}
     </span>
   )
 }

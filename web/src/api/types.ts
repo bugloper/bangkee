@@ -44,6 +44,7 @@ export interface User {
   locale: Locale | null
   display_name: string
   initial: string
+  photo_url: string | null // their profile photo, if they added one
 }
 
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "disabled"
@@ -167,6 +168,7 @@ export interface AccountSummary {
   days_overdue: number
   joined: boolean
   last_activity_at: Timestamp | null
+  customer_photo_url: string | null // the customer's own profile photo, once joined
 }
 
 export interface AuditEvent {
@@ -219,7 +221,7 @@ export type AccountDetail =
   | {
       viewer: "customer"
       account: AccountSummary
-      shop: { id: number; name: string }
+      shop: { id: number; name: string; photo_url: string | null }
       ledger: LedgerEntry[] // newest first, crossed-out rows included
       bank_accounts: BankAccount[] // active, primary first
     }
@@ -317,7 +319,7 @@ export interface CustomerDashboard {
   kind: "customer"
   total_owed_cents: Cents
   spent_month_cents: Cents
-  accounts: (AccountSummary & { shop: { id: number; name: string } })[]
+  accounts: (AccountSummary & { shop: { id: number; name: string; photo_url: string | null } })[]
   recent_transactions: (LedgerEntry & { account: { id: number; shop_name: string } })[]
 }
 
@@ -371,7 +373,7 @@ export interface ShopKind {
 
 /** GET /api/shops?kind=&q= — every shop with items to show. */
 export interface ShopDirectory {
-  shops: { id: number; name: string; kind: string | null; kind_label: string; location: string | null; items_count: number }[]
+  shops: { id: number; name: string; kind: string | null; kind_label: string; location: string | null; items_count: number; photo_url: string | null; latitude: number | null; longitude: number | null }[]
   kinds: ShopKind[]
 }
 
@@ -385,6 +387,9 @@ export interface ShopProfile {
   location: string | null
   phone: string | null
   hours: string | null
+  latitude: number | null // the pin on the map: both or neither
+  longitude: number | null
+  photo_url: string | null
 }
 
 export interface ShopProfileInput {
@@ -394,6 +399,8 @@ export interface ShopProfileInput {
   location: string
   phone: string
   hours: string
+  latitude: number | null
+  longitude: number | null
 }
 
 /** GET /api/shop/profile — the owner's own, to edit. */

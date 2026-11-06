@@ -68,6 +68,13 @@ var demoNames = []string{
 // Where the demo shops are.
 var demoTowns = []string{"Norzin Lam, Thimphu", "Changzamtog, Thimphu", "Paro Town", "Phuentsholing", "Punakha", "Wangdue", "Bumthang", "Gelephu"}
 
+// Where each town is, for the shops' pins: a shop sits a little off the
+// town's centre, so pins in one town do not stack.
+var demoTownPins = [][2]float64{
+	{27.4716, 89.6386}, {27.4580, 89.6440}, {27.4305, 89.4140}, {26.8516, 89.3880},
+	{27.5916, 89.8770}, {27.4862, 89.8990}, {27.5492, 90.7525}, {26.8706, 90.4850},
+}
+
 // Owners' names, one per shop of a type.
 var demoOwners = []string{
 	"Tshering Wangchuk", "Pema Lhamo", "Kinley Dorji", "Sonam Choden", "Ugyen Tenzin", "Dechen Wangmo", "Karma Tshering",
@@ -114,7 +121,10 @@ func seedDirectory(ctx context.Context, db *pgxpool.Pool, priceCents int64) erro
 			if err != nil {
 				return err
 			}
-			profile := domain.ShopProfileInput{Name: name, Kind: kind.key, Location: demoTowns[(i+k)%len(demoTowns)], Phone: phone}
+			town := (i + k) % len(demoTowns)
+			lat := demoTownPins[town][0] + float64(k%5-2)*0.0012
+			lng := demoTownPins[town][1] + float64(i%5-2)*0.0012
+			profile := domain.ShopProfileInput{Name: name, Kind: kind.key, Location: demoTowns[town], Phone: phone, Latitude: &lat, Longitude: &lng}
 			if err := domain.UpdateShopProfile(ctx, q, shopID, profile); err != nil {
 				return err
 			}

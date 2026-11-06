@@ -446,6 +446,9 @@ func (s *Server) attachment(c *echo.Context) error {
 	switch row.RecordType {
 	case domain.TransactionRecordType:
 		allowed, err = s.Q.TransactionVisibleTo(ctx, store.TransactionVisibleToParams{ID: row.RecordID, UserID: cur.User.ID})
+	case domain.UserRecordType, domain.ShopRecordType:
+		// Profile photos of people and shops: shown to anyone signed in.
+		allowed = true
 	case domain.SubscriptionPaymentRecordType:
 		allowed = cur.User.PlatformAdmin
 		if !allowed {

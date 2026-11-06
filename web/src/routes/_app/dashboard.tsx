@@ -115,7 +115,7 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
                   <Row
                     key={account.id}
                     href={`/accounts/${account.id}`}
-                    leading={<Initial text={account.display_name} tone="owed" />}
+                    leading={<Initial text={account.display_name} tone="owed" src={account.customer_photo_url} />}
                     title={account.display_name}
                     subtitle={<span className="text-warn">{pluralize(account.days_overdue, "day")} overdue</span>}
                     trailing={<Money cents={account.balance_cents} tone="owed" />}
@@ -218,7 +218,7 @@ function Customer({ data }: { data: CustomerDashboard }) {
               <Row
                 key={account.id}
                 href={`/accounts/${account.id}`}
-                leading={<Initial text={account.shop.name} />}
+                leading={<Initial text={account.shop.name} src={account.shop.photo_url} />}
                 title={account.shop.name}
                 subtitle={account.customer_phone || t("customer_home.credit_account")}
                 trailing={
