@@ -51,6 +51,7 @@ export function Landing() {
         <Hero />
         <Problem />
         <HowItWorks />
+        <Compare />
         <Features />
         <Preview />
         <Pricing />
@@ -101,6 +102,13 @@ function SiteHeader() {
 // -------------------------------------------------------------------- hero
 
 function Hero() {
+  const { data } = useQuery({ queryKey: ["pricing"], queryFn: api.pricing, staleTime: Infinity })
+  const points = [
+    data ? `${data.trial_days}-day free trial` : "Free trial",
+    data ? `Then ${ngultrum(data.monthly_price_cents)} a month` : "One simple price",
+    "Customers join free",
+    "English & Dzongkha",
+  ]
   return (
     <section className="relative overflow-hidden">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
@@ -117,7 +125,7 @@ function Hero() {
             The credit book your shop <span className="text-primary">and your customers</span> share.
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-pretty text-muted-foreground">
-            Bangkee replaces the <em className="font-medium text-foreground not-italic">khata</em> behind the counter. Every credit and every payment is written once and seen by both sides — on their own phones, the moment it happens.
+            Bangkee replaces the credit notebook behind the counter. Every credit and every payment is written once and seen by both sides — on their own phones, the moment it happens.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link to="/registration/new" className={buttonVariants({ size: "xl" })}>
@@ -128,7 +136,7 @@ function Hero() {
             </Link>
           </div>
           <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            {["14-day free trial", "No card needed", "Customers join free", "English & Dzongkha"].map((point) => (
+            {points.map((point) => (
               <li key={point} className="flex items-center gap-1.5">
                 <CheckIcon className="size-4 text-paid" /> {point}
               </li>
@@ -277,7 +285,7 @@ function Problem() {
     <section className="border-y bg-muted/40 py-20 sm:py-28">
       <div className={container}>
         <SectionIntro eyebrow="The problem" title="The notebook behind the counter has served shops for generations. It also costs them.">
-          Credit is how neighbourhood shops keep customers. But a handwritten khata only works as long as everyone remembers the same thing.
+          Credit is how neighbourhood shops keep customers. But a handwritten book only works as long as everyone remembers the same thing.
         </SectionIntro>
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PROBLEMS.map(([Icon, title, body]) => (
@@ -318,6 +326,54 @@ function HowItWorks() {
             </li>
           ))}
         </ol>
+      </div>
+    </section>
+  )
+}
+
+// ----------------------------------------------------------------- compare
+
+// The everyday moments at the counter, with the notebook and with Bangkee.
+const MOMENTS: [string, string, string][] = [
+  ["A customer takes goods on credit", "Find their page among dozens while they wait, then write the line by hand.", "Type two letters of their name, tap Credit, enter the amount. They see it on their phone."],
+  ["They come to settle at month end", "Flip back to their page, add up the month, take the money.", "Their balance is already added up. Record the payment — with a photo of the mBoB screen."],
+  ["After they settle", "Cross out the page and start them on a fresh one; the old months are scattered behind.", "The balance reads zero and the account carries on. Every past month stays in the history."],
+  ["“How much do I owe?”", "They ask at the counter, or not at all, and the total is a surprise.", "They check their own phone, any time, at every shop they use."],
+  ["The book goes missing", "Months of credit are gone with it.", "Nothing is lost: the book lives on Bangkee, not on paper."],
+  ["Someone is late paying", "You have to notice, remember, and bring it up yourself.", "Bangkee flags it on your home screen and reminds you both."],
+]
+
+function Compare() {
+  return (
+    <section className="border-t py-20 sm:py-28">
+      <div className={container}>
+        <SectionIntro eyebrow="Notebook or Bangkee" title="The same moments at the counter — without the flipping." center />
+        <div className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-xs">
+          <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] border-b bg-muted/50 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:grid">
+            <div className="px-5 py-3">At the counter</div>
+            <div className="flex items-center gap-2 px-5 py-3">
+              <BookOpenIcon className="size-3.5" /> With the notebook
+            </div>
+            <div className="flex items-center gap-2 px-5 py-3 text-primary">
+              <LogoMark className="size-4" /> With Bangkee
+            </div>
+          </div>
+          <div className="divide-y">
+            {MOMENTS.map(([moment, paper, bangkee]) => (
+              <div key={moment} className="grid gap-3 px-5 py-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] md:gap-0 md:px-0 md:py-0">
+                <div className="font-semibold tracking-tight md:px-5 md:py-5">{moment}</div>
+                <div className="flex gap-2.5 text-[0.9375rem] leading-relaxed text-muted-foreground md:px-5 md:py-5">
+                  <BookOpenIcon className="mt-1 size-4 shrink-0 text-owed md:hidden" aria-label="With the notebook" />
+                  {paper}
+                </div>
+                <div className="flex gap-2.5 rounded-xl bg-accent/50 px-3 py-2.5 text-[0.9375rem] leading-relaxed md:rounded-none md:bg-accent/30 md:px-5 md:py-5">
+                  <CheckIcon className="mt-1 size-4 shrink-0 text-paid" aria-label="With Bangkee" />
+                  {bangkee}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -495,7 +551,8 @@ function Pricing() {
                     <span className="text-muted-foreground">/month</span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Billed annually — <span className="tabular font-medium text-foreground">{ngultrum(data.annual_price_cents)}</span> per year.
+                    About <span className="tabular font-medium text-foreground">{ngultrum(Math.round(data.annual_price_cents / 365 / 100) * 100)}</span> a day. Billed annually —{" "}
+                    <span className="tabular font-medium text-foreground">{ngultrum(data.annual_price_cents)}</span> per year.
                   </p>
                 </>
               ) : (
@@ -507,7 +564,7 @@ function Pricing() {
               <Link to="/registration/new" className={buttonVariants({ size: "xl", className: "mt-7 w-full" })}>
                 Start your free trial <ArrowRightIcon />
               </Link>
-              <p className="mt-3 text-center text-xs text-muted-foreground">{data ? `${data.trial_days} days free` : "Free to start"} · No card needed · Pay by bank transfer when you're ready</p>
+              <p className="mt-3 text-center text-xs text-muted-foreground">{data ? `${data.trial_days} days free` : "Free to start"} · Nothing to pay to start · Pay by bank transfer when you're ready</p>
               <div className="mt-7 border-t pt-6">
                 <div className="text-sm font-semibold">Everything included</div>
                 <ul className="mt-3 grid gap-2.5 text-sm">

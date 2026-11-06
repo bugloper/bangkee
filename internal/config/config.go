@@ -107,7 +107,7 @@ func FromEnv() (Config, error) {
 			AccountName:   or("BANGKEE_ACCOUNT_NAME", "Bangkee"),
 			AccountNumber: or("BANGKEE_ACCOUNT_NUMBER", "1010 2030 4050"),
 			Branch:        or("BANGKEE_BRANCH", "Thimphu Main"),
-			PriceCents:    30_000, // Nu. 300 a month
+			PriceCents:    15_000, // Nu. 150 a month
 		},
 	}
 	if cfg.DatabaseURL == "" {

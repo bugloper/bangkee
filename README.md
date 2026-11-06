@@ -1,10 +1,10 @@
 # Bangkee
 
-The shared credit book — the *khata* — for shops in Bhutan. The owner records
+The shared credit book for shops in Bhutan. The owner records
 credits and payments, the customer sees their own balance. A credit can be
 picked from the shop's items; a payment made by mBoB or mPay can carry a photo
 of the customer's payment screen, straightened like a scanned document.
-Customers browse shops and their items. One subscription plan (Nu. 300 a
+Customers browse shops and their items. One subscription plan (Nu. 150 a
 month, billed annually) is reviewed by the Bangkee operator.
 
 | | |

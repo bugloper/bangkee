@@ -461,8 +461,8 @@ export interface Billing {
 
 /** GET /api/public/pricing — no sign-in; the homepage's pricing section. One plan, billed annually. */
 export interface PublicPricing {
-  monthly_price_cents: Cents // 30000 = Nu. 300 a month
-  annual_price_cents: Cents // 360000 = Nu. 3,600, paid once a year
+  monthly_price_cents: Cents // 15000 = Nu. 150 a month
+  annual_price_cents: Cents // 180000 = Nu. 1,800, paid once a year
   trial_days: number // 14
 }
 
