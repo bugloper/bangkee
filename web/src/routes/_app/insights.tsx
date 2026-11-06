@@ -38,8 +38,8 @@ function InsightsScreen() {
   const { data } = useQuery({ queryKey: ["insights", month ?? ""], queryFn: () => api.insights(month), placeholderData: keepPreviousData })
 
   return (
-    <div className="mx-auto grid w-full max-w-2xl gap-4">
-      <div role="tablist" aria-label="What to look at" className="grid grid-cols-3 gap-1 rounded-full border bg-card p-1">
+    <div className="mx-auto grid w-full max-w-2xl gap-4 xl:max-w-none">
+      <div role="tablist" aria-label="What to look at" className="grid grid-cols-3 gap-1 rounded-full border bg-card p-1 xl:w-md">
         {VIEWS.map(([key, name]) => (
           <button
             key={key}
@@ -81,7 +81,8 @@ function Flow({ data, kind, onMonth }: { data: Insights; kind: "credit" | "payme
   const title = kind === "credit" ? "Credit given" : "Payments received"
 
   return (
-    <>
+    // A desktop puts the month's chart beside its entries.
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:items-start">
       <Panel>
         <div className="text-sm font-medium text-muted-foreground">
           {title} · {monthName(data.month)}
@@ -146,7 +147,7 @@ function Flow({ data, kind, onMonth }: { data: Insights; kind: "credit" | "payme
           </Empty>
         )}
       </Panel>
-    </>
+    </div>
   )
 }
 
@@ -179,7 +180,7 @@ function Owed({ data }: { data: Insights }) {
   const topShare = total > 0 ? Math.round((data.owing[0].balance_cents / total) * 100) : 0
 
   return (
-    <>
+    <div className="grid gap-4 xl:max-w-3xl">
       {data.overdue_count > 0 && !dismissed && (
         <div role="status" className="flex items-start gap-3 rounded-2xl border border-primary/25 bg-accent px-4 py-3">
           <CircleAlertIcon className="mt-0.5 size-5 shrink-0 text-primary" />
@@ -239,7 +240,7 @@ function Owed({ data }: { data: Insights }) {
           )
         })}
       </div>
-    </>
+    </div>
   )
 }
 

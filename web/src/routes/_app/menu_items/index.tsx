@@ -28,7 +28,7 @@ const OUT = "\u0000out" // the "Out of stock" chip; no category can be named thi
 // The shop's catalog: what it sells, by category, with prices and whether it
 // is in stock. Picked from when recording a credit; customers browse it.
 function Catalog() {
-  usePage("Items", "/settings", { narrow: true })
+  usePage("Items", "/settings")
   const me = useMe()
   const { data } = useQuery({ queryKey: ["menu_items"], queryFn: api.menuItems })
   const [q, setQ] = useState("")
@@ -88,8 +88,9 @@ function Catalog() {
             <SectionLabel>
               {group.category} · {group.items.length}
             </SectionLabel>
-            <Panel flush>
-              <div className="divide-y">
+            {/* One list on a phone; on a desktop, a card for each item. */}
+            <Panel flush className="md:overflow-visible md:rounded-none md:border-0 md:bg-transparent">
+              <div className="divide-y md:grid md:grid-cols-2 md:gap-3 md:divide-y-0 xl:grid-cols-3">
                 {group.items.map((item) => (
                   <ItemRow key={item.id} item={item} />
                 ))}
@@ -126,7 +127,7 @@ function ItemRow({ item }: { item: MenuItem }) {
   const available = stock.isPending ? stock.variables : item.available
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5">
+    <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 md:rounded-[1.25rem] md:border md:bg-card md:px-4 md:py-3 md:transition-colors md:hover:border-foreground/20">
       <AppLink href={`/menu_items/${item.id}/edit`} className="flex min-w-0 flex-1 items-center gap-3">
         <ItemThumb src={item.image_url} className={cn("size-12", !available && "opacity-50 grayscale")} />
         <span className={cn("min-w-0 flex-1", !available && "opacity-60")}>

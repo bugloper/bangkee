@@ -183,9 +183,11 @@ function Customer({ data }: { data: CustomerDashboard }) {
   const t = useT()
   usePage(t("customer_home.title"))
   const settled = data.total_owed_cents === 0
+  // A phone stacks these in order; a desktop places them in two columns —
+  // the balance and the accounts on the left, the numbers and activity right.
   return (
-    <div className="grid gap-6">
-      <section className={cn("relative overflow-hidden rounded-[1.25rem] p-5 shadow-lg sm:p-7", settled ? "bg-[linear-gradient(135deg,oklch(0.52_0.12_158),oklch(0.4_0.1_165))] text-white" : "bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] text-white shadow-primary/25")}>
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:grid-rows-[auto_auto_1fr] xl:items-start">
+      <section className={cn("relative overflow-hidden rounded-[1.25rem] p-5 shadow-lg sm:p-7 xl:col-start-1 xl:row-start-1", settled ? "bg-[linear-gradient(135deg,oklch(0.52_0.12_158),oklch(0.4_0.1_165))] text-white" : "bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] text-white shadow-primary/25")}>
         <div aria-hidden="true" className="absolute -top-20 -right-16 size-64 rounded-full bg-white/10 blur-2xl" />
         <div className="relative">
           <div className="text-sm opacity-75">{t("customer_home.total_label")}</div>
@@ -194,20 +196,22 @@ function Customer({ data }: { data: CustomerDashboard }) {
         </div>
       </section>
 
-      <Panel flush>
+      <Panel flush className="xl:col-start-1 xl:row-start-3">
         <Rows>
           <Row href="/shops" leading={<RowIcon icon={StoreIcon} />} title={t("shops.card_title")} subtitle={t("shops.card_body")} chevron />
         </Rows>
       </Panel>
 
-      <InstallCard />
+      <div className="empty:hidden xl:col-span-2 xl:row-start-4">
+        <InstallCard />
+      </div>
 
-      <StatGrid className="lg:grid-cols-2">
+      <StatGrid className="xl:col-start-2 xl:row-start-1 lg:grid-cols-2">
         <Stat label={t("customer_home.shops")} value={data.accounts.length} />
         <Stat label={t("customer_home.taken_this_month")} value={ngultrum(data.spent_month_cents)} />
       </StatGrid>
 
-      <Panel flush title={t("customer_home.my_accounts")}>
+      <Panel flush title={t("customer_home.my_accounts")} className="xl:col-start-1 xl:row-start-2">
         {data.accounts.length > 0 ? (
           <Rows>
             {data.accounts.map((account) => (
@@ -235,7 +239,7 @@ function Customer({ data }: { data: CustomerDashboard }) {
       </Panel>
 
       {data.recent_transactions.length > 0 && (
-        <Panel flush title={t("customer_home.recent_activity")}>
+        <Panel flush title={t("customer_home.recent_activity")} className="xl:col-start-2 xl:row-span-2 xl:row-start-2">
           <Rows>
             {data.recent_transactions.map((entry) => (
               <Row

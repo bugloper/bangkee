@@ -28,7 +28,7 @@ const SEARCH_FROM = 9
 function ShopScreen() {
   const id = Number(Route.useParams().id)
   const { data } = useQuery({ queryKey: ["shop", id], queryFn: () => api.shopPage(id) })
-  usePage(data?.shop.name, data?.mine ? "/menu_items" : "/shops", { narrow: true })
+  usePage(data?.shop.name, data?.mine ? "/menu_items" : "/shops")
   const [q, setQ] = useState("")
   const [category, setCategory] = useState("")
   if (!data) return <Loading />
@@ -39,36 +39,45 @@ function ShopScreen() {
     .map((g) => ({ ...g, items: g.items.filter((item) => matches(q, item.name, g.category)) }))
     .filter((g) => g.items.length > 0)
 
+  // A desktop keeps who the shop is in view beside what it sells.
   return (
-    <div className="grid gap-4">
-      <ShopHeader shop={data.shop} mine={data.mine} />
+    <div className="mx-auto grid w-full max-w-2xl gap-4 xl:max-w-none xl:grid-cols-[20rem_minmax(0,1fr)] xl:items-start xl:gap-6">
+      <div className="xl:sticky xl:top-24">
+        <ShopHeader shop={data.shop} mine={data.mine} />
+      </div>
+      <div className="grid gap-4">
+        {count >= SEARCH_FROM && (
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input type="search" aria-label={`Search ${data.shop.name}`} placeholder="Search this shop" className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
+        )}
+        {data.menu.length > 1 && (
+          <Chips
+            label="Category"
+            chips={[{ key: "", label: "All" }, ...data.menu.map((g) => ({ key: g.category, label: g.category, count: g.items.length }))]}
+            value={category}
+            onChange={setCategory}
+          />
+        )}
 
-      {count >= SEARCH_FROM && (
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input type="search" aria-label={`Search ${data.shop.name}`} placeholder="Search this shop" className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
-      )}
-      {data.menu.length > 1 && (
-        <Chips label="Category" chips={[{ key: "", label: "All" }, ...data.menu.map((g) => ({ key: g.category, label: g.category, count: g.items.length }))]} value={category} onChange={setCategory} />
-      )}
-
-      {shown.map((group) => (
-        <Group key={group.category} group={group} />
-      ))}
-      {count === 0 ? (
-        <Panel>
-          <Empty title="No items listed yet">{data.mine ? "Add your items and they show here." : "This shop has not listed anything yet."}</Empty>
-        </Panel>
-      ) : (
-        shown.length === 0 && (
+        {shown.map((group) => (
+          <Group key={group.category} group={group} />
+        ))}
+        {count === 0 ? (
           <Panel>
-            <Empty icon={SearchIcon} title="Nothing matches">
-              No item called “{q.trim()}”{category && ` in ${category}`}.
-            </Empty>
+            <Empty title="No items listed yet">{data.mine ? "Add your items and they show here." : "This shop has not listed anything yet."}</Empty>
           </Panel>
-        )
-      )}
+        ) : (
+          shown.length === 0 && (
+            <Panel>
+              <Empty icon={SearchIcon} title="Nothing matches">
+                No item called “{q.trim()}”{category && ` in ${category}`}.
+              </Empty>
+            </Panel>
+          )
+        )}
+      </div>
     </div>
   )
 }
@@ -122,7 +131,7 @@ function Group({ group }: { group: MenuGroup }) {
     <section className="grid gap-2">
       <SectionLabel>{group.category}</SectionLabel>
       {photos ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
           {group.items.map((item) => (
             <div key={item.id} className="overflow-hidden rounded-[1.25rem] border bg-card">
               <ItemThumb src={item.image_url} className={cn("aspect-square w-full rounded-none", !item.available && "opacity-50 grayscale")} />

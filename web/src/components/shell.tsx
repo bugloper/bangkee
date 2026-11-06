@@ -96,7 +96,7 @@ const roundButton = "relative inline-flex size-11 shrink-0 items-center justify-
 function Topbar({ me }: { me: Me }) {
   const page = pageStore.use()
   return (
-    <header className="no-print sticky top-0 z-20 grid h-16 grid-cols-[2.75rem_1fr_2.75rem] items-center gap-2 bg-background/85 px-4 backdrop-blur-xl sm:px-6 md:h-18 md:px-8">
+    <header className="no-print sticky top-0 z-20 grid h-16 grid-cols-[2.75rem_1fr_2.75rem] items-center gap-2 bg-background/85 px-4 backdrop-blur-xl sm:px-6 md:hidden">
       {page.back ? (
         <Link to={page.back as never} aria-label="Back" className={roundButton}>
           <ChevronLeftIcon className="size-5" />
@@ -111,6 +111,27 @@ function Topbar({ me }: { me: Me }) {
         <BellIcon className="size-5" />
         <Badge count={me.unread_notifications} className="absolute -top-0.5 -right-0.5" />
       </Link>
+    </header>
+  )
+}
+
+/** The desktop header: the title on the left, over the content it names. */
+function DesktopTopbar({ me }: { me: Me }) {
+  const page = pageStore.use()
+  return (
+    <header className="no-print sticky top-0 z-20 hidden h-20 items-center border-b border-transparent bg-background/85 px-8 backdrop-blur-xl md:flex">
+      <div className="mx-auto flex w-full max-w-[68rem] items-center gap-3">
+        {page.back && (
+          <Link to={page.back as never} aria-label="Back" className={cn(roundButton, "size-10")}>
+            <ChevronLeftIcon className="size-5" />
+          </Link>
+        )}
+        <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold tracking-tight">{page.title ?? "Bangkee"}</h1>
+        <Link to="/notifications" aria-label="Notifications" className={cn(roundButton, "size-10")}>
+          <BellIcon className="size-[1.125rem]" />
+          <Badge count={me.unread_notifications} className="absolute -top-0.5 -right-0.5" />
+        </Link>
+      </div>
     </header>
   )
 }
@@ -173,13 +194,17 @@ export function Shell({ me, children }: { me: Me; children: React.ReactNode }) {
       <Sidebar me={me} active={active} onRecord={record} />
       <div className="md:pl-64 print:pl-0">
         <Topbar me={me} />
-        <main className={cn("mx-auto w-full px-4 pt-4 pb-28 sm:px-6 md:px-8 md:pt-6 md:pb-12 print:max-w-none print:p-0", page.narrow ? "max-w-2xl" : "max-w-6xl")}>
-          <div className="mb-4 grid gap-2 empty:hidden">
-            <OfflineBanner />
-            <SubscriptionBanner me={me} />
-            <FlashBanners />
+        <DesktopTopbar me={me} />
+        {/* On a desktop a narrow screen keeps its measure but lines up under the title. */}
+        <main className="mx-auto w-full max-w-6xl px-4 pt-4 pb-28 sm:px-6 md:px-8 md:pt-2 md:pb-12 print:max-w-none print:p-0">
+          <div className={cn(page.narrow && "mx-auto max-w-2xl md:mx-0")}>
+            <div className="mb-4 grid gap-2 empty:hidden">
+              <OfflineBanner />
+              <SubscriptionBanner me={me} />
+              <FlashBanners />
+            </div>
+            {children}
           </div>
-          {children}
         </main>
         <Tabbar me={me} active={active} onRecord={record} />
         {record && <RecordSheet open={recording} onOpenChange={setRecording} />}

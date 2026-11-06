@@ -208,8 +208,10 @@ function CustomerView({ data }: { data: CustomerData }) {
   // the moment to offer notifications (once, until they answer).
   useEffect(() => offerNotifications(), [])
 
+  // A desktop keeps the balance and how to pay in view beside the history.
   return (
-    <div className="mx-auto grid w-full max-w-3xl gap-6">
+    <div className="mx-auto grid w-full max-w-3xl gap-6 xl:max-w-none xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] xl:items-start">
+      <div className="grid gap-6 xl:sticky xl:top-24">
       <Panel>
         <div className="flex items-center gap-3">
           <Initial text={shop.name} size="lg" />
@@ -237,6 +239,7 @@ function CustomerView({ data }: { data: CustomerData }) {
           <BankDetails banks={data.bank_accounts} full />
         </Panel>
       )}
+      </div>
 
       <Panel flush title={t("account.transaction_history")}>
         {data.ledger.length > 0 ? (

@@ -1,9 +1,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { SearchIcon, StoreIcon } from "lucide-react"
+import { ChevronRightIcon, MapPinIcon, SearchIcon, StoreIcon } from "lucide-react"
 import { useState } from "react"
 
 import { api } from "@/api/client"
+import { AppLink } from "@/components/app-link"
 import { Chips } from "@/components/catalog"
 import { Loading } from "@/components/form"
 import { Empty, Initial, Panel, Row, Rows } from "@/components/kit"
@@ -33,21 +34,50 @@ function Shops() {
       {!data ? (
         <Loading />
       ) : data.shops.length > 0 ? (
-        <Panel flush>
-          <Rows>
+        <>
+          {/* A desktop shows the shops as cards, several to a row. */}
+          <div className="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-3">
             {data.shops.map((shop) => (
-              <Row
+              <AppLink
                 key={shop.id}
                 href={`/shops/${shop.id}`}
-                leading={<Initial text={shop.name} />}
-                title={shop.name}
-                subtitle={[shop.kind_label, shop.location].filter(Boolean).join(" · ")}
-                trailing={<span className="text-xs text-muted-foreground">{pluralize(shop.items_count, "item")}</span>}
-                chevron
-              />
+                className="group flex items-center gap-3 rounded-[1.25rem] border bg-card p-4 transition-colors hover:border-foreground/20 hover:bg-muted/40"
+              >
+                <Initial text={shop.name} size="lg" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{shop.name}</span>
+                  <span className="block truncate text-sm text-muted-foreground">{shop.kind_label}</span>
+                  <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                    {shop.location && (
+                      <>
+                        <MapPinIcon className="size-3.5 shrink-0" />
+                        <span className="truncate">{shop.location}</span>
+                        <span aria-hidden>·</span>
+                      </>
+                    )}
+                    <span className="shrink-0">{pluralize(shop.items_count, "item")}</span>
+                  </span>
+                </span>
+                <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              </AppLink>
             ))}
-          </Rows>
-        </Panel>
+          </div>
+          <Panel flush className="md:hidden">
+            <Rows>
+              {data.shops.map((shop) => (
+                <Row
+                  key={shop.id}
+                  href={`/shops/${shop.id}`}
+                  leading={<Initial text={shop.name} />}
+                  title={shop.name}
+                  subtitle={[shop.kind_label, shop.location].filter(Boolean).join(" · ")}
+                  trailing={<span className="text-xs text-muted-foreground">{pluralize(shop.items_count, "item")}</span>}
+                  chevron
+                />
+              ))}
+            </Rows>
+          </Panel>
+        </>
       ) : (
         <Panel>
           <Empty icon={StoreIcon} title="No shops found">
