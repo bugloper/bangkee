@@ -2,7 +2,8 @@
 # shared Caddy (deploy/bangkee.caddy), which reaches the app over the "edge"
 # network; nothing here is published on the host. See README "Deploying".
 #
-# Needs a .env beside it with BANGKEE_DOMAIN, SECRET_KEY_BASE and POSTGRES_PASSWORD.
+# Needs a .env beside it with BANGKEE_DOMAIN, SECRET_KEY_BASE and POSTGRES_PASSWORD,
+# and optionally VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY for Web Push.
 services:
   bangkee:
     build: .
@@ -15,6 +16,10 @@ services:
       DATABASE_URL: postgres://bangkee:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/bangkee
       SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE}
       BANGKEE_HOST: ${BANGKEE_DOMAIN:?set BANGKEE_DOMAIN}
+      # Web Push, off when unset. Never change the pair once phones have subscribed.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:hello@bangkee.bt}
     volumes:
       - bangkee-storage:/app/storage
     expose:
