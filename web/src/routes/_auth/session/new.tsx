@@ -7,6 +7,7 @@ import { AuthFrame } from "@/components/auth-frame"
 import { Field, Segmented } from "@/components/form"
 import { PinInput } from "@/components/pin-input"
 import { Button } from "@/components/ui/button"
+import { PasswordInput } from "@/components/password-input"
 import { Input } from "@/components/ui/input"
 import { go, takeReturnPath } from "@/lib/go"
 import { isAdminHost } from "@/lib/host"
@@ -99,7 +100,7 @@ function SignIn() {
                 </Link>
               }
             >
-              <Input id="password" type="password" required autoComplete="current-password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <PasswordInput id="password" required autoComplete="current-password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
             </Field>
           </>
         )}

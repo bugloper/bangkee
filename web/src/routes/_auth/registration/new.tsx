@@ -6,6 +6,7 @@ import { api } from "@/api/client"
 import { AuthFrame } from "@/components/auth-frame"
 import { ErrorBox, Field } from "@/components/form"
 import { Button } from "@/components/ui/button"
+import { PasswordInput } from "@/components/password-input"
 import { Input } from "@/components/ui/input"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
@@ -80,7 +81,7 @@ function Register() {
           <Input id="phone" type="tel" placeholder="17 00 00 00" value={form.phone} onChange={set("phone")} />
         </Field>
         <Field label="Password" htmlFor="password">
-          <Input id="password" type="password" required autoComplete="new-password" placeholder="At least 8 characters" value={form.password} onChange={set("password")} />
+          <PasswordInput id="password" required autoComplete="new-password" placeholder="At least 8 characters" value={form.password} onChange={set("password")} />
         </Field>
         <Button type="submit" size="lg" className="mt-2 w-full" disabled={register.isPending}>
           {invited ? "Create account" : "Create shop"}

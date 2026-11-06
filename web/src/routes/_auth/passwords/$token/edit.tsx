@@ -6,7 +6,7 @@ import { api, ApiError } from "@/api/client"
 import { AuthFrame } from "@/components/auth-frame"
 import { Field } from "@/components/form"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/password-input"
 import { flashAlert, flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
 import { usePage } from "@/lib/page"
@@ -46,10 +46,10 @@ function NewPassword() {
         }}
       >
         <Field label="New password" htmlFor="password">
-          <Input id="password" type="password" required autoFocus autoComplete="new-password" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordInput id="password" required autoFocus autoComplete="new-password" placeholder="At least 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         <Field label="Repeat password" htmlFor="password_confirmation">
-          <Input id="password_confirmation" type="password" required autoComplete="new-password" placeholder="Same again" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
+          <PasswordInput id="password_confirmation" required autoComplete="new-password" placeholder="Same again" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
         </Field>
         <Button type="submit" size="lg" className="mt-2 w-full" disabled={save.isPending}>
           Save new password

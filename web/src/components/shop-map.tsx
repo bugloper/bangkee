@@ -36,12 +36,18 @@ export function PinPicker({ value, onChange }: { value: Pin | null; onChange: (p
   const map = useRef<L.Map | null>(null)
   const marker = useRef<L.Marker | null>(null)
   const change = useRef(onChange)
-  change.current = onChange
+  useEffect(() => {
+    change.current = onChange
+  })
+  // Where the map opens: the pin it was given, or Thimphu. After that the
+  // map stays put and the pin follows `value` (below).
+  const start = useRef(value)
   const [locating, setLocating] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
 
   useEffect(() => {
-    const m = L.map(element.current!, { scrollWheelZoom: false }).setView(value ? [value.latitude, value.longitude] : THIMPHU, value ? 17 : 13)
+    const opening = start.current
+    const m = L.map(element.current!, { scrollWheelZoom: false }).setView(opening ? [opening.latitude, opening.longitude] : THIMPHU, opening ? 17 : 13)
     tiles(m)
     m.on("click", (event: L.LeafletMouseEvent) => change.current({ latitude: round(event.latlng.lat), longitude: round(event.latlng.lng) }))
     map.current = m
@@ -50,7 +56,6 @@ export function PinPicker({ value, onChange }: { value: Pin | null; onChange: (p
       map.current = null
       marker.current = null
     }
-    // The map is made once, where the pin was; the pin follows `value` below.
   }, [])
 
   useEffect(() => {
