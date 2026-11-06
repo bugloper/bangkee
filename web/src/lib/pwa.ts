@@ -89,7 +89,14 @@ export async function enablePush() {
   if (permission !== "granted") return message("Notifications are blocked in your browser settings.")
 
   const me = queryClient.getQueryData<Me | null>(["me"])
-  await subscribe(me?.push.public_key ?? null)
+  try {
+    await subscribe(me?.push.public_key ?? null)
+  } catch (error) {
+    console.warn("[bangkee] push subscription failed", error)
+    // Brave refuses push subscriptions until Google push messaging is allowed.
+    if ("brave" in navigator) return message("Brave blocks notifications by default. Turn on “Use Google services for push messaging” in brave://settings/privacy, then try again.")
+    return message("This browser could not turn on notifications. Try again, or use Chrome, Edge or Firefox.")
+  }
   await queryClient.invalidateQueries({ queryKey: ["me"] })
   message("Notifications are on for this device.")
 }
