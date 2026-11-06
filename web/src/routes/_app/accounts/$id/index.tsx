@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ArrowDownLeftIcon, ArrowUpRightIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
+import { useEffect } from "react"
 
 import { api } from "@/api/client"
 import type { AccountDetail } from "@/api/types"
@@ -15,6 +16,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { useT } from "@/lib/i18n"
 import { ngultrum, pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
+import { offerNotifications } from "@/lib/pwa"
 import { dateTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -195,6 +197,9 @@ function CustomerView({ data }: { data: CustomerData }) {
   const t = useT()
   const { account, shop } = data
   usePage(shop.name, "/dashboard")
+  // A customer never records anything, so opening their account at a shop is
+  // the moment to offer notifications (once, until they answer).
+  useEffect(() => offerNotifications(), [])
 
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-6">
