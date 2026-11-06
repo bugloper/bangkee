@@ -4,17 +4,20 @@ import {
   ArrowDownLeftIcon,
   ArrowRightIcon,
   ArrowUpRightIcon,
+  BarChart3Icon,
   BellRingIcon,
   BookOpenIcon,
+  BookXIcon,
   CheckIcon,
-  FileClockIcon,
   HistoryIcon,
   ImageIcon,
   type LucideIcon,
+  MapPinIcon,
   MessageSquareWarningIcon,
   PrinterIcon,
   PackageIcon,
   ScrollTextIcon,
+  SearchIcon,
   ShoppingBasketIcon,
   SmartphoneIcon,
   TimerIcon,
@@ -125,7 +128,7 @@ function Hero() {
             </Link>
           </div>
           <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            {["14-day free trial", "No card needed", "Customers join free"].map((point) => (
+            {["14-day free trial", "No card needed", "Customers join free", "English & Dzongkha"].map((point) => (
               <li key={point} className="flex items-center gap-1.5">
                 <CheckIcon className="size-4 text-paid" /> {point}
               </li>
@@ -253,6 +256,16 @@ function SectionIntro({ eyebrow, title, children, center }: { eyebrow: string; t
 }
 
 const PROBLEMS: [LucideIcon, string, string][] = [
+  [
+    SearchIcon,
+    "Flipping pages to find one customer",
+    "Every credit means leafing through the book for the right name while the customer waits at the counter — and the same again when they come to pay.",
+  ],
+  [
+    BookXIcon,
+    "Settling up means crossing out a page",
+    "When a customer clears their month, the page is struck through and the next credit starts on a fresh one. What they took before is scattered across old, crossed-out pages.",
+  ],
   [BookOpenIcon, "Pages get lost, torn or smudged", "One spilled cup of suja and a month of credit is unreadable. When the notebook is gone, so is the record."],
   [MessageSquareWarningIcon, "Every disagreement is your word against theirs", "“I paid you last week.” With only the shop's copy, there is nothing both sides trust."],
   [SmartphoneIcon, "Customers never see what they owe", "They only find out at the counter, so the total always comes as a surprise — and surprises start arguments."],
@@ -266,7 +279,7 @@ function Problem() {
         <SectionIntro eyebrow="The problem" title="The notebook behind the counter has served shops for generations. It also costs them.">
           Credit is how neighbourhood shops keep customers. But a handwritten khata only works as long as everyone remembers the same thing.
         </SectionIntro>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PROBLEMS.map(([Icon, title, body]) => (
             <div key={title} className="rounded-2xl border bg-card p-6 shadow-xs">
               <span className="flex size-10 items-center justify-center rounded-xl bg-owed/10 text-owed">
@@ -314,13 +327,20 @@ function HowItWorks() {
 
 const FEATURES: [LucideIcon, string, string][] = [
   [ZapIcon, "A shared, real-time ledger", "One book, two views. What you record is what your customer sees — no copying, no catching up."],
+  [SearchIcon, "Find any customer in a second", "Type a few letters of a name or phone number and their account is open. No flipping pages, at the counter or at the end of the month."],
+  [ScrollTextIcon, "Settling up keeps the history", "When a customer clears their balance it simply reads zero. Their account stays open and every past month is still there — no crossed-out pages."],
   [ShoppingBasketIcon, "Itemized purchases", "Add the items, quantities and prices, and Bangkee does the sum. Customers see exactly what they took."],
   [ImageIcon, "A photo of every transfer", "When a customer shows you their mBoB or mPay screen, photograph it with the payment. Bangkee straightens it and keeps it on the record."],
-  [PackageIcon, "Your items, a tap away", "List what you sell with prices and photos. Pick from them when you record a credit, and customers can browse them too."],
+  [PackageIcon, "Your items, a tap away", "List what you sell by category, with prices and photos. Pick from them when you record a credit, and mark what is out of stock."],
+  [MapPinIcon, "Your shop, easy to find", "A shop page with your photo, hours, items and prices, and a pin on the map — customers browse shops and get directions to yours."],
   [WifiOffIcon, "Works offline", "No signal? Keep recording. Entries wait safely on the phone and send themselves when you're back online."],
-  [BellRingIcon, "Push notifications", "Customers hear about every new entry. You hear when a customer joins and when balances run late."],
+  [
+    BellRingIcon,
+    "Notifications and reminders",
+    "Customers hear about every new entry the moment it happens. When a balance runs late it is flagged on your home screen and you both get a reminder — so you don't have to bring it up.",
+  ],
   [PrinterIcon, "Printable statements", "The whole account on one clean page — every entry, totals and balance — ready to print or save as a PDF."],
-  [FileClockIcon, "Overdue reminders", "Late balances are flagged on your home screen, and both you and the customer get a reminder — so you don't have to bring it up."],
+  [BarChart3Icon, "Insights", "Credit given and money repaid, month by month, and who owes you the most — so you know how the book is doing."],
   [HistoryIcon, "A full audit trail", "Nothing is ever deleted. A mistake is crossed out and logged — the history stays honest."],
 ]
 
@@ -341,11 +361,13 @@ function Features() {
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
             </div>
           ))}
-          <div className="flex flex-col justify-center bg-card p-6 sm:col-span-2 lg:col-span-2">
+          <div className="flex flex-col justify-center bg-card p-6 sm:col-span-2 lg:col-span-3">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <UsersIcon className="size-4 text-primary" /> Customers are always free
             </div>
-            <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted-foreground">They see their balance at every shop they use, get notified of new entries, and browse shops — without paying anything.</p>
+            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              They join with their phone number and a 4-digit PIN, see their balance at every shop they use, get notified of new entries, and browse shops — without paying anything.
+            </p>
           </div>
         </div>
       </div>
@@ -385,7 +407,7 @@ function Preview() {
                   <span className="text-xs font-semibold">Karma General Shop</span>
                 </div>
                 <div className="mt-3 grid gap-0.5 text-xs font-medium">
-                  {["Home", "Customers", "Items", "Settings"].map((item, index) => (
+                  {["Home", "Customers", "Insights", "Profile"].map((item, index) => (
                     <div key={item} className={cn("flex items-center justify-between rounded-md px-2 py-1.5", index === 0 ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
                       {item}
                     </div>
@@ -444,7 +466,8 @@ const INCLUDED = [
   "Unlimited customers and entries",
   "Itemized credits, picked from your items",
   "A photo of every mBoB or mPay transfer",
-  "Your shop listed for customers to browse",
+  "Your shop page, with photo, prices and a map",
+  "Insights on credit and repayments, month by month",
   "Offline recording and push notifications",
   "Printable statements and the full audit trail",
 ]
@@ -542,7 +565,11 @@ function Faq() {
     ],
     [
       "How do customers join?",
-      "Add the customer, then share the invite link Bangkee gives you — by WhatsApp, SMS or however you usually talk. They create a free account and see their balance straight away.",
+      "Add the customer with their phone number, then share the invite link Bangkee gives you — by WhatsApp, SMS or however you usually talk. They choose a 4-digit PIN, no email needed, and see their balance straight away.",
+    ],
+    [
+      "What happens when a customer settles up?",
+      "Record the payment and their balance reads zero. There is no page to cross out and nothing to start again: their account stays open, the next credit goes on the same account, and every month before it is still in the history and on their statement.",
     ],
     [
       "How do I pay for Bangkee?",
@@ -551,6 +578,10 @@ function Faq() {
     [
       "Do I need to install an app?",
       "No app store needed. Bangkee opens in any phone browser, and you can add it to your home screen so it opens like an app, with notifications.",
+    ],
+    [
+      "Is it in Dzongkha?",
+      "Yes — everyone can switch between English and Dzongkha from their Profile. Anything not yet translated is shown in English.",
     ],
   ]
   return (
