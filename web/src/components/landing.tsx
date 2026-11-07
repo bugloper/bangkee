@@ -158,72 +158,91 @@ function Hero() {
 
 // One customer's page, as the owner's phone shows it, with the customer's
 // side of the same moment beside it.
+// The same moment on both phones: the shop records a credit on the left, and
+// the customer's phone shows it on the right.
 function HeroVisual() {
   return (
-    <div aria-hidden="true" className="relative mx-auto w-full max-w-md select-none lg:mr-0">
-      <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-gradient-to-br from-primary/15 via-transparent to-paid/10 blur-2xl" />
-      <PhoneFrame>
-        <div className="flex items-center gap-3 border-b px-4 py-3">
-          <span className="flex size-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">T</span>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold">Tashi Wangmo</div>
-            <div className="text-xs text-muted-foreground">Customer since March</div>
-          </div>
-        </div>
-        <div className="px-4 pt-4">
-          <div className="text-xs text-muted-foreground">Balance</div>
-          <div className="tabular mt-0.5 text-[2rem] leading-tight font-semibold tracking-tight text-owed">Nu. 4,250</div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <span className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-owed text-xs font-semibold text-white">
-              <ArrowUpRightIcon className="size-3.5" /> Credit
-            </span>
-            <span className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-paid text-xs font-semibold text-white">
-              <ArrowDownLeftIcon className="size-3.5" /> Payment
-            </span>
-          </div>
-        </div>
-        <div className="mt-4 divide-y border-t">
-          <MiniEntry kind="credit" title="Rice 25 kg, mustard oil" meta="Today · 3 items" amount="+ Nu. 2,150" balance="Nu. 4,250" />
-          <MiniEntry kind="payment" title="Payment received" meta="Yesterday · mBoB" amount="− Nu. 1,000" balance="Nu. 2,100" />
-          <MiniEntry kind="credit" title="Milk, eggs, bread" meta="12 Oct" amount="+ Nu. 640" balance="Nu. 3,100" />
-          <MiniEntry kind="crossed_out" title="Sugar 5 kg" meta="11 Oct · crossed out" amount="+ Nu. 310" />
-        </div>
-      </PhoneFrame>
+    <div aria-hidden="true" className="relative mx-auto h-[34rem] w-full max-w-[31.5rem] select-none sm:h-[33rem] lg:mr-0">
+      <div className="absolute -inset-8 -z-10 rounded-[3rem] bg-gradient-to-br from-primary/15 via-transparent to-paid/10 blur-2xl" />
 
-      <div className="absolute -bottom-6 -left-4 w-60 rounded-2xl border bg-card/95 p-3.5 shadow-xl shadow-foreground/5 backdrop-blur sm:-left-12">
-        <div className="flex items-start gap-3">
-          <LogoMark className="size-8" />
-          <div className="min-w-0 text-xs">
-            <div className="font-semibold">Karma General Shop</div>
-            <div className="mt-0.5 text-muted-foreground">
-              Rice 25 kg, mustard oil · <span className="tabular font-medium text-owed">Nu. 2,150</span> added. Your balance is Nu. 4,250.
+      <div className="absolute top-0 left-0 origin-top-left max-sm:scale-[0.88] lg:max-xl:scale-[0.86]">
+        <DeviceLabel>The shop's phone</DeviceLabel>
+        <PhoneFrame className="w-[16.5rem]">
+          <div className="flex items-center gap-2.5 border-b px-4 py-3">
+            <span className="flex size-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">T</span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[0.8125rem] font-semibold">Tashi Wangmo</div>
+              <div className="text-[0.6875rem] text-muted-foreground">17 61 23 45 · joined</div>
             </div>
           </div>
-        </div>
+          <div className="px-4 pt-3.5">
+            <div className="text-[0.6875rem] text-muted-foreground">Outstanding balance</div>
+            <div className="tabular mt-0.5 text-[1.75rem] leading-tight font-semibold tracking-tight text-owed">Nu. 4,250</div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <span className="flex h-8 items-center justify-center gap-1 rounded-lg bg-owed text-[0.6875rem] font-semibold text-white ring-4 ring-owed/15">
+                <ArrowUpRightIcon className="size-3" /> Add credit
+              </span>
+              <span className="flex h-8 items-center justify-center gap-1 rounded-lg bg-paid text-[0.6875rem] font-semibold text-white">
+                <ArrowDownLeftIcon className="size-3" /> Payment
+              </span>
+            </div>
+          </div>
+          <div className="mt-3.5 divide-y border-t">
+            <MiniEntry kind="credit" title="Rice 25 kg, mustard oil" meta="Just now · 3 items" amount="+ Nu. 2,150" balance="Nu. 4,250" />
+            <MiniEntry kind="payment" title="Payment received" meta="Yesterday · mBoB" amount="− Nu. 1,000" balance="Nu. 2,100" />
+            <MiniEntry kind="credit" title="Milk, eggs, bread" meta="12 Oct" amount="+ Nu. 640" balance="Nu. 3,100" />
+          </div>
+        </PhoneFrame>
       </div>
 
-      <div className="absolute top-4 -right-16 hidden w-44 rounded-2xl sm:block xl:-right-20 border bg-card/95 p-3 shadow-xl shadow-foreground/5 backdrop-blur sm:-right-10">
-        <div className="flex items-center gap-2 text-xs font-semibold">
-          <span className="flex size-6 items-center justify-center rounded-md bg-paid/10 text-paid">
-            <ImageIcon className="size-3.5" />
-          </span>
-          Payment photo
-        </div>
-        <div className="mt-2 h-16 rounded-lg bg-[repeating-linear-gradient(135deg,var(--muted)_0_6px,transparent_6px_12px)]" />
-        <div className="mt-2 flex items-center justify-between text-xs">
-          <span className="tabular font-semibold">Nu. 1,000</span>
-          <span className="rounded-full bg-paid/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-paid">mBoB</span>
-        </div>
+      <div className="absolute top-60 right-0 z-10 origin-top-right max-sm:scale-[0.88] sm:top-28 lg:max-xl:scale-[0.86]">
+        <DeviceLabel align="right">The customer's phone</DeviceLabel>
+        <PhoneFrame className="w-[14.5rem] shadow-primary/20">
+          <div className="px-3 pt-1">
+            <div className="flex items-start gap-2 rounded-2xl border bg-card/95 p-2.5 shadow-lg shadow-foreground/10">
+              <LogoMark className="size-6 shrink-0" />
+              <div className="min-w-0 text-[0.625rem] leading-snug">
+                <div className="flex items-center justify-between gap-2 font-semibold">
+                  New credit at Karma General Shop <span className="font-normal text-muted-foreground">now</span>
+                </div>
+                <div className="mt-0.5 text-muted-foreground">Rice 25 kg, mustard oil · Nu. 2,150</div>
+              </div>
+            </div>
+          </div>
+          <div className="px-3 pt-3">
+            <div className="rounded-xl bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-3 text-white">
+              <div className="text-[0.625rem] opacity-75">Your total balance</div>
+              <div className="tabular mt-0.5 text-xl font-semibold tracking-tight">Nu. 4,250</div>
+              <div className="mt-1 text-[0.625rem] opacity-75">Outstanding across 1 shop</div>
+            </div>
+            <div className="mt-3 flex items-center gap-2 rounded-xl border px-2.5 py-2">
+              <span className="flex size-7 items-center justify-center rounded-full bg-accent text-[0.625rem] font-semibold text-accent-foreground">K</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[0.6875rem] leading-tight font-medium">Karma General Shop</div>
+                <div className="text-[0.625rem] text-muted-foreground">Your credit account</div>
+              </div>
+              <span className="tabular text-[0.6875rem] font-semibold text-owed">Nu. 4,250</span>
+            </div>
+          </div>
+        </PhoneFrame>
       </div>
+    </div>
+  )
+}
+
+function DeviceLabel({ children, align }: { children: React.ReactNode; align?: "right" }) {
+  return (
+    <div className={cn("mb-2 flex", align === "right" ? "justify-end pr-3" : "pl-3")}>
+      <span className="rounded-full border bg-card px-2.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground shadow-xs">{children}</span>
     </div>
   )
 }
 
 function PhoneFrame({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("mx-auto w-[18.5rem] rounded-[2.5rem] border bg-card p-2 shadow-2xl shadow-primary/10 ring-1 ring-foreground/5", className)}>
-      <div className="overflow-hidden rounded-[2rem] border bg-background pb-3">
-        <div className="flex h-7 items-center justify-center">
+    <div className={cn("rounded-[2.25rem] border bg-card p-1.5 shadow-2xl shadow-primary/10 ring-1 ring-foreground/5", className)}>
+      <div className="overflow-hidden rounded-[1.875rem] border bg-background pb-3">
+        <div className="flex h-6 items-center justify-center">
           <span className="h-1.5 w-16 rounded-full bg-muted" />
         </div>
         {children}
@@ -290,21 +309,25 @@ const PROBLEMS: [LucideIcon, string, string][] = [
 function Problem() {
   return (
     <section className="border-y bg-muted/40 py-20 sm:py-28">
-      <div className={container}>
-        <SectionIntro eyebrow="The problem" title="The notebook behind the counter has served shops for generations. It also costs them.">
-          Credit is how neighbourhood shops keep customers. But a handwritten book only works as long as everyone remembers the same thing.
-        </SectionIntro>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className={cn(container, "grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:gap-16")}>
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <SectionIntro eyebrow="The problem" title="The notebook behind the counter has served shops for generations. It also costs them.">
+            Credit is how neighbourhood shops keep customers. But a handwritten book only works as long as everyone remembers the same thing.
+          </SectionIntro>
+        </div>
+        <ul className="divide-y rounded-3xl border bg-card px-5 shadow-xs sm:px-7">
           {PROBLEMS.map(([Icon, title, body]) => (
-            <div key={title} className="rounded-2xl border bg-card p-6 shadow-xs">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-owed/10 text-owed">
+            <li key={title} className="flex gap-4 py-6">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-owed/10 text-owed">
                 <Icon className="size-5" />
               </span>
-              <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
-              <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">{body}</p>
-            </div>
+              <div>
+                <h3 className="font-semibold tracking-tight">{title}</h3>
+                <p className="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">{body}</p>
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   )
@@ -465,23 +488,40 @@ function Compare() {
 
 // ---------------------------------------------------------------- features
 
-const FEATURES: [LucideIcon, string, string][] = [
-  [ZapIcon, "A shared, real-time ledger", "One book, two views. What you record is what your customer sees — no copying, no catching up."],
-  [SearchIcon, "Find any customer in a second", "Type a few letters of a name or phone number and their account is open. No flipping pages, at the counter or at the end of the month."],
-  [ScrollTextIcon, "Settling up keeps the history", "When a customer clears their balance it simply reads zero. Their account stays open and every past month is still there — no crossed-out pages."],
-  [ShoppingBasketIcon, "Itemized purchases", "Add the items, quantities and prices, and Bangkee does the sum. Customers see exactly what they took."],
-  [ImageIcon, "A photo of every transfer", "When a customer shows you their mBoB or mPay screen, photograph it with the payment. Bangkee straightens it and keeps it on the record."],
-  [PackageIcon, "Your items, a tap away", "List what you sell by category, with prices and photos. Pick from them when you record a credit, and mark what is out of stock."],
-  [MapPinIcon, "Your shop, easy to find", "A shop page with your photo, hours, items and prices, and a pin on the map — customers browse shops and get directions to yours."],
-  [WifiOffIcon, "Works offline", "No signal? Keep recording. Entries wait safely on the phone and send themselves when you're back online."],
-  [
-    BellRingIcon,
-    "Notifications and reminders",
-    "Customers hear about every new entry the moment it happens. When a balance runs late it is flagged on your home screen and you both get a reminder — so you don't have to bring it up.",
-  ],
-  [PrinterIcon, "Printable statements", "The whole account on one clean page — every entry, totals and balance — ready to print or save as a PDF."],
-  [BarChart3Icon, "Insights", "Credit given and money repaid, month by month, and who owes you the most — so you know how the book is doing."],
-  [HistoryIcon, "A full audit trail", "Nothing is ever deleted. A mistake is crossed out and logged — the history stays honest."],
+type Feature = [LucideIcon, string, string]
+
+// Grouped by when they matter, so the page reads like a shop's day.
+const FEATURE_GROUPS: { title: string; blurb: string; features: Feature[] }[] = [
+  {
+    title: "At the counter",
+    blurb: "A few taps while the customer waits.",
+    features: [
+      [SearchIcon, "Find any customer in a second", "Type a few letters of a name or phone number and their account is open. No flipping pages."],
+      [ShoppingBasketIcon, "Itemized purchases", "Pick the items and quantities; Bangkee does the sum, and customers see exactly what they took."],
+      [PackageIcon, "Your items, a tap away", "What you sell by category, with prices and photos — and a switch for what is out of stock."],
+      [ImageIcon, "A photo of every transfer", "Photograph the customer's mBoB or mPay screen with the payment. Bangkee straightens it and keeps it."],
+      [WifiOffIcon, "Works offline", "No signal? Keep recording. Entries wait on the phone and send themselves when you're back online."],
+    ],
+  },
+  {
+    title: "Between you and your customers",
+    blurb: "One book, and both of you can read it.",
+    features: [
+      [ZapIcon, "A shared, real-time ledger", "What you record is what your customer sees — no copying, no catching up."],
+      [BellRingIcon, "Notifications and reminders", "Customers hear about every new entry. Late balances are flagged, and you both get a reminder."],
+      [ScrollTextIcon, "Settling up keeps the history", "A cleared balance simply reads zero. The account carries on, and every past month stays."],
+      [PrinterIcon, "Printable statements", "The whole account on one clean page, ready to print or save as a PDF."],
+    ],
+  },
+  {
+    title: "Running your shop",
+    blurb: "The bigger picture, without the bookkeeping.",
+    features: [
+      [MapPinIcon, "Your shop, easy to find", "A shop page with your photo, hours, items and prices, and a pin on the map for directions."],
+      [BarChart3Icon, "Insights", "Credit given and money repaid, month by month, and who owes you the most."],
+      [HistoryIcon, "A full audit trail", "Nothing is ever deleted. A mistake is crossed out and logged — the history stays honest."],
+    ],
+  },
 ]
 
 function Features() {
@@ -491,21 +531,37 @@ function Features() {
         <SectionIntro eyebrow="Features" title="Everything the notebook did — and everything it couldn't.">
           Built for the counter: big buttons, few taps, and figures you can read at a glance.
         </SectionIntro>
-        <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border bg-border shadow-xs sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(([Icon, title, body]) => (
-            <div key={title} className="bg-card p-6">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
-                <Icon className="size-[1.125rem]" />
-              </span>
-              <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
+        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+          {FEATURE_GROUPS.map((group, index) => (
+            <div key={group.title} className="rounded-3xl border bg-card p-6 shadow-xs sm:p-7">
+              <div className="flex items-center gap-2.5">
+                <span className="tabular flex size-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">{index + 1}</span>
+                <h3 className="text-lg font-semibold tracking-tight">{group.title}</h3>
+              </div>
+              <p className="mt-1.5 text-sm text-muted-foreground">{group.blurb}</p>
+              <ul className="mt-6 grid gap-5">
+                {group.features.map(([Icon, title, body]) => (
+                  <li key={title} className="flex gap-3.5">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                      <Icon className="size-[1.125rem]" />
+                    </span>
+                    <div>
+                      <div className="font-semibold tracking-tight">{title}</div>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
-          <div className="flex flex-col justify-center bg-card p-6 sm:col-span-2 lg:col-span-3">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <UsersIcon className="size-4 text-primary" /> Customers are always free
-            </div>
-            <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+        </div>
+        <div className="mt-4 flex flex-col gap-3 rounded-3xl border bg-card p-6 shadow-xs sm:flex-row sm:items-center sm:gap-5 sm:p-7">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-paid/10 text-paid">
+            <UsersIcon className="size-5" />
+          </span>
+          <div>
+            <div className="font-semibold tracking-tight">Customers are always free</div>
+            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
               They join with their phone number and a 4-digit PIN, see their balance at every shop they use, get notified of new entries, and browse shops — without paying anything.
             </p>
           </div>
@@ -544,22 +600,35 @@ function Preview() {
               <div className="hidden border-r bg-sidebar p-3 md:block">
                 <div className="flex items-center gap-2 px-2 py-1.5">
                   <LogoMark className="size-6" />
-                  <span className="text-xs font-semibold">Karma General Shop</span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-semibold">Bangkee</span>
+                    <span className="block truncate text-[0.625rem] text-muted-foreground">Karma General Shop</span>
+                  </span>
+                </div>
+                <div className="mt-3 flex h-8 items-center justify-center gap-1 rounded-full bg-primary text-xs font-semibold text-primary-foreground shadow-sm shadow-primary/30">
+                  <span className="text-sm leading-none">+</span> Record
                 </div>
                 <div className="mt-3 grid gap-0.5 text-xs font-medium">
                   {["Home", "Customers", "Insights", "Profile"].map((item, index) => (
-                    <div key={item} className={cn("flex items-center justify-between rounded-md px-2 py-1.5", index === 0 ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+                    <div key={item} className={cn("flex h-8 items-center rounded-full px-3", index === 0 ? "bg-foreground text-background" : "text-muted-foreground")}>
                       {item}
                     </div>
                   ))}
                 </div>
               </div>
               <div className="grid gap-4 p-4 sm:p-6">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  <MiniStat label="Outstanding credit" value="Nu. 84,310" />
+                <div className="flex items-end justify-between gap-4 rounded-xl bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-4 text-white shadow-md shadow-primary/20">
+                  <div>
+                    <div className="text-[0.6875rem] opacity-75">Total outstanding credit</div>
+                    <div className="tabular mt-0.5 text-2xl font-semibold tracking-tight">Nu. 84,310</div>
+                    <div className="mt-1 text-[0.6875rem] opacity-75">48 customers · updated just now</div>
+                  </div>
+                  <span className="hidden rounded-full bg-white px-3 py-1.5 text-[0.6875rem] font-semibold text-primary sm:block">+ Add customer</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
                   <MiniStat label="Repaid this month" value="Nu. 31,900" tone="paid" />
                   <MiniStat label="Overdue accounts" value="3" tone="owed" />
-                  <MiniStat label="Customers" value="48" />
+                  <MiniStat label="Items" value="64" />
                 </div>
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="rounded-xl border">
@@ -670,9 +739,17 @@ function Pricing() {
             </span>
             <h3 className="mt-5 text-lg font-semibold tracking-tight">Customers</h3>
             <div className="mt-2 text-3xl font-semibold tracking-tight">Always free</div>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Anyone you invite gets their own account: their balance at every shop they use, a note when something is added, and shops to browse.
-            </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Anyone you invite gets their own account, with just a phone number and a PIN.</p>
+            <ul className="mt-5 grid gap-2.5 text-sm">
+              {["Their balance at every shop they use", "A note the moment something is added", "Every entry, and statements to print", "Shops to browse, with prices and directions"].map((item) => (
+                <li key={item} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-paid/15 text-paid">
+                    <CheckIcon className="size-3" strokeWidth={3} />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
             <div className="mt-auto pt-6">
               <div className="flex items-center gap-2 rounded-xl bg-muted/60 px-3.5 py-3 text-sm">
                 <ScrollTextIcon className="size-4 shrink-0 text-muted-foreground" />
