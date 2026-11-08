@@ -20,6 +20,6 @@ export function usePage(title: string | undefined, back?: string, options: { nar
   const narrow = options.narrow ?? false
   useEffect(() => {
     pageStore.set({ title, back, narrow })
-    document.title = title ? `${title} · Bangkee` : "Bangkee — the shared credit book for your shop"
+    document.title = title ? `${title} · Bangkee` : "Bangkee — the credit book your shop and your customers share"
   }, [title, back, narrow])
 }

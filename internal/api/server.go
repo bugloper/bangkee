@@ -96,7 +96,9 @@ func (s *Server) Handler() http.Handler {
 	api.RouteNotFound("/*", func(c *echo.Context) error { return apperr.ErrNotFound })
 
 	e.GET("/up", func(c *echo.Context) error { return c.String(http.StatusOK, "OK") })
-	e.GET("/*", serveApp(webDist()))
+	e.GET("/robots.txt", s.robots)
+	e.GET("/sitemap.xml", s.sitemap)
+	e.GET("/*", s.serveApp(webDist()))
 	return e
 }
 
@@ -242,12 +244,13 @@ func webDist() string {
 // everything under /assets, so those are kept forever; the page and the
 // service worker are revalidated every time, or a deploy would sit unseen
 // behind the old ones.
-func serveApp(dist string) echo.HandlerFunc {
+func (s *Server) serveApp(dist string) echo.HandlerFunc {
 	files := os.DirFS(dist)
 	return func(c *echo.Context) error {
 		name := strings.TrimPrefix(path.Clean("/"+c.Request().URL.Path), "/")
-		if info, err := fs.Stat(files, name); name == "" || err != nil || info.IsDir() {
-			name = "index.html"
+		if info, err := fs.Stat(files, name); name == "" || name == "index.html" || err != nil || info.IsDir() {
+			// The page itself, written for this address (seo.go).
+			return s.writePage(c, files)
 		}
 		header := c.Response().Header()
 		if strings.HasPrefix(name, "assets/") {
