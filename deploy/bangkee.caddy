@@ -12,3 +12,18 @@
 	}
 	reverse_proxy bangkee:3000
 }
+
+# www goes to the bare domain.
+www.{$BANGKEE_DOMAIN} {
+	redir https://{$BANGKEE_DOMAIN}{uri} permanent
+}
+
+# Where Bangkee lived before bangkee.app: links and installed apps from then
+# land on the same page at the new address.
+bangkee.72.61.233.126.sslip.io {
+	redir https://{$BANGKEE_DOMAIN}{uri} permanent
+}
+
+admin.bangkee.72.61.233.126.sslip.io {
+	redir https://admin.{$BANGKEE_DOMAIN}{uri} permanent
+}
