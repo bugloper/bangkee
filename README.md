@@ -66,6 +66,32 @@ Migrations run when the server starts. The database and uploaded photos live in 
 `bangkee-db` and `bangkee-storage` volumes and survive rebuilds. For a server that is only for
 trying Bangkee out, `docker compose exec bangkee ./seed` loads the demo data.
 
+## Backups
+
+Every night at 02:30 Thimphu time, `deploy/backup.sh` (installed on the VM as
+`/usr/local/bin/bangkee-backup`, run from root's crontab, logging to
+`/var/log/bangkee-backup.log`) writes the database and the uploaded photos to
+`/opt/backups/nightly` and keeps 14 days of them:
+
+- `db-<stamp>.dump` — `pg_dump --format=custom`
+- `files-<stamp>.tar.gz` — the `bangkee_bangkee-storage` volume
+
+After changing the script, copy it to the VM again:
+`scp deploy/backup.sh lockedsh:/usr/local/bin/bangkee-backup`.
+
+To restore, on the VM, with the app stopped (`docker compose stop bangkee`):
+
+```sh
+cd /opt/bangkee
+docker compose exec -T db sh -c "dropdb -U bangkee bangkee && createdb -U bangkee bangkee"
+docker compose exec -T db pg_restore -U bangkee -d bangkee --no-owner < /opt/backups/nightly/db-<stamp>.dump
+tar -xzf /opt/backups/nightly/files-<stamp>.tar.gz -C "$(docker volume inspect bangkee_bangkee-storage --format '{{.Mountpoint}}')"
+docker compose start bangkee
+```
+
+These copies live on the same VM as the database, so they cover mistakes
+and a broken database, not the loss of the VM.
+
 ## Tests
 
 ```sh
