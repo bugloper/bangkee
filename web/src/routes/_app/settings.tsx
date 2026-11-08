@@ -8,6 +8,7 @@ import {
   CrownIcon,
   LandmarkIcon,
   LifeBuoyIcon,
+  MessageSquareQuoteIcon,
   LogOutIcon,
   MonitorSmartphoneIcon,
   NotebookTextIcon,
@@ -173,6 +174,7 @@ function Settings() {
             <Panel flush>
               <Rows>
                 <Row href="/help" leading={<Tile icon={LifeBuoyIcon} />} title="Help & feedback" subtitle="Feedback, a feature you'd like, or help with a problem" chevron />
+                <Row href="/testimonial" leading={<Tile icon={MessageSquareQuoteIcon} />} title="Share your experience" subtitle="A few words for the Bangkee homepage" chevron />
               </Rows>
             </Panel>
           </Section>

@@ -162,6 +162,13 @@ func (s *Server) routes(g *echo.Group) {
 	// settings & billing
 	g.GET("/settings", s.settings)
 	g.PATCH("/language", s.setLanguage)
+	g.GET("/testimonial", s.myTestimonial)
+	g.PUT("/testimonial", s.saveTestimonial)
+	g.DELETE("/testimonial", s.deleteTestimonial)
+	g.GET("/public/testimonials", s.publicTestimonials)
+	g.GET("/admin/testimonials", s.adminTestimonials)
+	g.POST("/admin/testimonials/:id/approve", s.approveTestimonial)
+	g.POST("/admin/testimonials/:id/hide", s.hideTestimonial)
 	g.GET("/feedback", s.myFeedback)
 	g.POST("/feedback", s.sendFeedback)
 	g.GET("/subscription", s.billing)

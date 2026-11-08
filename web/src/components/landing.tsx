@@ -32,6 +32,7 @@ export function Landing() {
       <main>
         <Hero />
         <Bento />
+        <Testimonials />
         <Shops />
         <Faq />
         <FinalCta />
@@ -121,12 +122,12 @@ function Bento() {
           <div aria-hidden="true" className="w-full max-w-[15rem]">
             <div className="flex h-10 items-center gap-2 rounded-xl border px-3 text-sm">
               <SearchIcon className="size-4 text-muted-foreground" />
-              ta
+              lh
               <span className="h-4 w-px animate-pulse bg-primary" />
             </div>
             <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-accent/60 px-3 py-2">
-              <span className="flex size-7 items-center justify-center rounded-full bg-card text-xs font-semibold text-accent-foreground">T</span>
-              <span className="flex-1 text-left text-sm font-medium">Tashi Wangmo</span>
+              <span className="flex size-7 items-center justify-center rounded-full bg-card text-xs font-semibold text-accent-foreground">L</span>
+              <span className="flex-1 text-left text-sm font-medium">Lhaki Dolma</span>
               <span className="tabular text-xs font-semibold text-owed">Nu. 2,570</span>
             </div>
           </div>
@@ -213,6 +214,39 @@ function Bento() {
   )
 }
 
+// ------------------------------------------------------------ testimonials
+
+// What shop owners and customers say, in their words — only what Bangkee has
+// read and approved. Not shown at all until there is something to show.
+function Testimonials() {
+  const { data } = useQuery({ queryKey: ["public_testimonials"], queryFn: api.publicTestimonials, staleTime: 60_000 })
+  if (!data || data.testimonials.length === 0) return null
+  return (
+    <section className={cn(container, "pb-20 sm:pb-28")}>
+      <SectionIntro eyebrow="In their words" title="From the counter, and the other side of it." center />
+      <div className="mt-12 columns-1 gap-4 md:columns-2 lg:columns-3">
+        {data.testimonials.map((t) => (
+          <figure key={t.id} className="mb-4 break-inside-avoid rounded-[1.75rem] border bg-card p-6 shadow-xs">
+            <span aria-hidden="true" className="block font-serif text-5xl leading-none text-primary/30">
+              “
+            </span>
+            <blockquote className="-mt-3 text-[0.9375rem] leading-relaxed text-pretty">{t.body}</blockquote>
+            <figcaption className="mt-5 flex items-center gap-3">
+              <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold", t.owner ? "bg-accent text-accent-foreground" : "bg-paid/10 text-paid")}>
+                {t.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold">{t.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">{t.role}</span>
+              </span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // ---------------------------------------------------------------- the demo
 
 type Entry = { id: number; kind: "credit" | "payment"; what: string; cents: number }
@@ -266,9 +300,9 @@ function Demo() {
       <div className="flex flex-col rounded-2xl border bg-background/60 p-4">
         <div className="text-xs font-medium text-muted-foreground">The shop's phone</div>
         <div className="mt-3 flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">T</span>
+          <span className="flex size-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">L</span>
           <div className="text-left">
-            <div className="text-sm font-semibold">Tashi Wangmo</div>
+            <div className="text-sm font-semibold">Lhaki Dolma</div>
             <div className="text-xs text-muted-foreground">owes you</div>
           </div>
         </div>
@@ -295,7 +329,7 @@ function Demo() {
 
       {/* The customer's side */}
       <div className="flex flex-col rounded-2xl border bg-background/60 p-4">
-        <div className="text-xs font-medium text-muted-foreground">Tashi's phone</div>
+        <div className="text-xs font-medium text-muted-foreground">Lhaki's phone</div>
         <div key={latest.id} role="status" className="mt-3 flex items-start gap-2.5 rounded-xl border bg-card p-2.5 text-left shadow-md shadow-foreground/5 duration-500 animate-in fade-in slide-in-from-top-4">
           <LogoMark className="size-7 shrink-0" />
           <div className="min-w-0 text-xs leading-snug">

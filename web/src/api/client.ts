@@ -149,6 +149,15 @@ export const api = {
   acknowledgeFeedback: (id: number) => post<T.Notice>(`/api/admin/feedback/${id}/acknowledge`),
   replyToFeedback: (id: number, reply: string) => post<T.Notice>(`/api/admin/feedback/${id}/reply`, { reply }),
 
+  // testimonials
+  myTestimonial: () => get<T.MyTestimonial>("/api/testimonial"),
+  saveTestimonial: (body: string) => put<T.Notice>("/api/testimonial", { body }),
+  deleteTestimonial: () => del<T.Notice>("/api/testimonial"),
+  publicTestimonials: () => get<T.PublicTestimonials>("/api/public/testimonials"),
+  adminTestimonials: (status: string) => get<T.AdminTestimonialQueue>(`/api/admin/testimonials${qs({ status })}`),
+  approveTestimonial: (id: number) => post<T.Notice>(`/api/admin/testimonials/${id}/approve`),
+  hideTestimonial: (id: number) => post<T.Notice>(`/api/admin/testimonials/${id}/hide`),
+
   // feedback, feature requests and support
   myFeedback: () => get<T.MyFeedback>("/api/feedback"),
   sendFeedback: (kind: string, body: string) => post<T.Notice & { id: number }>("/api/feedback", { kind, body }),

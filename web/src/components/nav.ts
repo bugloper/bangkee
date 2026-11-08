@@ -1,4 +1,17 @@
-import { BarChart3Icon, BellIcon, HouseIcon, InboxIcon, LayoutGridIcon, ReceiptTextIcon, SettingsIcon, StoreIcon, UserRoundIcon, UsersIcon, type LucideIcon } from "lucide-react"
+import {
+  BarChart3Icon,
+  BellIcon,
+  HouseIcon,
+  InboxIcon,
+  LayoutGridIcon,
+  MessageSquareQuoteIcon,
+  ReceiptTextIcon,
+  SettingsIcon,
+  StoreIcon,
+  UserRoundIcon,
+  UsersIcon,
+  type LucideIcon,
+} from "lucide-react"
 
 import type { Me } from "@/api/types"
 import { isAdminHost } from "@/lib/host"
@@ -21,6 +34,7 @@ export function navItems(me: Me): NavItem[] {
       { label: "Overview", icon: LayoutGridIcon, path: "/", key: "admin" },
       { label: "Payments", icon: ReceiptTextIcon, path: "/subscription_payments", key: "admin_payments", badge: me.badges.admin_payments },
       { label: "Feedback", icon: InboxIcon, path: "/feedback", key: "admin_feedback", badge: me.badges.admin_feedback },
+      { label: "Testimonials", icon: MessageSquareQuoteIcon, path: "/testimonials", key: "admin_testimonials", badge: me.badges.admin_testimonials },
       { label: "Shops", icon: StoreIcon, path: "/shops", key: "admin_shops" },
       { label: "Settings", icon: SettingsIcon, path: "/settings", key: "settings" },
     ]
@@ -58,6 +72,7 @@ const NAV_ROOTS: Record<string, string> = {
   notifications: "notifications",
   shops: "shops",
   help: "settings",
+  testimonial: "settings",
 }
 
 export function navRoot(pathname: string, me: Me): string | undefined {
@@ -67,6 +82,7 @@ export function navRoot(pathname: string, me: Me): string | undefined {
     if (first === "subscription_payments") return "admin_payments"
     if (first === "shops") return "admin_shops"
     if (first === "feedback") return "admin_feedback"
+    if (first === "testimonials") return "admin_testimonials"
     return first === "settings" ? "settings" : undefined
   }
   // A customer's account screens hang off their own home.

@@ -17,6 +17,7 @@ import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as AdminFeedbackRouteImport } from './routes/_admin/feedback'
 import { Route as AdminShopsRouteImport } from './routes/_admin/shops'
 import { Route as AdminSubscription_paymentsRouteImport } from './routes/_admin/subscription_payments'
+import { Route as AdminTestimonialsRouteImport } from './routes/_admin/testimonials'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppHelpRouteImport } from './routes/_app/help'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
@@ -25,6 +26,7 @@ import { Route as AppRecordRouteImport } from './routes/_app/record'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShop_profileRouteImport } from './routes/_app/shop_profile'
 import { Route as AppSubscriptionRouteImport } from './routes/_app/subscription'
+import { Route as AppTestimonialRouteImport } from './routes/_app/testimonial'
 import { Route as ShopIdRouteImport } from './routes/shop.$id'
 import { Route as AppAccountsIndexRouteImport } from './routes/_app/accounts/index'
 import { Route as AppAccountsNewRouteImport } from './routes/_app/accounts/new'
@@ -86,6 +88,11 @@ const AdminSubscription_paymentsRoute =
     path: '/subscription_payments',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminTestimonialsRoute = AdminTestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -124,6 +131,11 @@ const AppShop_profileRoute = AppShop_profileRouteImport.update({
 const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
   id: '/subscription',
   path: '/subscription',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTestimonialRoute = AppTestimonialRouteImport.update({
+  id: '/testimonial',
+  path: '/testimonial',
   getParentRoute: () => AppRoute,
 } as any)
 const ShopIdRoute = ShopIdRouteImport.update({
@@ -244,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/feedback': typeof AdminFeedbackRoute
   '/shops': typeof AdminShopsRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
+  '/testimonials': typeof AdminTestimonialsRoute
   '/dashboard': typeof AppDashboardRoute
   '/help': typeof AppHelpRoute
   '/insights': typeof AppInsightsRoute
@@ -252,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
+  '/testimonial': typeof AppTestimonialRoute
   '/shop/$id': typeof ShopIdRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/menu_items/new': typeof AppMenu_itemsNewRoute
@@ -281,6 +295,7 @@ export interface FileRoutesByTo {
   '/feedback': typeof AdminFeedbackRoute
   '/shops': typeof AppShopsIndexRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
+  '/testimonials': typeof AdminTestimonialsRoute
   '/dashboard': typeof AppDashboardRoute
   '/help': typeof AppHelpRoute
   '/insights': typeof AppInsightsRoute
@@ -289,6 +304,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
+  '/testimonial': typeof AppTestimonialRoute
   '/shop/$id': typeof ShopIdRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/menu_items/new': typeof AppMenu_itemsNewRoute
@@ -321,6 +337,7 @@ export interface FileRoutesById {
   '/_admin/feedback': typeof AdminFeedbackRoute
   '/_admin/shops': typeof AdminShopsRoute
   '/_admin/subscription_payments': typeof AdminSubscription_paymentsRoute
+  '/_admin/testimonials': typeof AdminTestimonialsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/help': typeof AppHelpRoute
   '/_app/insights': typeof AppInsightsRoute
@@ -329,6 +346,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shop_profile': typeof AppShop_profileRoute
   '/_app/subscription': typeof AppSubscriptionRoute
+  '/_app/testimonial': typeof AppTestimonialRoute
   '/shop/$id': typeof ShopIdRoute
   '/_app/accounts/new': typeof AppAccountsNewRoute
   '/_app/menu_items/new': typeof AppMenu_itemsNewRoute
@@ -360,6 +378,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/shops'
     | '/subscription_payments'
+    | '/testimonials'
     | '/dashboard'
     | '/help'
     | '/insights'
@@ -368,6 +387,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop_profile'
     | '/subscription'
+    | '/testimonial'
     | '/shop/$id'
     | '/accounts/new'
     | '/menu_items/new'
@@ -397,6 +417,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/shops'
     | '/subscription_payments'
+    | '/testimonials'
     | '/dashboard'
     | '/help'
     | '/insights'
@@ -405,6 +426,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop_profile'
     | '/subscription'
+    | '/testimonial'
     | '/shop/$id'
     | '/accounts/new'
     | '/menu_items/new'
@@ -436,6 +458,7 @@ export interface FileRouteTypes {
     | '/_admin/feedback'
     | '/_admin/shops'
     | '/_admin/subscription_payments'
+    | '/_admin/testimonials'
     | '/_app/dashboard'
     | '/_app/help'
     | '/_app/insights'
@@ -444,6 +467,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/shop_profile'
     | '/_app/subscription'
+    | '/_app/testimonial'
     | '/shop/$id'
     | '/_app/accounts/new'
     | '/_app/menu_items/new'
@@ -535,6 +559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSubscription_paymentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/testimonials': {
+      id: '/_admin/testimonials'
+      path: '/testimonials'
+      fullPath: '/testimonials'
+      preLoaderRoute: typeof AdminTestimonialsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -589,6 +620,13 @@ declare module '@tanstack/react-router' {
       path: '/subscription'
       fullPath: '/subscription'
       preLoaderRoute: typeof AppSubscriptionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/testimonial': {
+      id: '/_app/testimonial'
+      path: '/testimonial'
+      fullPath: '/testimonial'
+      preLoaderRoute: typeof AppTestimonialRouteImport
       parentRoute: typeof AppRoute
     }
     '/shop/$id': {
@@ -752,12 +790,14 @@ interface AdminRouteChildren {
   AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminShopsRoute: typeof AdminShopsRoute
   AdminSubscription_paymentsRoute: typeof AdminSubscription_paymentsRoute
+  AdminTestimonialsRoute: typeof AdminTestimonialsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminFeedbackRoute: AdminFeedbackRoute,
   AdminShopsRoute: AdminShopsRoute,
   AdminSubscription_paymentsRoute: AdminSubscription_paymentsRoute,
+  AdminTestimonialsRoute: AdminTestimonialsRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -771,6 +811,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppShop_profileRoute: typeof AppShop_profileRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
+  AppTestimonialRoute: typeof AppTestimonialRoute
   AppAccountsNewRoute: typeof AppAccountsNewRoute
   AppMenu_itemsNewRoute: typeof AppMenu_itemsNewRoute
   AppShopsIdRoute: typeof AppShopsIdRoute
@@ -798,6 +839,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppShop_profileRoute: AppShop_profileRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
+  AppTestimonialRoute: AppTestimonialRoute,
   AppAccountsNewRoute: AppAccountsNewRoute,
   AppMenu_itemsNewRoute: AppMenu_itemsNewRoute,
   AppShopsIdRoute: AppShopsIdRoute,

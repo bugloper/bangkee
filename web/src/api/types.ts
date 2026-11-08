@@ -76,6 +76,7 @@ export interface Me {
   badges: {
     admin_payments: number // pending subscription payments (platform admins)
     admin_feedback: number // new feedback messages (platform admins)
+    admin_testimonials: number // testimonials waiting for review (platform admins)
   }
   unread_notifications: number
   push: {
@@ -566,4 +567,33 @@ export interface AdminFeedbackQueue {
     from: { name: string; email: string | null; phone: string | null; role: "shop_owner" | "customer"; shop: string | null }
     reviewed_by_name: string | null
   })[]
+}
+
+// ------------------------------------------------------------ testimonials
+
+export type TestimonialStatus = "pending" | "approved" | "hidden"
+
+/** GET /api/testimonial — the signed-in person's own, or null. */
+export interface MyTestimonial {
+  testimonial: { id: number; body: string; status: TestimonialStatus; updated_at: Timestamp } | null
+}
+
+/** GET /api/public/testimonials — the approved ones, for the homepage. */
+export interface PublicTestimonials {
+  testimonials: { id: number; body: string; name: string; role: string; owner: boolean }[]
+}
+
+/** GET /api/admin/testimonials?status= — the operator's list. */
+export interface AdminTestimonialQueue {
+  status: string
+  pending_count: number
+  testimonials: {
+    id: number
+    body: string
+    status: TestimonialStatus
+    updated_at: Timestamp
+    from: { name: string; email: string | null; phone: string | null; role: "shop_owner" | "customer"; shop: string | null }
+    reviewed_by_name: string | null
+    reviewed_at: Timestamp | null
+  }[]
 }

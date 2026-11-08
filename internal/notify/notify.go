@@ -214,6 +214,18 @@ func (n *Notifier) FeedbackReceived(ctx context.Context, from, kindLabel, body s
 	}
 }
 
+// TestimonialReceived: every platform admin hears there is one to review.
+func (n *Notifier) TestimonialReceived(ctx context.Context, from string) {
+	admins, err := n.q.PlatformAdminIDs(ctx)
+	if err != nil {
+		slog.Error("could not load admins", "error", err)
+		return
+	}
+	for _, id := range admins {
+		n.deliver(ctx, note{userID: id, kind: "feedback", title: "A testimonial from " + from, body: "Read it and approve it for the homepage.", path: consoleTestimonialsPath})
+	}
+}
+
 func (n *Notifier) FeedbackAcknowledged(ctx context.Context, userID int64, kindLabel, body string) {
 	n.deliver(ctx, note{userID: userID, kind: "feedback", title: "Bangkee has seen your " + strings.ToLower(kindLabel), body: snippet(body), path: helpPath})
 }
@@ -298,9 +310,10 @@ func (n *Notifier) push(ctx context.Context, notificationID int64) {
 // The operator's queues on the console host, and where a person reads the
 // answers to what they sent.
 const (
-	consoleQueuePath    = "/subscription_payments"
-	consoleFeedbackPath = "/feedback"
-	helpPath            = "/help"
+	consoleQueuePath        = "/subscription_payments"
+	consoleFeedbackPath     = "/feedback"
+	consoleTestimonialsPath = "/testimonials"
+	helpPath                = "/help"
 )
 
 // absolute links into the app, or into the console (admin.<host>) for the
@@ -374,7 +387,7 @@ func (n *Notifier) email(ctx context.Context, notificationID int64) {
 		return
 	}
 	path := util.Deref(notification.Path)
-	url := n.absolute(path, path == consoleQueuePath || (notification.Kind == "feedback" && path == consoleFeedbackPath))
+	url := n.absolute(path, path == consoleQueuePath || path == consoleTestimonialsPath || (notification.Kind == "feedback" && path == consoleFeedbackPath))
 	body := util.Deref(notification.Body)
 
 	text := fmt.Sprintf("%s\n%s\n\n%s\n\nOpen Bangkee: %s\n\nYou are getting this because you use Bangkee, the shared credit book.\n",

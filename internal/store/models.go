@@ -184,6 +184,17 @@ type SubscriptionPayment struct {
 	UpdatedAt       time.Time
 }
 
+type Testimonial struct {
+	ID           int64
+	UserID       int64
+	Body         string
+	Status       int32
+	ReviewedByID *int64
+	ReviewedAt   *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
 type Transaction struct {
 	ID             int64
 	AccountID      int64
