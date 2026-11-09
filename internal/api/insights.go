@@ -49,12 +49,24 @@ func (s *Server) insights(c *echo.Context) error {
 	for _, row := range totals {
 		byMonth[row.Month] = row
 	}
+	joined, err := s.Q.MonthlyNewCustomers(ctx, store.MonthlyNewCustomersParams{ShopID: o.Shop.ID, Since: first})
+	if err != nil {
+		return err
+	}
+	joinedBy := map[string]int64{}
+	for _, row := range joined {
+		joinedBy[row.Month] = row.Customers
+	}
+	counts, err := s.Q.ShopCounts(ctx, o.Shop.ID)
+	if err != nil {
+		return err
+	}
 	months := make([]M, 0, insightMonths)
 	for m := first; !m.After(current); m = m.AddDate(0, 1, 0) {
 		key := m.Format("2006-01")
 		months = append(months, M{
 			"month": key, "label": m.Format("Jan"),
-			"credit_cents": byMonth[key].CreditCents, "payment_cents": byMonth[key].PaymentCents,
+			"credit_cents": byMonth[key].CreditCents, "payment_cents": byMonth[key].PaymentCents, "new_customers": joinedBy[key],
 		})
 	}
 
@@ -93,6 +105,6 @@ func (s *Server) insights(c *echo.Context) error {
 
 	return c.JSON(http.StatusOK, M{
 		"months": months, "month": month.Format("2006-01"), "entries": listed,
-		"outstanding_cents": outstanding, "owing": owingViews, "overdue_count": overdue,
+		"outstanding_cents": outstanding, "owing": owingViews, "overdue_count": overdue, "customers_count": counts.Customers,
 	})
 }

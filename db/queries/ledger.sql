@@ -106,3 +106,9 @@ SELECT to_char(t.occurred_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar
 FROM transactions t JOIN accounts a ON a.id = t.account_id
 WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL AND t.occurred_at >= sqlc.arg(since)::timestamptz
 GROUP BY 1 ORDER BY 1;
+
+-- name: MonthlyNewCustomers :many
+-- Customers added to a shop's book per month, months as Bhutan has them.
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month, COUNT(*)::bigint AS customers
+FROM accounts WHERE shop_id = $1 AND created_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;

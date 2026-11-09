@@ -231,6 +231,8 @@ func TestInsightsShowTheMonthsAndWhoOwes(t *testing.T) {
 	equal(t, insights.num("outstanding_cents"), 85_000, "owed in all")
 	equal(t, insights.str("owing.0.display_name"), "Pema", "most owed first")
 	equal(t, insights.len("owing"), 2, "everyone owing")
+	equal(t, insights.num("months.5.new_customers"), 2, "two customers joined the book this month")
+	equal(t, insights.num("customers_count"), 2, "two in the book")
 
 	equal(t, owner.get("/api/insights?month=1999-01").Status, 422, "only the last six months")
 	customer := a.browser()

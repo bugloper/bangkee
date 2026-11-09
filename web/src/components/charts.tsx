@@ -37,7 +37,8 @@ function axisMoney(cents: number): string {
  */
 export function MonthBars({ bars, selected, onSelect, label }: { bars: Bar[]; selected: string; onSelect: (key: string) => void; label: string }) {
   const [hover, setHover] = useState<string | null>(null)
-  const top = niceCeiling(Math.max(...bars.map((bar) => bar.cents)))
+  // An empty chart still gets a real scale (Nu. 1,000), not four zeros.
+  const top = niceCeiling(Math.max(100_000, ...bars.map((bar) => bar.cents)))
   const ticks = [1, 0.75, 0.5, 0.25].map((share) => top * share)
 
   return (

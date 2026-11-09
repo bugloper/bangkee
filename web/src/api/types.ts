@@ -392,12 +392,13 @@ export interface CustomerDashboard {
 
 /** GET /api/insights?month=YYYY-MM — the owner's book over the last six months. */
 export interface Insights {
-  months: { month: string; label: string; credit_cents: Cents; payment_cents: Cents }[] // oldest first, this month last
+  months: { month: string; label: string; credit_cents: Cents; payment_cents: Cents; new_customers: number }[] // oldest first, this month last
   month: string // the month `entries` are from
   entries: (LedgerEntry & { account: { id: number; display_name: string } })[] // newest first, crossed-out left out
   outstanding_cents: Cents
   owing: AccountSummary[] // everyone who owes, most first
   overdue_count: number
+  customers_count: number // everyone in the book
 }
 
 /** GET /api/dashboard (platform admins use /api/admin/dashboard) */

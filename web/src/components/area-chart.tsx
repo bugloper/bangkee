@@ -1,4 +1,4 @@
-import { useId, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -41,23 +41,35 @@ export function AreaChart({
 }) {
   const id = useId().replace(/:/g, "")
   const [hover, setHover] = useState<number | null>(null)
+  // Drawn at the card's own width, so its text is the same size on a phone
+  // and a desktop instead of scaling with the drawing.
+  const box = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(640)
+  useEffect(() => {
+    const element = box.current
+    if (!element) return
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(240, Math.round(entry.contentRect.width))))
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
   const count = labels.length
-  const width = 720
   const pad = { top: 12, right: 8, bottom: 26, left: 40 }
   const top = niceCeiling(Math.max(0, ...series.flatMap((s) => s.values)))
   const x = (i: number) => pad.left + (count <= 1 ? 0 : (i / (count - 1)) * (width - pad.left - pad.right))
   const y = (v: number) => pad.top + (1 - v / top) * (height - pad.top - pad.bottom)
   const ticks = [0, 0.5, 1].map((share) => top * share)
-  const every = Math.ceil(count / 6)
+  const every = Math.ceil(count / Math.max(2, Math.min(6, Math.floor(width / 70))))
   const shown = hover ?? count - 1
 
   const path = (values: number[]) => values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")
 
   return (
-    <div className={cn("relative", className)}>
+    <div ref={box} className={cn("relative", className)}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full overflow-visible outline-none"
+        width={width}
+        height={height}
+        className="block max-w-full overflow-visible outline-none"
         role="img"
         aria-label={label}
         tabIndex={0}

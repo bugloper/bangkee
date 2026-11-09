@@ -233,6 +233,43 @@ func (q *Queries) LineItemsTotal(ctx context.Context, transactionID int64) (int6
 	return column_1, err
 }
 
+const monthlyNewCustomers = `-- name: MonthlyNewCustomers :many
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month, COUNT(*)::bigint AS customers
+FROM accounts WHERE shop_id = $1 AND created_at >= $2::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type MonthlyNewCustomersParams struct {
+	ShopID int64
+	Since  time.Time
+}
+
+type MonthlyNewCustomersRow struct {
+	Month     string
+	Customers int64
+}
+
+// Customers added to a shop's book per month, months as Bhutan has them.
+func (q *Queries) MonthlyNewCustomers(ctx context.Context, arg MonthlyNewCustomersParams) ([]MonthlyNewCustomersRow, error) {
+	rows, err := q.db.Query(ctx, monthlyNewCustomers, arg.ShopID, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MonthlyNewCustomersRow
+	for rows.Next() {
+		var i MonthlyNewCustomersRow
+		if err := rows.Scan(&i.Month, &i.Customers); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const monthlyTotals = `-- name: MonthlyTotals :many
 SELECT to_char(t.occurred_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month,
        COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 0), 0)::bigint AS credit_cents,
