@@ -3,6 +3,7 @@ package util
 
 import (
 	"crypto/rand"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -92,3 +93,6 @@ func MonthStart(now time.Time) time.Time {
 
 // Ptr makes a pointer of any value.
 func Ptr[T any](value T) *T { return &value }
+
+// Itoa is strconv.Itoa, for messages.
+func Itoa(n int) string { return strconv.Itoa(n) }

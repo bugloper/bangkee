@@ -73,10 +73,11 @@ UPDATE transactions SET crossed_out_at = now(), crossed_out_by_id = $2, updated_
 WHERE id = $1 AND crossed_out_at IS NULL;
 
 -- name: TransactionVisibleTo :one
--- The shop's owner and the account's customer.
+-- The shop's owner, its staff, and the account's customer.
 SELECT EXISTS(
   SELECT 1 FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN shops s ON s.id = a.shop_id
-  WHERE t.id = $1 AND (s.owner_id = sqlc.arg(user_id) OR a.customer_id = sqlc.arg(user_id))
+  WHERE t.id = $1 AND (s.owner_id = sqlc.arg(user_id) OR a.customer_id = sqlc.arg(user_id)
+    OR EXISTS(SELECT 1 FROM shop_members m WHERE m.shop_id = s.id AND m.user_id = sqlc.arg(user_id) AND m.revoked_at IS NULL))
 );
 
 -- name: MonthlyTotals :many
@@ -95,3 +96,19 @@ FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN users u ON u.id 
 WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL
   AND t.occurred_at >= sqlc.arg(since)::timestamptz AND t.occurred_at < sqlc.arg(until)::timestamptz
 ORDER BY t.occurred_at DESC, t.id DESC LIMIT 200;
+
+-- name: DailyTotals :many
+-- Credit given and payments received per day, days as Bhutan has them
+-- (UTC+6), from `since` on — the dashboard's today and its trend.
+SELECT to_char(t.occurred_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 0), 0)::bigint AS credit_cents,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 1), 0)::bigint AS payment_cents
+FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL AND t.occurred_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;
+
+-- name: MonthlyNewCustomers :many
+-- Customers added to a shop's book per month, months as Bhutan has them.
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month, COUNT(*)::bigint AS customers
+FROM accounts WHERE shop_id = $1 AND created_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;

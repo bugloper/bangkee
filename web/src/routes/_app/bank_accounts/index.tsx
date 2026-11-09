@@ -11,7 +11,7 @@ import { usePage } from "@/lib/page"
 export const Route = createFileRoute("/_app/bank_accounts/")({ component: BankAccounts })
 
 function BankAccounts() {
-  usePage("Bank details", "/settings", { narrow: true })
+  usePage("Bank details", "/dashboard", { narrow: true })
   const { data } = useQuery({ queryKey: ["bank_accounts"], queryFn: api.bankAccounts })
   const banks = data?.bank_accounts ?? []
 

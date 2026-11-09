@@ -128,8 +128,8 @@ func (q *Queries) CreateBankAccount(ctx context.Context, arg CreateBankAccountPa
 }
 
 const createSubscriptionPayment = `-- name: CreateSubscriptionPayment :one
-INSERT INTO subscription_payments (shop_id, submitted_by_id, amount_cents, months, method, reference)
-VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+INSERT INTO subscription_payments (shop_id, submitted_by_id, amount_cents, months, method, reference, plan)
+VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
 `
 
 type CreateSubscriptionPaymentParams struct {
@@ -139,6 +139,7 @@ type CreateSubscriptionPaymentParams struct {
 	Months        int32
 	Method        *string
 	Reference     *string
+	Plan          string
 }
 
 func (q *Queries) CreateSubscriptionPayment(ctx context.Context, arg CreateSubscriptionPaymentParams) (int64, error) {
@@ -149,6 +150,7 @@ func (q *Queries) CreateSubscriptionPayment(ctx context.Context, arg CreateSubsc
 		arg.Months,
 		arg.Method,
 		arg.Reference,
+		arg.Plan,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -185,7 +187,7 @@ func (q *Queries) DemoteOtherPrimaries(ctx context.Context, arg DemoteOtherPrima
 }
 
 const lockSubscriptionPayment = `-- name: LockSubscriptionPayment :one
-SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, s.name AS shop_name
+SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, p.plan, s.name AS shop_name
 FROM subscription_payments p JOIN shops s ON s.id = p.shop_id
 WHERE p.id = $1 FOR UPDATE OF p
 `
@@ -212,6 +214,7 @@ func (q *Queries) LockSubscriptionPayment(ctx context.Context, id int64) (LockSu
 		&i.SubscriptionPayment.ReviewedAt,
 		&i.SubscriptionPayment.CreatedAt,
 		&i.SubscriptionPayment.UpdatedAt,
+		&i.SubscriptionPayment.Plan,
 		&i.ShopName,
 	)
 	return i, err
@@ -245,7 +248,7 @@ func (q *Queries) RejectSubscriptionPayment(ctx context.Context, arg RejectSubsc
 }
 
 const subscriptionPaymentList = `-- name: SubscriptionPaymentList :many
-SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, r.name AS reviewed_by_name, u.name AS submitted_by_name, s.name AS shop_name
+SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, p.plan, r.name AS reviewed_by_name, u.name AS submitted_by_name, s.name AS shop_name
 FROM subscription_payments p
 JOIN shops s ON s.id = p.shop_id
 JOIN users u ON u.id = p.submitted_by_id
@@ -299,6 +302,7 @@ func (q *Queries) SubscriptionPaymentList(ctx context.Context, arg SubscriptionP
 			&i.SubscriptionPayment.ReviewedAt,
 			&i.SubscriptionPayment.CreatedAt,
 			&i.SubscriptionPayment.UpdatedAt,
+			&i.SubscriptionPayment.Plan,
 			&i.ReviewedByName,
 			&i.SubmittedByName,
 			&i.ShopName,

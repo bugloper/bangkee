@@ -95,5 +95,9 @@ func Pluralize(count int64, singular string) string {
 	if count == 1 {
 		return "1 " + singular
 	}
+	// entry → entries, but day → days.
+	if n := len(singular); n > 1 && singular[n-1] == 'y' && !strings.ContainsRune("aeiou", rune(singular[n-2])) {
+		return fmt.Sprintf("%d %sies", count, singular[:n-1])
+	}
 	return fmt.Sprintf("%d %ss", count, singular)
 }

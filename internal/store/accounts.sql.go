@@ -11,7 +11,7 @@ import (
 )
 
 const accountByID = `-- name: AccountByID :one
-SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts WHERE id = $1
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts WHERE id = $1
 `
 
 func (q *Queries) AccountByID(ctx context.Context, id int64) (Account, error) {
@@ -29,12 +29,13 @@ func (q *Queries) AccountByID(ctx context.Context, id int64) (Account, error) {
 		&i.LastActivityAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RemindersPaused,
 	)
 	return i, err
 }
 
 const accountByInviteToken = `-- name: AccountByInviteToken :one
-SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts WHERE invite_token = $1
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts WHERE invite_token = $1
 `
 
 func (q *Queries) AccountByInviteToken(ctx context.Context, inviteToken string) (Account, error) {
@@ -52,12 +53,13 @@ func (q *Queries) AccountByInviteToken(ctx context.Context, inviteToken string) 
 		&i.LastActivityAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RemindersPaused,
 	)
 	return i, err
 }
 
 const accountInShop = `-- name: AccountInShop :one
-SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts WHERE id = $1 AND shop_id = $2
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts WHERE id = $1 AND shop_id = $2
 `
 
 type AccountInShopParams struct {
@@ -80,6 +82,7 @@ func (q *Queries) AccountInShop(ctx context.Context, arg AccountInShopParams) (A
 		&i.LastActivityAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RemindersPaused,
 	)
 	return i, err
 }
@@ -158,7 +161,7 @@ func (q *Queries) AccountTransactionIDs(ctx context.Context, accountID int64) ([
 }
 
 const accountsByName = `-- name: AccountsByName :many
-SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts WHERE shop_id = $1 ORDER BY customer_name, id
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts WHERE shop_id = $1 ORDER BY customer_name, id
 `
 
 func (q *Queries) AccountsByName(ctx context.Context, shopID int64) ([]Account, error) {
@@ -182,6 +185,7 @@ func (q *Queries) AccountsByName(ctx context.Context, shopID int64) ([]Account, 
 			&i.LastActivityAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RemindersPaused,
 		); err != nil {
 			return nil, err
 		}
@@ -276,7 +280,7 @@ func (q *Queries) CustomerAccountInShop(ctx context.Context, arg CustomerAccount
 }
 
 const customerAccounts = `-- name: CustomerAccounts :many
-SELECT a.id, a.shop_id, a.customer_id, a.customer_name, a.customer_phone, a.invite_token, a.pin_reset_until, a.balance_cents, a.last_activity_at, a.created_at, a.updated_at, s.name AS shop_name, s.credit_due_days
+SELECT a.id, a.shop_id, a.customer_id, a.customer_name, a.customer_phone, a.invite_token, a.pin_reset_until, a.balance_cents, a.last_activity_at, a.created_at, a.updated_at, a.reminders_paused, s.name AS shop_name, s.credit_due_days
 FROM accounts a JOIN shops s ON s.id = a.shop_id
 WHERE a.customer_id = $1 ORDER BY a.balance_cents DESC, a.id
 `
@@ -308,6 +312,7 @@ func (q *Queries) CustomerAccounts(ctx context.Context, customerID *int64) ([]Cu
 			&i.Account.LastActivityAt,
 			&i.Account.CreatedAt,
 			&i.Account.UpdatedAt,
+			&i.Account.RemindersPaused,
 			&i.ShopName,
 			&i.CreditDueDays,
 		); err != nil {
@@ -372,7 +377,7 @@ func (q *Queries) EndPinReset(ctx context.Context, id int64) error {
 }
 
 const owingAccounts = `-- name: OwingAccounts :many
-SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts WHERE shop_id = $1 AND balance_cents > 0 ORDER BY balance_cents DESC, id
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts WHERE shop_id = $1 AND balance_cents > 0 ORDER BY balance_cents DESC, id
 `
 
 // Everyone who owes the shop something, most first.
@@ -397,6 +402,7 @@ func (q *Queries) OwingAccounts(ctx context.Context, shopID int64) ([]Account, e
 			&i.LastActivityAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RemindersPaused,
 		); err != nil {
 			return nil, err
 		}
@@ -471,7 +477,7 @@ func (q *Queries) RecomputeBalance(ctx context.Context, accountID int64) error {
 }
 
 const searchAccounts = `-- name: SearchAccounts :many
-SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts WHERE shop_id = $1 AND (customer_name ILIKE $2 OR customer_phone ILIKE $2)
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts WHERE shop_id = $1 AND (customer_name ILIKE $2 OR customer_phone ILIKE $2)
 ORDER BY customer_name, id
 `
 
@@ -501,6 +507,7 @@ func (q *Queries) SearchAccounts(ctx context.Context, arg SearchAccountsParams) 
 			&i.LastActivityAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RemindersPaused,
 		); err != nil {
 			return nil, err
 		}

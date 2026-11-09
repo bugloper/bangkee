@@ -52,7 +52,7 @@ func run() error {
 	}
 
 	server := api.NewServer(db, cfg, files)
-	server.ScheduleOverdueReminders(ctx)
+	server.ScheduleReminders(ctx)
 
 	httpServer := &http.Server{Addr: ":" + cfg.Port, Handler: server.Handler(), ReadHeaderTimeout: 10 * time.Second}
 	go func() {

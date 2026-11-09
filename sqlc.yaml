@@ -10,6 +10,14 @@ sql:
       - migrations/20261104193414_create_feedback.sql
       - migrations/20261105041340_add_profile_to_shops.sql
       - migrations/20261106101222_add_coordinates_to_shops.sql
+      - migrations/20261108135517_create_testimonials.sql
+      - migrations/20261109090838_add_confirmation_to_transactions.sql
+      - migrations/20261109091402_create_reminders.sql
+      - migrations/20261109091636_add_plans.sql
+      - migrations/20261109092706_create_installment_plans.sql
+      - migrations/20261109093840_create_suppliers.sql
+      - migrations/20261109094729_create_shop_staff.sql
+      - migrations/20261109122240_index_transactions_on_created_at.sql
     queries: db/queries
     gen:
       go:
@@ -25,6 +33,8 @@ sql:
             go_type:
               type: time.Time
               pointer: true
+          - db_type: date
+            go_type: time.Time
           - db_type: pg_catalog.numeric
             go_type: github.com/shopspring/decimal.Decimal
           - db_type: pg_catalog.numeric

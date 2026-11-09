@@ -59,27 +59,101 @@ func (s *Server) currentUser(c *echo.Context) (*current, error) {
 	return user, err
 }
 
+// owner is whoever is working on the shop's side: its owner, or one of its
+// staff (Role says which, and what they may do).
 type owner struct {
 	User store.User
 	Shop store.Shop
+	Role string // "owner", or the staff member's role
 }
 
+// owner is the guard for every shop-side endpoint. An owner may do
+// anything there; a staff member only what their role allows for this
+// endpoint (staffPermissions), and only while the shop's plan includes staff.
 func (s *Server) owner(c *echo.Context) (*owner, error) {
 	cur, err := s.currentUser(c)
 	if err != nil {
 		return nil, err
 	}
-	if cur.User.Role != domain.RoleShopOwner {
-		return nil, apperr.NewForbidden("That area is for shop owners.")
+	ctx := c.Request().Context()
+	switch cur.User.Role {
+	case domain.RoleShopOwner:
+		shop, err := domain.ShopForOwner(ctx, s.Q, cur.User.ID)
+		if err != nil {
+			return nil, err
+		}
+		if shop == nil {
+			return nil, apperr.NewForbidden("That area is for shop owners.")
+		}
+		return &owner{User: cur.User, Shop: *shop, Role: domain.ShopOwnerRole}, nil
+	case domain.RoleStaff:
+		m, err := s.staffMembership(ctx, cur.User.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !domain.Can(m.Member.Role, requiredPermission(c)) {
+			return nil, apperr.NewForbidden("Your role in " + m.Shop.Name + " does not include that. Ask the owner.")
+		}
+		return &owner{User: cur.User, Shop: m.Shop, Role: m.Member.Role}, nil
 	}
-	shop, err := domain.ShopForOwner(c.Request().Context(), s.Q, cur.User.ID)
+	return nil, apperr.NewForbidden("That area is for shop owners.")
+}
+
+// staffMembership is the shop a staff member works in, while they are on
+// its staff and its plan includes staff.
+func (s *Server) staffMembership(ctx context.Context, userID int64) (*domain.Membership, error) {
+	m, err := domain.ActiveMembership(ctx, s.Q, userID)
 	if err != nil {
 		return nil, err
 	}
-	if shop == nil {
-		return nil, apperr.NewForbidden("That area is for shop owners.")
+	if m == nil {
+		return nil, apperr.NewForbidden("You are no longer on a shop's staff.")
 	}
-	return &owner{User: cur.User, Shop: *shop}, nil
+	allowed, err := s.planAllows(ctx, s.Q, m.Shop.ID, domain.FeatureStaff)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, apperr.NewForbidden(m.Shop.Name + "'s plan no longer includes staff accounts. Ask the owner.")
+	}
+	return m, nil
+}
+
+// shopSide says whether this person sees the shop's side of its book: the
+// owner, or any of its current staff.
+func (s *Server) shopSide(ctx context.Context, user store.User, shop store.Shop) (bool, error) {
+	switch user.Role {
+	case domain.RoleShopOwner:
+		return shop.OwnerID == user.ID, nil
+	case domain.RoleStaff:
+		m, err := domain.ActiveMembership(ctx, s.Q, user.ID)
+		if err != nil || m == nil || m.Shop.ID != shop.ID {
+			return false, err
+		}
+		return s.planAllows(ctx, s.Q, shop.ID, domain.FeatureStaff)
+	}
+	return false, nil
+}
+
+// shopOf is the shop this person works in, owner or staff, and their role
+// there; nil for a customer.
+func (s *Server) shopOf(ctx context.Context, user store.User) (*store.Shop, string, error) {
+	switch user.Role {
+	case domain.RoleShopOwner:
+		shop, err := domain.ShopForOwner(ctx, s.Q, user.ID)
+		return shop, domain.ShopOwnerRole, err
+	case domain.RoleStaff:
+		m, err := s.staffMembership(ctx, user.ID)
+		if err != nil {
+			var appErr *apperr.Error
+			if errors.As(err, &appErr) {
+				return nil, "", nil // off the staff, or the plan no longer has staff: no shop
+			}
+			return nil, "", err
+		}
+		return &m.Shop, m.Member.Role, nil
+	}
+	return nil, "", nil
 }
 
 // requireWritable is BR-40: once the grace period is exhausted the owner

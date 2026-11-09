@@ -67,7 +67,7 @@ export function AccountForm({ account }: { account?: AccountSummary }) {
       >
         <ErrorBox errors={validationErrors(save.error)} />
         <Field label="Customer name" htmlFor="customer_name">
-          <Input id="customer_name" required autoFocus placeholder="e.g. Tashi Wangmo" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input id="customer_name" required autoFocus placeholder="e.g. Lhaki Dolma" value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         <Field label="Phone" hint="Their invite goes to this number" htmlFor="customer_phone">
           <Input id="customer_phone" type="tel" required autoComplete="off" className="tabular" placeholder="17 12 34 56" value={phone} onChange={(e) => setPhone(e.target.value)} />

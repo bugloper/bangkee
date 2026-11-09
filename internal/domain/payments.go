@@ -206,6 +206,8 @@ func SubscriptionPaymentStatusValue(key string) (int32, bool) {
 
 type SubscriptionPaymentDTO struct {
 	ID              int64      `json:"id"`
+	Plan            string     `json:"plan"`
+	PlanName        string     `json:"plan_name"`
 	AmountCents     int64      `json:"amount_cents"`
 	Months          int32      `json:"months"`
 	PaymentMethod   *string    `json:"payment_method"`
@@ -220,7 +222,7 @@ type SubscriptionPaymentDTO struct {
 
 func SubscriptionPaymentView(p store.SubscriptionPayment, reviewedBy *string, shot *string) SubscriptionPaymentDTO {
 	return SubscriptionPaymentDTO{
-		ID: p.ID, AmountCents: p.AmountCents, Months: p.Months, PaymentMethod: p.Method, Reference: p.Reference,
+		ID: p.ID, Plan: p.Plan, PlanName: planName(p.Plan), AmountCents: p.AmountCents, Months: p.Months, PaymentMethod: p.Method, Reference: p.Reference,
 		Status: [...]string{"pending", "approved", "rejected"}[p.Status], RejectionReason: p.RejectionReason,
 		CreatedAt: p.CreatedAt, ReviewedAt: p.ReviewedAt, ReviewedByName: reviewedBy, ScreenshotURL: shot,
 	}
@@ -228,6 +230,7 @@ func SubscriptionPaymentView(p store.SubscriptionPayment, reviewedBy *string, sh
 
 type NewSubscriptionPayment struct {
 	Amount, Months, Method, Reference string
+	Plan                              string // basic | pro | business: what the year buys
 }
 
 func CreateSubscriptionPayment(ctx context.Context, q *store.Queries, files *storage.Storage, shopID, by int64, in NewSubscriptionPayment, upload *Upload) (int64, int64, int32, error) {
@@ -241,6 +244,8 @@ func CreateSubscriptionPayment(ctx context.Context, q *store.Queries, files *sto
 	}
 	months, err := strconv.Atoi(monthsText)
 	errs.Check(err == nil && months >= 1, "Months must be greater than or equal to 1")
+	_, known := PlanByKey(in.Plan)
+	errs.Check(known, "Choose a plan")
 	ValidateImage("Screenshot", upload, &errs)
 	if err := errs.Err(); err != nil {
 		return 0, 0, 0, err
@@ -251,7 +256,7 @@ func CreateSubscriptionPayment(ctx context.Context, q *store.Queries, files *sto
 	}
 	id, err := q.CreateSubscriptionPayment(ctx, store.CreateSubscriptionPaymentParams{
 		ShopID: shopID, SubmittedByID: by, AmountCents: amount, Months: int32(months),
-		Method: util.Presence(in.Method), Reference: util.Presence(in.Reference),
+		Method: util.Presence(in.Method), Reference: util.Presence(in.Reference), Plan: in.Plan,
 	})
 	if err != nil {
 		return 0, 0, 0, err
@@ -260,8 +265,11 @@ func CreateSubscriptionPayment(ctx context.Context, q *store.Queries, files *sto
 }
 
 // ApproveSubscriptionPayment is BR-43/BR-45. Returns the new paid-through
-// date, or nil when it had already been reviewed.
-func ApproveSubscriptionPayment(ctx context.Context, q *store.Queries, p store.SubscriptionPayment, by int64) (*time.Time, error) {
+// date, or nil when it had already been reviewed. The shop moves onto the
+// plan the payment was for straight away, and the months are added to its
+// cover. A shop staying on its plan keeps the price it had; one changing
+// plan takes the plan's price now (planPrice).
+func ApproveSubscriptionPayment(ctx context.Context, q *store.Queries, p store.SubscriptionPayment, by int64, planPrice func(string) int64) (*time.Time, error) {
 	if p.Status != 0 {
 		return nil, nil
 	}
@@ -275,6 +283,14 @@ func ApproveSubscriptionPayment(ctx context.Context, q *store.Queries, p store.S
 	paidThrough, err := ExtendPeriod(ctx, q, *sub, p.Months, &by)
 	if err != nil {
 		return nil, err
+	}
+	if p.Plan != sub.Plan {
+		if err := q.SetSubscriptionPlan(ctx, store.SetSubscriptionPlanParams{ID: sub.ID, Plan: p.Plan, PriceCents: planPrice(p.Plan)}); err != nil {
+			return nil, err
+		}
+		if err := Audit(ctx, q, "Subscription", sub.ID, "plan_changed", &by, map[string]any{"from": sub.Plan, "to": p.Plan}); err != nil {
+			return nil, err
+		}
 	}
 	return &paidThrough, Audit(ctx, q, SubscriptionPaymentRecordType, p.ID, "approved", &by,
 		map[string]any{"amount_cents": p.AmountCents, "months": p.Months})

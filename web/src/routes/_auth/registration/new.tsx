@@ -11,15 +11,12 @@ import { Input } from "@/components/ui/input"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
-import { isAdminHost } from "@/lib/host"
 import { meQuery } from "@/lib/me"
 import { usePage } from "@/lib/page"
 import { queryClient } from "@/lib/query"
 
 export const Route = createFileRoute("/_auth/registration/new")({
   beforeLoad: async ({ context }) => {
-    // The console has no sign-up: staff accounts are made by hand.
-    if (isAdminHost()) throw redirect({ to: "/session/new" })
     if (await context.queryClient.ensureQueryData(meQuery)) throw redirect({ to: "/dashboard" })
   },
   component: Register,
@@ -48,7 +45,7 @@ function Register() {
   return (
     <AuthFrame
       title={invited ? "Create your account" : "Create your shop account"}
-      description={invited ? "So you can see your balance whenever you want." : "Free for 14 days. No card needed."}
+      description={invited ? "So you can see your balance whenever you want." : "Free for 3 months. Nothing to pay to start."}
       footer={
         <>
           Already have an account?{" "}

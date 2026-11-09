@@ -67,7 +67,7 @@ export function IosInstallSheet() {
 /** Shown after a write, never on arrival, and only while the browser has not been asked yet. */
 export function PushPrompt({ me }: { me: Me }) {
   const open = pushPromptStore.use()
-  const owner = me.user.role === "shop_owner"
+  const owner = me.user.role === "shop_owner" || me.user.role === "staff"
   return (
     <ActionSheet
       open={open}

@@ -11,17 +11,18 @@ import (
 )
 
 type Account struct {
-	ID             int64
-	ShopID         int64
-	CustomerID     *int64
-	CustomerName   string
-	CustomerPhone  *string
-	InviteToken    string
-	PinResetUntil  *time.Time
-	BalanceCents   int64
-	LastActivityAt *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              int64
+	ShopID          int64
+	CustomerID      *int64
+	CustomerName    string
+	CustomerPhone   *string
+	InviteToken     string
+	PinResetUntil   *time.Time
+	BalanceCents    int64
+	LastActivityAt  *time.Time
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	RemindersPaused bool
 }
 
 type ActiveStorageAttachment struct {
@@ -83,6 +84,22 @@ type Feedback struct {
 	UpdatedAt      time.Time
 }
 
+type InstallmentPlan struct {
+	ID               int64
+	AccountID        int64
+	CreatedByID      int64
+	TotalCents       int64
+	InstallmentCount int32
+	Frequency        string
+	FirstDueOn       time.Time
+	StartsAt         time.Time
+	Notes            *string
+	Status           string
+	EndedAt          *time.Time
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
 type LineItem struct {
 	ID             int64
 	TransactionID  int64
@@ -129,6 +146,19 @@ type PushSubscription struct {
 	UpdatedAt  time.Time
 }
 
+type Reminder struct {
+	ID           int64
+	AccountID    int64
+	Kind         string
+	Channel      string
+	Status       string
+	Detail       *string
+	BalanceCents int64
+	SentByID     *int64
+	RemindedOn   time.Time
+	CreatedAt    time.Time
+}
+
 type Session struct {
 	ID        int64
 	UserID    int64
@@ -140,19 +170,48 @@ type Session struct {
 }
 
 type Shop struct {
-	ID            int64
-	OwnerID       int64
-	Name          string
-	Kind          *string
-	CreditDueDays int32
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	About         *string
-	Location      *string
-	Phone         *string
-	Hours         *string
-	Latitude      *float64
-	Longitude     *float64
+	ID                int64
+	OwnerID           int64
+	Name              string
+	Kind              *string
+	CreditDueDays     int32
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	About             *string
+	Location          *string
+	Phone             *string
+	Hours             *string
+	Latitude          *float64
+	Longitude         *float64
+	RemindersEnabled  bool
+	ReminderEveryDays int32
+	ReminderHour      int32
+}
+
+type ShopMember struct {
+	ID          int64
+	ShopID      int64
+	UserID      int64
+	Role        string
+	InvitedByID *int64
+	RevokedAt   *time.Time
+	RevokedByID *int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type StaffInvitation struct {
+	ID           int64
+	ShopID       int64
+	Name         string
+	EmailAddress string
+	Role         string
+	Token        string
+	InvitedByID  int64
+	ExpiresAt    time.Time
+	AcceptedAt   *time.Time
+	RevokedAt    *time.Time
+	CreatedAt    time.Time
 }
 
 type Subscription struct {
@@ -182,6 +241,47 @@ type SubscriptionPayment struct {
 	ReviewedAt      *time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	Plan            string
+}
+
+type Supplier struct {
+	ID             int64
+	ShopID         int64
+	Name           string
+	Phone          *string
+	Notes          *string
+	BalanceCents   int64
+	LastActivityAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type SupplierEntry struct {
+	ID             int64
+	SupplierID     int64
+	CreatedByID    int64
+	CrossedOutByID *int64
+	Kind           int32
+	AmountCents    int64
+	Description    *string
+	Notes          *string
+	PaymentMethod  *string
+	IdempotencyKey *string
+	OccurredAt     time.Time
+	CrossedOutAt   *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type Testimonial struct {
+	ID           int64
+	UserID       int64
+	Body         string
+	Status       int32
+	ReviewedByID *int64
+	ReviewedAt   *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type Transaction struct {
@@ -200,17 +300,28 @@ type Transaction struct {
 	CrossedOutAt   *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+	Confirmation   int32
+}
+
+type TransactionResponse struct {
+	ID            int64
+	TransactionID int64
+	UserID        int64
+	Action        string
+	Note          *string
+	CreatedAt     time.Time
 }
 
 type User struct {
-	ID             int64
-	EmailAddress   *string
-	PasswordDigest string
-	Name           string
-	Phone          *string
-	Locale         *string
-	Role           int32
-	PlatformAdmin  bool
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              int64
+	EmailAddress    *string
+	PasswordDigest  string
+	Name            string
+	Phone           *string
+	Locale          *string
+	Role            int32
+	PlatformAdmin   bool
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	RemindersOptOut bool
 }

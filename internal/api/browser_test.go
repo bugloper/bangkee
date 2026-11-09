@@ -109,14 +109,12 @@ func newApp(t *testing.T) *app {
 type browser struct {
 	app    *app
 	client *http.Client
-	// host is the Host header sent, so one test server can play both
-	// bangkee.test and admin.bangkee.test.
+	// host is the Host header sent.
 	host string
 }
 
-// browser is someone on the app host; console is someone on admin.<host>.
+// browser is someone at the app's address.
 func (a *app) browser() *browser { return a.on("bangkee.test") }
-func (a *app) console() *browser { return a.on("admin.bangkee.test") }
 
 func (a *app) on(host string) *browser {
 	jar, _ := cookiejar.New(nil)

@@ -7,6 +7,7 @@ package store
 
 import (
 	"context"
+	"time"
 )
 
 const attach = `-- name: Attach :one
@@ -69,6 +70,56 @@ func (q *Queries) AttachedBlobs(ctx context.Context, arg AttachedBlobsParams) ([
 	return items, nil
 }
 
+const attachedFiles = `-- name: AttachedFiles :many
+SELECT a.id, a.record_id, b.filename, COALESCE(b.content_type, '')::varchar AS content_type, b.byte_size, a.created_at
+FROM active_storage_attachments a JOIN active_storage_blobs b ON b.id = a.blob_id
+WHERE a.record_type = $1 AND a.record_id = ANY($3::bigint[]) AND a.name = $2
+ORDER BY a.id
+`
+
+type AttachedFilesParams struct {
+	RecordType string
+	Name       string
+	RecordIds  []int64
+}
+
+type AttachedFilesRow struct {
+	ID          int64
+	RecordID    int64
+	Filename    string
+	ContentType string
+	ByteSize    int64
+	CreatedAt   time.Time
+}
+
+// Records' attachments of one name with what a list shows about each file.
+func (q *Queries) AttachedFiles(ctx context.Context, arg AttachedFilesParams) ([]AttachedFilesRow, error) {
+	rows, err := q.db.Query(ctx, attachedFiles, arg.RecordType, arg.Name, arg.RecordIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AttachedFilesRow
+	for rows.Next() {
+		var i AttachedFilesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RecordID,
+			&i.Filename,
+			&i.ContentType,
+			&i.ByteSize,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const attachmentIDs = `-- name: AttachmentIDs :many
 SELECT id, record_id FROM active_storage_attachments
 WHERE record_type = $1 AND record_id = ANY($3::bigint[]) AND name = $2
@@ -106,6 +157,43 @@ func (q *Queries) AttachmentIDs(ctx context.Context, arg AttachmentIDsParams) ([
 	return items, nil
 }
 
+const attachmentOn = `-- name: AttachmentOn :one
+SELECT a.id, a.blob_id, b.key, b.filename FROM active_storage_attachments a JOIN active_storage_blobs b ON b.id = a.blob_id
+WHERE a.id = $1 AND a.record_type = $2 AND a.record_id = $3 AND a.name = $4
+`
+
+type AttachmentOnParams struct {
+	ID         int64
+	RecordType string
+	RecordID   int64
+	Name       string
+}
+
+type AttachmentOnRow struct {
+	ID       int64
+	BlobID   int64
+	Key      string
+	Filename string
+}
+
+// One attachment of one name on one record, with its blob: the one about to be removed.
+func (q *Queries) AttachmentOn(ctx context.Context, arg AttachmentOnParams) (AttachmentOnRow, error) {
+	row := q.db.QueryRow(ctx, attachmentOn,
+		arg.ID,
+		arg.RecordType,
+		arg.RecordID,
+		arg.Name,
+	)
+	var i AttachmentOnRow
+	err := row.Scan(
+		&i.ID,
+		&i.BlobID,
+		&i.Key,
+		&i.Filename,
+	)
+	return i, err
+}
+
 const attachmentWithBlob = `-- name: AttachmentWithBlob :one
 SELECT a.record_type, a.record_id, b.key, b.content_type
 FROM active_storage_attachments a JOIN active_storage_blobs b ON b.id = a.blob_id WHERE a.id = $1
@@ -128,6 +216,23 @@ func (q *Queries) AttachmentWithBlob(ctx context.Context, id int64) (AttachmentW
 		&i.ContentType,
 	)
 	return i, err
+}
+
+const countAttachments = `-- name: CountAttachments :one
+SELECT COUNT(*)::bigint FROM active_storage_attachments WHERE record_type = $1 AND record_id = $2 AND name = $3
+`
+
+type CountAttachmentsParams struct {
+	RecordType string
+	RecordID   int64
+	Name       string
+}
+
+func (q *Queries) CountAttachments(ctx context.Context, arg CountAttachmentsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAttachments, arg.RecordType, arg.RecordID, arg.Name)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const createBlob = `-- name: CreateBlob :one
@@ -183,6 +288,15 @@ func (q *Queries) CreateNotification(ctx context.Context, arg CreateNotification
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const deleteAttachment = `-- name: DeleteAttachment :exec
+DELETE FROM active_storage_attachments WHERE id = $1
+`
+
+func (q *Queries) DeleteAttachment(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteAttachment, id)
+	return err
 }
 
 const deleteBlobs = `-- name: DeleteBlobs :exec

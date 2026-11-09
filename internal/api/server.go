@@ -40,6 +40,8 @@ type Server struct {
 	secret  []byte
 	limiter *rateLimiter
 	jobs    sync.WaitGroup
+	// places turns a map pin into a street and town (places.go).
+	places *geocoder
 }
 
 func NewServer(db *pgxpool.Pool, cfg config.Config, files *storage.Storage) *Server {
@@ -51,7 +53,7 @@ func NewServer(db *pgxpool.Pool, cfg config.Config, files *storage.Storage) *Ser
 	}
 	return &Server{
 		DB: db, Q: store.New(db), Cfg: cfg, Files: files, Notify: notify.New(db, cfg),
-		secret: secret, limiter: newRateLimiter(),
+		secret: secret, limiter: newRateLimiter(), places: newGeocoder(nominatimURL),
 	}
 }
 
@@ -91,12 +93,14 @@ func (s *Server) Handler() http.Handler {
 	e.HTTPErrorHandler = renderError
 	e.Use(middleware.Recover(), middleware.RequestLogger(), middleware.BodyLimit(bodyLimit))
 
-	api := e.Group("/api", requireAppHeader, hostGate)
+	api := e.Group("/api", requireAppHeader)
 	s.routes(api)
 	api.RouteNotFound("/*", func(c *echo.Context) error { return apperr.ErrNotFound })
 
 	e.GET("/up", func(c *echo.Context) error { return c.String(http.StatusOK, "OK") })
-	e.GET("/*", serveApp(webDist()))
+	e.GET("/robots.txt", s.robots)
+	e.GET("/sitemap.xml", s.sitemap)
+	e.GET("/*", s.serveApp(webDist()))
 	return e
 }
 
@@ -115,6 +119,7 @@ func (s *Server) routes(g *echo.Group) {
 	g.GET("/shops/:id", s.shopPage)
 	g.GET("/shop/profile", s.shopProfile)
 	g.PATCH("/shop/profile", s.updateShopProfile)
+	g.GET("/places/name", s.placeName)
 	g.POST("/shop/photo", s.setShopPhoto)
 	g.DELETE("/shop/photo", s.removeShopPhoto)
 	g.POST("/me/photo", s.setMyPhoto)
@@ -135,11 +140,51 @@ func (s *Server) routes(g *echo.Group) {
 	g.POST("/accounts/:id/credits", s.createCredit)
 	g.POST("/accounts/:id/payments", s.createPayment)
 	g.GET("/accounts/:id/statement", s.statement)
+	g.GET("/accounts/:id/statement.pdf", s.statementPDF)
+	g.GET("/accounts/:id/receipts", s.receipts)
 	g.GET("/accounts/:id/invite", s.invite)
 	g.POST("/accounts/:id/pin_reset", s.pinReset)
 	g.GET("/transactions/:id", s.transaction)
 	g.PATCH("/transactions/:id", s.updateTransaction)
 	g.POST("/transactions/:id/cross_out", s.crossOutTransaction)
+	g.GET("/transactions/:id/receipt", s.receipt)
+	g.POST("/transactions/:id/documents", s.addDocument)
+	g.DELETE("/transactions/:id/documents/:document_id", s.removeDocument)
+	g.POST("/transactions/:id/confirm", s.confirmEntry)
+	g.POST("/transactions/:id/dispute", s.disputeEntry)
+	g.POST("/transactions/:id/dispute_reply", s.replyToDispute)
+	g.POST("/accounts/:id/confirm_all", s.confirmAll)
+	g.GET("/accounts/:id/installments", s.installmentPlans)
+	g.POST("/accounts/:id/installments", s.createInstallmentPlan)
+	g.POST("/installment_plans/:id/cancel", s.cancelInstallmentPlan)
+	g.POST("/accounts/:id/remind", s.remind)
+	g.POST("/accounts/:id/reminders/log", s.logReminder)
+	g.GET("/accounts/:id/reminders", s.accountReminders)
+	g.PATCH("/accounts/:id/reminders", s.pauseReminders)
+	g.POST("/reminders/overdue", s.remindAll)
+	g.GET("/shop/reminders", s.reminderSettings)
+	g.PATCH("/shop/reminders", s.updateReminderSettings)
+	g.PATCH("/me/reminders", s.setMyReminders)
+	g.GET("/transactions/:id/receipt.pdf", s.receiptPDF)
+	// suppliers
+	g.GET("/suppliers", s.suppliers)
+	g.POST("/suppliers", s.createSupplier)
+	g.GET("/suppliers/:id", s.supplier)
+	g.PATCH("/suppliers/:id", s.updateSupplier)
+	g.DELETE("/suppliers/:id", s.destroySupplier)
+	g.POST("/suppliers/:id/purchases", s.createSupplierPurchase)
+	g.POST("/suppliers/:id/payments", s.createSupplierPayment)
+	g.GET("/suppliers/:id/statement", s.supplierStatement)
+	g.GET("/suppliers/:id/statement.pdf", s.supplierStatement)
+	g.POST("/supplier_entries/:id/cross_out", s.crossOutSupplierEntry)
+	// staff
+	g.GET("/staff", s.staff)
+	g.POST("/staff/invitations", s.inviteStaff)
+	g.DELETE("/staff/invitations/:id", s.withdrawStaffInvitation)
+	g.PATCH("/staff/:id", s.changeStaffRole)
+	g.DELETE("/staff/:id", s.removeStaff)
+	g.GET("/staff_invitations/:token", s.staffInvitation)
+	g.POST("/staff_invitations/:token/accept", s.acceptStaffInvitation)
 	// bank details
 	g.GET("/bank_accounts", s.bankAccounts)
 	g.POST("/bank_accounts", s.createBankAccount)
@@ -156,9 +201,19 @@ func (s *Server) routes(g *echo.Group) {
 	g.DELETE("/menu_items/:id", s.destroyMenuItem)
 	g.GET("/public/pricing", s.pricing)
 	g.GET("/public/item_images/:id", s.itemImage)
+	g.GET("/public/shop_photos/:id", s.shopPhoto)
+	g.GET("/public/shops", s.publicShopDirectory)
+	g.GET("/public/shops/:id", s.publicShopPage)
 	// settings & billing
 	g.GET("/settings", s.settings)
 	g.PATCH("/language", s.setLanguage)
+	g.GET("/testimonial", s.myTestimonial)
+	g.PUT("/testimonial", s.saveTestimonial)
+	g.DELETE("/testimonial", s.deleteTestimonial)
+	g.GET("/public/testimonials", s.publicTestimonials)
+	g.GET("/admin/testimonials", s.adminTestimonials)
+	g.POST("/admin/testimonials/:id/approve", s.approveTestimonial)
+	g.POST("/admin/testimonials/:id/hide", s.hideTestimonial)
 	g.GET("/feedback", s.myFeedback)
 	g.POST("/feedback", s.sendFeedback)
 	g.GET("/subscription", s.billing)
@@ -232,12 +287,13 @@ func webDist() string {
 // everything under /assets, so those are kept forever; the page and the
 // service worker are revalidated every time, or a deploy would sit unseen
 // behind the old ones.
-func serveApp(dist string) echo.HandlerFunc {
+func (s *Server) serveApp(dist string) echo.HandlerFunc {
 	files := os.DirFS(dist)
 	return func(c *echo.Context) error {
 		name := strings.TrimPrefix(path.Clean("/"+c.Request().URL.Path), "/")
-		if info, err := fs.Stat(files, name); name == "" || err != nil || info.IsDir() {
-			name = "index.html"
+		if info, err := fs.Stat(files, name); name == "" || name == "index.html" || err != nil || info.IsDir() {
+			// The page itself, written for this address (seo.go).
+			return s.writePage(c, files)
 		}
 		header := c.Response().Header()
 		if strings.HasPrefix(name, "assets/") {

@@ -1,6 +1,5 @@
-# Bangkee's site on the VM's shared Caddy: the app and the operator console,
-# which the server tells apart by host. BANGKEE_DOMAIN is set in the proxy's .env.
-{$BANGKEE_DOMAIN}, admin.{$BANGKEE_DOMAIN} {
+# Bangkee's site on the VM's shared Caddy. BANGKEE_DOMAIN is set in the proxy's .env.
+{$BANGKEE_DOMAIN} {
 	encode zstd gzip
 	# Photos are capped at 8 MB by the app; leave room for the rest of the form.
 	request_body {
@@ -11,4 +10,21 @@
 		-Server
 	}
 	reverse_proxy bangkee:3000
+}
+
+# www goes to the bare domain, and so does admin, where the operator console
+# lived before it moved into the app: old links, bookmarks and installed apps
+# land on the same page there. It needs the admin DNS record (Proxied).
+www.{$BANGKEE_DOMAIN}, admin.{$BANGKEE_DOMAIN} {
+	redir https://{$BANGKEE_DOMAIN}{uri} permanent
+}
+
+# Where Bangkee lived before bangkee.app: links and installed apps from then
+# land on the same page at the new address.
+bangkee.72.61.233.126.sslip.io {
+	redir https://{$BANGKEE_DOMAIN}{uri} permanent
+}
+
+admin.bangkee.72.61.233.126.sslip.io {
+	redir https://{$BANGKEE_DOMAIN}{uri} permanent
 }

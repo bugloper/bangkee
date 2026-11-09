@@ -8,14 +8,16 @@ import type { Insights } from "@/api/types"
 import { AppLink } from "@/components/app-link"
 import { MonthBars, Ring, RingLegend, type Slice } from "@/components/charts"
 import { Loading } from "@/components/form"
+import { InsightsOverview } from "@/components/insights-overview"
 import { Empty, Initial, Money, Panel, Row, Rows } from "@/components/kit"
 import { ngultrum, pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { dayMonth } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-type View = "credit" | "payments" | "owed"
+type View = "overview" | "credit" | "payments" | "owed"
 const VIEWS: [View, string][] = [
+  ["overview", "Overview"],
   ["credit", "Credit"],
   ["payments", "Payments"],
   ["owed", "Owed"],
@@ -23,7 +25,7 @@ const VIEWS: [View, string][] = [
 
 export const Route = createFileRoute("/_app/insights")({
   validateSearch: (search: Record<string, unknown>): { view: View; month?: string } => ({
-    view: search.view === "payments" || search.view === "owed" ? search.view : "credit",
+    view: search.view === "credit" || search.view === "payments" || search.view === "owed" ? search.view : "overview",
     month: typeof search.month === "string" && /^\d{4}-\d{2}$/.test(search.month) ? search.month : undefined,
   }),
   component: InsightsScreen,
@@ -39,7 +41,7 @@ function InsightsScreen() {
 
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-4 xl:max-w-none">
-      <div role="tablist" aria-label="What to look at" className="grid grid-cols-3 gap-1 rounded-full border bg-card p-1 xl:w-md">
+      <div role="tablist" aria-label="What to look at" className="grid grid-cols-4 gap-1 rounded-full border bg-card p-1 xl:w-xl">
         {VIEWS.map(([key, name]) => (
           <button
             key={key}
@@ -55,6 +57,8 @@ function InsightsScreen() {
       </div>
       {!data ? (
         <Loading />
+      ) : view === "overview" ? (
+        <InsightsOverview data={data} onMonth={(key) => void navigate({ search: { view, month: key }, replace: true })} />
       ) : view === "owed" ? (
         <Owed data={data} />
       ) : (
@@ -186,7 +190,13 @@ function Owed({ data }: { data: Insights }) {
           <CircleAlertIcon className="mt-0.5 size-5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1 text-sm">
             <div className="font-semibold text-accent-foreground">{pluralize(data.overdue_count, "balance")} overdue.</div>
-            <div className="text-muted-foreground">Bangkee reminds them each morning; a word at the counter helps too.</div>
+            <div className="text-muted-foreground">
+              Remind them from their account, or let Bangkee do it from{" "}
+              <AppLink href="/reminders" className="font-medium text-primary hover:underline">
+                Reminders
+              </AppLink>
+              ; a word at the counter helps too.
+            </div>
           </div>
           <button type="button" aria-label="Dismiss" onClick={() => setDismissed(true)} className="text-accent-foreground/70 hover:text-accent-foreground">
             <XIcon className="size-4" />

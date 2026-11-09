@@ -16,9 +16,6 @@ WHERE shop_id = $1 AND balance_cents > 0
   AND (last_activity_at IS NULL OR last_activity_at < sqlc.arg(threshold)::timestamptz)
 ORDER BY balance_cents DESC, id;
 
--- name: TotalOutstanding :one
-SELECT COALESCE(SUM(balance_cents), 0)::bigint FROM accounts WHERE shop_id = $1 AND balance_cents > 0;
-
 -- name: ShopCounts :one
 SELECT (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = $1)::bigint AS menu_items,
        (SELECT COUNT(*) FROM bank_accounts b WHERE b.shop_id = $1)::bigint AS bank_accounts,
@@ -34,18 +31,15 @@ INSERT INTO subscriptions (shop_id, status, current_period_end, grace_until, pri
 UPDATE subscriptions SET status = 1, current_period_end = $2, grace_until = $3, disabled_at = NULL, updated_at = now()
 WHERE id = $1;
 
+-- name: SetSubscriptionPlan :exec
+UPDATE subscriptions SET plan = $2, price_cents = $3, updated_at = now() WHERE id = $1;
+
 -- name: SetSubscriptionStatus :exec
 UPDATE subscriptions SET status = $2, disabled_at = $3, updated_at = now() WHERE id = $1;
 
--- name: AdminStats :one
-SELECT (SELECT COUNT(*) FROM shops)::bigint AS shops,
-       (SELECT COALESCE(SUM(amount_cents), 0) FROM subscription_payments
-        WHERE status = 1 AND reviewed_at >= sqlc.arg(month_start)::timestamptz)::bigint AS approved,
-       (SELECT COUNT(*) FROM subscriptions
-        WHERE now() > current_period_end AND (grace_until IS NULL OR now() > grace_until))::bigint AS locked;
-
 -- name: AdminShops :many
-SELECT s.id, s.name, u.name AS owner_name, u.email_address AS owner_email
+SELECT s.id, s.name, s.kind, s.created_at, u.name AS owner_name, u.email_address AS owner_email,
+       (SELECT COUNT(*) FROM accounts a WHERE a.shop_id = s.id)::bigint AS customers
 FROM shops s JOIN users u ON u.id = s.owner_id ORDER BY s.name, s.id;
 
 -- name: UpdateShopProfile :exec
@@ -54,12 +48,65 @@ UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, ho
 WHERE id = $1;
 
 -- name: ShopDirectory :many
--- Every shop with something to show a customer: at least one item listed.
+-- Every shop with something to show a customer — at least one item listed —
+-- and, for a signed-in customer (`customer`), the shops whose book they are
+-- in, listed or not. Their own shops come first.
 SELECT s.id, s.name, s.kind, s.location, s.latitude, s.longitude,
-       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count
+       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count,
+       EXISTS (SELECT 1 FROM accounts a WHERE a.shop_id = s.id AND a.customer_id = sqlc.narg(customer)) AS yours
 FROM shops s
-WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
+WHERE (EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
+       OR EXISTS (SELECT 1 FROM accounts a WHERE a.shop_id = s.id AND a.customer_id = sqlc.narg(customer)))
   AND (sqlc.narg(kind)::varchar IS NULL OR s.kind = sqlc.narg(kind))
   AND (sqlc.narg(search)::varchar IS NULL OR s.name ILIKE '%' || sqlc.narg(search) || '%')
-ORDER BY s.name, s.id
+ORDER BY yours DESC, s.name, s.id
 LIMIT 200;
+
+-- name: CustomerOfShop :one
+SELECT EXISTS (SELECT 1 FROM accounts WHERE shop_id = $1 AND customer_id = $2);
+
+-- name: LockShop :one
+-- Holds the shop's row until the transaction ends: what is decided about the
+-- shop in it (a staff place) is decided one at a time.
+SELECT id FROM shops WHERE id = $1 FOR UPDATE;
+
+-- name: AllSubscriptions :many
+-- Every shop's subscription, for the console's lists and counts in one read.
+SELECT * FROM subscriptions;
+
+
+
+-- name: DailyApproved :many
+-- Subscription money approved per day, days as Bhutan has them, from `since` on.
+SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COALESCE(SUM(amount_cents), 0)::bigint AS cents
+FROM subscription_payments WHERE status = 1 AND reviewed_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;
+
+-- name: DailyNewShops :many
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day, COUNT(*)::bigint AS shops
+FROM shops WHERE created_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;
+
+-- name: DailyPlatformActivity :many
+-- Across every shop: entries recorded per day, and how many shops recorded any.
+SELECT to_char(t.created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COUNT(*) FILTER (WHERE t.kind = 0)::bigint AS credits,
+       COUNT(*) FILTER (WHERE t.kind = 1)::bigint AS payments,
+       COUNT(DISTINCT a.shop_id)::bigint AS shops
+FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE t.created_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;
+
+-- name: ActiveShopsBetween :one
+-- Shops that recorded at least one entry in [since, until).
+SELECT COUNT(DISTINCT a.shop_id)::bigint FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE t.created_at >= sqlc.arg(since)::timestamptz AND t.created_at < sqlc.arg(until)::timestamptz;
+
+-- name: MostActiveShops :many
+-- The shops that recorded the most entries since `since`: counts only, never amounts.
+SELECT s.id, s.name, s.kind, COUNT(t.id)::bigint AS entries, COUNT(DISTINCT t.account_id)::bigint AS customers,
+       MAX(t.created_at)::timestamptz AS last_entry_at
+FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN shops s ON s.id = a.shop_id
+WHERE t.created_at >= sqlc.arg(since)::timestamptz
+GROUP BY s.id, s.name, s.kind ORDER BY entries DESC, s.id LIMIT 6;

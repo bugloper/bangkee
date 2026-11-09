@@ -4,9 +4,11 @@ package api_test
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestSignedOutPeopleGet401AndBadPasswordsAreRefused(t *testing.T) {
@@ -26,7 +28,9 @@ func TestSignedOutPeopleGet401AndBadPasswordsAreRefused(t *testing.T) {
 	me := visitor.get("/api/me")
 	equal(t, me.str("user.role"), "shop_owner", "role")
 	equal(t, me.str("subscription.status"), "trialing", "subscription")
-	equal(t, me.str("subscription.summary"), "14 days of free trial left", "summary")
+	// Three calendar months from today, counted in whole days.
+	trialDays := int(math.Ceil(time.Until(time.Now().AddDate(0, 3, 0)).Hours() / 24))
+	equal(t, me.str("subscription.summary"), fmt.Sprintf("%d days of free trial left", trialDays), "summary")
 
 	equal(t, visitor.delete("/api/session").Status, 200, "sign out")
 	equal(t, visitor.get("/api/me").Status, 401, "signed out again")
@@ -199,10 +203,11 @@ func TestTheStatementLeavesCrossedOutEntriesOut(t *testing.T) {
 	owner.post(fmt.Sprintf("/api/accounts/%d/payments", account), map[string]any{"amount": "250"})
 
 	statement := owner.get(fmt.Sprintf("/api/accounts/%d/statement", account))
-	equal(t, statement.len("rows"), 2, "rows")
-	equal(t, statement.num("debit_cents"), 75_000, "debit")
-	equal(t, statement.num("credit_cents"), 25_000, "credit")
-	equal(t, statement.num("rows.1.running_balance_cents"), 50_000, "running")
+	equal(t, statement.len("statement.rows"), 2, "rows")
+	equal(t, statement.num("statement.credit_cents"), 75_000, "taken on credit")
+	equal(t, statement.num("statement.payment_cents"), 25_000, "paid")
+	equal(t, statement.num("statement.rows.1.running_balance_cents"), 50_000, "running")
+	equal(t, statement.num("statement.closing_cents"), owner.balance(account), "closing is the balance")
 }
 
 func TestInsightsShowTheMonthsAndWhoOwes(t *testing.T) {
@@ -226,6 +231,8 @@ func TestInsightsShowTheMonthsAndWhoOwes(t *testing.T) {
 	equal(t, insights.num("outstanding_cents"), 85_000, "owed in all")
 	equal(t, insights.str("owing.0.display_name"), "Pema", "most owed first")
 	equal(t, insights.len("owing"), 2, "everyone owing")
+	equal(t, insights.num("months.5.new_customers"), 2, "two customers joined the book this month")
+	equal(t, insights.num("customers_count"), 2, "two in the book")
 
 	equal(t, owner.get("/api/insights?month=1999-01").Status, 422, "only the last six months")
 	customer := a.browser()

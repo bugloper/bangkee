@@ -31,12 +31,14 @@ func (s *Server) me(c *echo.Context) error {
 
 	var shopView *domain.ShopRef
 	var subView *domain.SubscriptionDTO
-	var adminPayments, adminFeedback int64
-	if user.Role == domain.RoleShopOwner {
-		shop, err := domain.ShopForOwner(ctx, q, user.ID)
+	var adminPayments, adminFeedback, adminTestimonials int64
+	var staffRole string
+	if user.Role == domain.RoleShopOwner || user.Role == domain.RoleStaff {
+		shop, role, err := s.shopOf(ctx, user)
 		if err != nil {
 			return err
 		}
+		staffRole = role
 		if shop != nil {
 			view := domain.ShopView(*shop)
 			shopView = &view
@@ -55,6 +57,9 @@ func (s *Server) me(c *echo.Context) error {
 			return err
 		}
 		if adminFeedback, err = q.NewFeedbackCount(ctx); err != nil {
+			return err
+		}
+		if adminTestimonials, err = q.PendingTestimonialCount(ctx); err != nil {
 			return err
 		}
 	}
@@ -80,9 +85,11 @@ func (s *Server) me(c *echo.Context) error {
 		"user":                 userView,
 		"shop":                 shopView,
 		"subscription":         subView,
-		"badges":               M{"admin_payments": adminPayments, "admin_feedback": adminFeedback},
+		"badges":               M{"admin_payments": adminPayments, "admin_feedback": adminFeedback, "admin_testimonials": adminTestimonials},
 		"unread_notifications": unread,
 		"push":                 M{"configured": s.Cfg.Vapid != nil, "public_key": publicKey, "devices": devices},
+		// The shop side: "owner" or a staff role, and what it may do; empty for a customer.
+		"shop_role": staffRole, "permissions": domain.Permissions(staffRole),
 	})
 }
 
@@ -122,20 +129,6 @@ func (s *Server) signIn(c *echo.Context) error {
 		}
 		if user == nil {
 			return apperr.NewRule("Try another email address or password.")
-		}
-	}
-	// Each host signs in the people it is for: the console only staff, the
-	// app everyone else (and staff who also run a shop).
-	if isAdminHost(c) && !user.PlatformAdmin {
-		return apperr.NewRule("That area is for Bangkee staff.")
-	}
-	if !isAdminHost(c) && user.PlatformAdmin {
-		shop, err := domain.ShopForOwner(ctx, s.Q, user.ID)
-		if err != nil {
-			return err
-		}
-		if shop == nil && user.Role == domain.RoleShopOwner {
-			return apperr.NewRule("Bangkee staff sign in at " + adminHostFor(c) + ".")
 		}
 	}
 	if err := s.startSession(c, s.Q, user.ID); err != nil {
@@ -368,7 +361,7 @@ func (s *Server) invitation(c *echo.Context) error {
 	// BR-25
 	user := cur.User
 	switch {
-	case user.Role == domain.RoleShopOwner:
+	case user.Role == domain.RoleShopOwner || user.Role == domain.RoleStaff:
 		return c.JSON(http.StatusOK, M{"outcome": "refused", "alert": "Invite links are for customers. Ask your customer to open it on their phone."})
 	case account.CustomerID != nil && *account.CustomerID == user.ID:
 		return c.JSON(http.StatusOK, M{"outcome": "already_yours", "account_id": account.ID, "notice": "You are already linked to " + shop.Name + "."})

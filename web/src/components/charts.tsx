@@ -37,7 +37,8 @@ function axisMoney(cents: number): string {
  */
 export function MonthBars({ bars, selected, onSelect, label }: { bars: Bar[]; selected: string; onSelect: (key: string) => void; label: string }) {
   const [hover, setHover] = useState<string | null>(null)
-  const top = niceCeiling(Math.max(...bars.map((bar) => bar.cents)))
+  // An empty chart still gets a real scale (Nu. 1,000), not four zeros.
+  const top = niceCeiling(Math.max(100_000, ...bars.map((bar) => bar.cents)))
   const ticks = [1, 0.75, 0.5, 0.25].map((share) => top * share)
 
   return (
@@ -189,5 +190,76 @@ export function RingLegend({ slices }: { slices: Slice[] }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+// ------------------------------------------------------------ day bars
+
+export interface DayBar {
+  day: string // YYYY-MM-DD
+  cents: number
+  /** A second figure the tooltip mentions beside the bar's own. */
+  aside?: string
+}
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const dayLabel = (day: string) => `${Number(day.slice(8, 10))} ${SHORT_MONTHS[Number(day.slice(5, 7)) - 1]}`
+
+/**
+ * One figure a day, today last — the dashboard's collections. Only the first
+ * day, the middle and today are labelled; hovering or focusing a day shows
+ * its figure.
+ */
+export function DayBars({ bars, label }: { bars: DayBar[]; label: string }) {
+  const [hover, setHover] = useState<number | null>(null)
+  const top = niceCeiling(Math.max(...bars.map((bar) => bar.cents)))
+  const labelled = new Set([0, Math.floor((bars.length - 1) / 2), bars.length - 1])
+
+  return (
+    <div role="group" aria-label={label}>
+      <div className="relative flex h-32 items-end gap-0.5">
+        <span aria-hidden="true" className="absolute inset-x-0 top-0 border-t border-dashed border-border" />
+        <span aria-hidden="true" className="tabular absolute -top-2.5 right-0 bg-card pl-1 text-[0.6875rem] text-muted-foreground">
+          {axisMoney(top)}
+        </span>
+        {bars.map((bar, i) => (
+          <button
+            key={bar.day}
+            type="button"
+            aria-label={`${dayLabel(bar.day)}: ${ngultrum(bar.cents)}${bar.aside ? `, ${bar.aside}` : ""}`}
+            onPointerEnter={() => setHover(i)}
+            onPointerLeave={() => setHover(null)}
+            onFocus={() => setHover(i)}
+            onBlur={() => setHover(null)}
+            className="relative z-10 flex h-full flex-1 cursor-default items-end focus-visible:outline-none"
+          >
+            <span
+              className={cn("block w-full rounded-t-[4px] transition-colors", hover === i ? "bg-paid" : "bg-paid/70", i === bars.length - 1 && "bg-paid")}
+              style={{ height: `${Math.max(bar.cents > 0 ? 3 : 0, (bar.cents / top) * 100)}%` }}
+            />
+            {hover === i && (
+              <span
+                className={cn(
+                  "tabular pointer-events-none absolute -top-12 z-20 rounded-md bg-foreground px-2 py-1 text-left text-xs whitespace-nowrap text-background shadow-md",
+                  i < bars.length / 2 ? "left-0" : "right-0",
+                )}
+              >
+                <span className="block font-medium">
+                  {dayLabel(bar.day)} · {ngultrum(bar.cents)}
+                </span>
+                {bar.aside && <span className="block opacity-75">{bar.aside}</span>}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      <div className="mt-1.5 flex gap-0.5">
+        {bars.map((bar, i) => (
+          <span key={bar.day} className="flex-1 text-center text-[0.6875rem] whitespace-nowrap text-muted-foreground">
+            {labelled.has(i) ? (i === bars.length - 1 ? "Today" : dayLabel(bar.day)) : ""}
+          </span>
+        ))}
+      </div>
+    </div>
   )
 }

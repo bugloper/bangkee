@@ -75,7 +75,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 }
 
 const customerByPhone = `-- name: CustomerByPhone :one
-SELECT id, email_address, password_digest, name, phone, locale, role, platform_admin, created_at, updated_at FROM users WHERE role = 1 AND bangkee_phone(phone) = $1::text
+SELECT id, email_address, password_digest, name, phone, locale, role, platform_admin, created_at, updated_at, reminders_opt_out FROM users WHERE role = 1 AND bangkee_phone(phone) = $1::text
 ORDER BY (email_address IS NULL) DESC, id LIMIT 1
 `
 
@@ -94,6 +94,7 @@ func (q *Queries) CustomerByPhone(ctx context.Context, phone string) (User, erro
 		&i.PlatformAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RemindersOptOut,
 	)
 	return i, err
 }
@@ -161,7 +162,7 @@ func (q *Queries) PushDeviceCount(ctx context.Context, userID int64) (int64, err
 }
 
 const sessionUser = `-- name: SessionUser :one
-SELECT s.id AS session_id, u.id, u.email_address, u.password_digest, u.name, u.phone, u.locale, u.role, u.platform_admin, u.created_at, u.updated_at
+SELECT s.id AS session_id, u.id, u.email_address, u.password_digest, u.name, u.phone, u.locale, u.role, u.platform_admin, u.created_at, u.updated_at, u.reminders_opt_out
 FROM sessions s JOIN users u ON u.id = s.user_id
 WHERE s.token = $1
 `
@@ -186,6 +187,7 @@ func (q *Queries) SessionUser(ctx context.Context, token *string) (SessionUserRo
 		&i.User.PlatformAdmin,
 		&i.User.CreatedAt,
 		&i.User.UpdatedAt,
+		&i.User.RemindersOptOut,
 	)
 	return i, err
 }
@@ -230,7 +232,7 @@ func (q *Queries) UnreadCount(ctx context.Context, userID int64) (int64, error) 
 }
 
 const userByEmail = `-- name: UserByEmail :one
-SELECT id, email_address, password_digest, name, phone, locale, role, platform_admin, created_at, updated_at FROM users WHERE email_address = $1
+SELECT id, email_address, password_digest, name, phone, locale, role, platform_admin, created_at, updated_at, reminders_opt_out FROM users WHERE email_address = $1
 `
 
 func (q *Queries) UserByEmail(ctx context.Context, emailAddress *string) (User, error) {
@@ -247,12 +249,13 @@ func (q *Queries) UserByEmail(ctx context.Context, emailAddress *string) (User, 
 		&i.PlatformAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RemindersOptOut,
 	)
 	return i, err
 }
 
 const userByID = `-- name: UserByID :one
-SELECT id, email_address, password_digest, name, phone, locale, role, platform_admin, created_at, updated_at FROM users WHERE id = $1
+SELECT id, email_address, password_digest, name, phone, locale, role, platform_admin, created_at, updated_at, reminders_opt_out FROM users WHERE id = $1
 `
 
 func (q *Queries) UserByID(ctx context.Context, id int64) (User, error) {
@@ -269,6 +272,7 @@ func (q *Queries) UserByID(ctx context.Context, id int64) (User, error) {
 		&i.PlatformAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RemindersOptOut,
 	)
 	return i, err
 }

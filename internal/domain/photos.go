@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 	"slices"
 
 	"bangkee/internal/apperr"
@@ -10,9 +11,9 @@ import (
 )
 
 // Photos of people and shops: a person's profile photo, and the photo a shop
-// shows customers. Each has at most one; a new one replaces the old. They are
-// served to anyone signed in (/api/attachments/:id), like the people and
-// shops themselves.
+// shows customers. Each has at most one; a new one replaces the old. A
+// person's is served to anyone signed in (/api/attachments/:id); a shop's to
+// anyone at all (/api/public/shop_photos/:id), like its items' photos.
 
 const (
 	UserRecordType = "User"
@@ -66,9 +67,18 @@ func AvatarURLs(ctx context.Context, q *store.Queries, userIDs []int64) (map[int
 	return AttachmentURLs(ctx, q, UserRecordType, userIDs, AvatarName)
 }
 
-// ShopPhotoURLs maps each shop to its photo's URL.
+// ShopPhotoURLs maps each shop to its photo's URL. Shop photos are public,
+// like item photos: the homepage shows them to visitors.
 func ShopPhotoURLs(ctx context.Context, q *store.Queries, shopIDs []int64) (map[int64]string, error) {
-	return AttachmentURLs(ctx, q, ShopRecordType, shopIDs, ShopPhotoName)
+	rows, err := q.AttachmentIDs(ctx, store.AttachmentIDsParams{RecordType: ShopRecordType, RecordIds: shopIDs, Name: ShopPhotoName})
+	if err != nil {
+		return nil, err
+	}
+	out := map[int64]string{}
+	for _, row := range rows {
+		out[row.RecordID] = fmt.Sprintf("/api/public/shop_photos/%d", row.ID)
+	}
+	return out, nil
 }
 
 // PhotoURL is one record's photo, or nil.

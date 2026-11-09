@@ -4,22 +4,21 @@ import { useEffect } from "react"
 
 import type { Me } from "@/api/types"
 import { Shell } from "@/components/shell"
-import { StaffOnly } from "@/components/staff-only"
 import { requireMe } from "@/lib/gate"
-import { isAdminHost } from "@/lib/host"
 import { meQuery } from "@/lib/me"
 import { resubscribeIfGranted } from "@/lib/pwa"
 import { queryClient } from "@/lib/query"
 
-// The console shares only these screens with the app; the rest of the
-// shop's screens do not exist on the admin host.
-const CONSOLE_SCREENS = ["notifications", "settings"]
+// An operator's home is the console's overview; of the app's other screens
+// they have only these. The shop's and the customer's are not theirs.
+const CONSOLE_SCREENS = ["dashboard", "notifications", "settings"]
 
 // Everything behind sign-in: the shell with the sidebar, topbar and tab bar.
 export const Route = createFileRoute("/_app")({
   beforeLoad: async ({ context, location }) => {
     await requireMe(context.queryClient, location.href)
-    if (isAdminHost() && !CONSOLE_SCREENS.includes(location.pathname.split("/")[1])) throw redirect({ to: "/", replace: true })
+    const me = await context.queryClient.ensureQueryData(meQuery)
+    if (me?.user.platform_admin && !CONSOLE_SCREENS.includes(location.pathname.split("/")[1])) throw redirect({ to: "/dashboard", replace: true })
   },
   component: AppLayout,
 })
@@ -35,7 +34,6 @@ function AppLayout() {
   }, [userId])
 
   if (!me) return null
-  if (isAdminHost() && !me.user.platform_admin) return <StaffOnly me={me} />
   return (
     <Shell me={me}>
       <Outlet />

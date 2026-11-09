@@ -1,40 +1,25 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import {
-  ArrowDownLeftIcon,
-  ArrowRightIcon,
-  ArrowUpRightIcon,
-  BellRingIcon,
-  BookOpenIcon,
-  CheckIcon,
-  FileClockIcon,
-  HistoryIcon,
-  ImageIcon,
-  type LucideIcon,
-  MessageSquareWarningIcon,
-  PrinterIcon,
-  PackageIcon,
-  ScrollTextIcon,
-  ShoppingBasketIcon,
-  SmartphoneIcon,
-  TimerIcon,
-  UsersIcon,
-  WifiOffIcon,
-  ZapIcon,
-} from "lucide-react"
+import { useEffect, useState } from "react"
+import { ArrowDownLeftIcon, ArrowRightIcon, ArrowUpRightIcon, CheckIcon, CloudUploadIcon, FlagIcon, MapPinIcon, SearchIcon, WifiOffIcon } from "lucide-react"
 
 import { api } from "@/api/client"
 import { Logo, LogoMark } from "@/components/brand"
+import { Chips } from "@/components/catalog"
+import { ShopCard } from "@/components/shop-view"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { buttonVariants } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { matches } from "@/lib/catalog"
 import { ngultrum } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { cn } from "@/lib/utils"
 
-// The front door at bangkee.bt for anyone not signed in: what the notebook
-// costs a shop, what Bangkee does instead, and what it costs. The pictures
-// are the app's own screens drawn in markup — no stock photography.
+// The front door at bangkee.bt for anyone not signed in. A headline whose
+// ending changes, then one bento grid that says the rest at a glance: the
+// demo you can tap is the biggest box, everything else one idea per box.
+// The pictures are the app drawn in markup.
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8"
 const YEAR = new Date().getFullYear()
@@ -46,11 +31,10 @@ export function Landing() {
       <SiteHeader />
       <main>
         <Hero />
-        <Problem />
-        <HowItWorks />
-        <Features />
-        <Preview />
+        <Bento />
         <Pricing />
+        <Testimonials />
+        <Shops />
         <Faq />
         <FinalCta />
       </main>
@@ -59,16 +43,425 @@ export function Landing() {
   )
 }
 
+function usePricing() {
+  return useQuery({ queryKey: ["pricing"], queryFn: api.pricing, staleTime: Infinity }).data
+}
+
+function useReducedMotion() {
+  const [reduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+  return reduced
+}
+
+// -------------------------------------------------------------------- hero
+
+const ENDINGS = ["lives on two phones.", "finds anyone in two letters.", "never loses a page.", "settles without crossing out."]
+
+function Hero() {
+  const reduced = useReducedMotion()
+  const [index, setIndex] = useState(0)
+  useEffect(() => {
+    if (reduced) return
+    const timer = setInterval(() => setIndex((i) => (i + 1) % ENDINGS.length), 2800)
+    return () => clearInterval(timer)
+  }, [reduced])
+
+  return (
+    <section className={cn(container, "pt-16 pb-12 text-center sm:pt-24 sm:pb-16")}>
+      <span className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-xs">
+        <span className="size-1.5 rounded-full bg-paid" />
+        Made for shops in Bhutan
+      </span>
+      <h1 className="mx-auto mt-6 max-w-4xl text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.04em] text-balance sm:text-7xl">
+        <span className="sr-only">The credit book that lives on two phones — the shop's and the customer's.</span>
+        <span aria-hidden="true">
+          The credit book that
+          <br />
+          <span key={index} className="inline-block text-primary duration-700 animate-in fade-in slide-in-from-bottom-3">
+            {ENDINGS[index]}
+          </span>
+        </span>
+      </h1>
+      <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-pretty text-muted-foreground">The shop writes it down. The customer sees it on their own phone, the moment it happens.</p>
+      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <Link to="/registration/new" className={buttonVariants({ size: "xl" })}>
+          Start free — 3 months <ArrowRightIcon />
+        </Link>
+        <Link to="/session/new" className={buttonVariants({ size: "xl", variant: "outline" })}>
+          Sign in
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+// ------------------------------------------------------------------- bento
+
+// One box, one idea: a few words of headline, a picture, at most a line.
+function Box({ title, line, className, children, id }: { title: string; line?: React.ReactNode; className?: string; children: React.ReactNode; id?: string }) {
+  return (
+    <div id={id} className={cn("flex scroll-mt-24 flex-col overflow-hidden rounded-[1.75rem] border bg-card p-6 shadow-xs transition duration-300 hover:-translate-y-1 hover:shadow-lg", className)}>
+      <div className="flex flex-1 items-center justify-center">{children}</div>
+      <h3 className="mt-6 text-lg font-semibold tracking-tight">{title}</h3>
+      {line && <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{line}</p>}
+    </div>
+  )
+}
+
+function Bento() {
+  const pricing = usePricing()
+  return (
+    <section id="features" className={cn(container, "scroll-mt-20 pb-20 sm:pb-28")}>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* The demo: the biggest box, because it is the whole idea. */}
+        <div className="flex flex-col overflow-hidden rounded-[1.75rem] border bg-card p-6 shadow-xs md:col-span-2 lg:row-span-2">
+          <Demo />
+          <h3 className="mt-6 text-lg font-semibold tracking-tight">Try it: one book, two phones</h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Record a credit or a payment and watch it reach the customer.</p>
+        </div>
+
+        <Box title="Two letters, and they're open" line="No flipping through pages while the customer waits.">
+          <div aria-hidden="true" className="w-full max-w-[15rem]">
+            <div className="flex h-10 items-center gap-2 rounded-xl border px-3 text-sm">
+              <SearchIcon className="size-4 text-muted-foreground" />
+              lh
+              <span className="h-4 w-px animate-pulse bg-primary" />
+            </div>
+            <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-accent/60 px-3 py-2">
+              <span className="flex size-7 items-center justify-center rounded-full bg-card text-xs font-semibold text-accent-foreground">L</span>
+              <span className="flex-1 text-left text-sm font-medium">Lhaki Dolma</span>
+              <span className="tabular text-xs font-semibold text-owed">Nu. 2,570</span>
+            </div>
+          </div>
+        </Box>
+
+        <Box title="No more crossed-out pages" line="Settling up brings the balance to zero; every month stays.">
+          <div
+            aria-hidden="true"
+            className="w-full max-w-[15rem] -rotate-2 rounded-sm bg-[#fffdf5] py-3 pr-4 pl-9 font-hand text-lg leading-8 text-[#2b3a67] shadow-md ring-1 ring-black/5"
+            style={{ backgroundImage: "linear-gradient(to bottom, transparent 1.9rem, #c8d7ee 1.9rem, #c8d7ee 2rem)", backgroundSize: "100% 2rem", backgroundPositionY: "0.75rem" }}
+          >
+            {[
+              ["rice, oil", "1,240", true],
+              ["sugar 5kg", "310", true],
+              ["milk, eggs", "420", false],
+            ].map(([what, amount, crossed]) => (
+              <div key={what as string} className={cn("relative flex justify-between", crossed && "text-[#2b3a67]/45")}>
+                <span>{what}</span>
+                <span>{amount}</span>
+                {crossed && <span className="absolute top-1/2 -right-1 -left-2 h-0.5 -rotate-2 rounded bg-[#2b3a67]/55" />}
+              </div>
+            ))}
+          </div>
+        </Box>
+
+        <div className="flex flex-col justify-between overflow-hidden rounded-[1.75rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-6 text-white shadow-lg shadow-primary/25 md:col-span-2">
+          <div>
+            <div className="text-sm font-medium text-white/75">Free for {pricing?.trial_months ?? 3} months</div>
+            <div className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Every feature, from day one</div>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/80">
+              Then from {pricing ? ngultrum(pricing.monthly_price_cents) : "Nu. 150"} a month, paid once a year. Your customers never pay.
+            </p>
+          </div>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link to="/registration/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90" })}>
+              Start free <ArrowRightIcon />
+            </Link>
+            <a href="#pricing" className="text-sm font-medium text-white/90 underline-offset-4 hover:underline">
+              Compare plans
+            </a>
+          </div>
+        </div>
+
+        <Box title="No signal? Keep going" line="It sends itself when you're back online.">
+          <div aria-hidden="true" className="relative">
+            <WifiOffIcon className="size-14 text-muted-foreground/40" strokeWidth={1.5} />
+            <span className="absolute -right-10 -bottom-2 inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-xs font-medium shadow-sm">
+              <CloudUploadIcon className="size-3.5 text-primary" /> 3 waiting
+            </span>
+          </div>
+        </Box>
+
+        <Box title="Both sides agree" line="Customers confirm each entry, or flag it.">
+          <div aria-hidden="true" className="flex flex-col items-start gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-paid/10 px-3 py-1 text-sm font-medium text-paid">
+              <CheckIcon className="size-4" /> Confirmed
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-owed/10 px-3 py-1 text-sm font-medium text-owed">
+              <FlagIcon className="size-4" /> "I took one, not two"
+            </span>
+          </div>
+        </Box>
+
+        <a href="#shops" className="group flex flex-col overflow-hidden rounded-[1.75rem] border bg-card p-6 shadow-xs transition duration-300 hover:-translate-y-1 hover:shadow-lg md:col-span-2">
+          <div
+            aria-hidden="true"
+            className="relative flex flex-1 items-center justify-center gap-2 rounded-2xl bg-muted/50 py-6"
+            style={{ backgroundImage: "radial-gradient(var(--border) 1px, transparent 1px)", backgroundSize: "14px 14px" }}
+          >
+            {["Grocery", "Café", "Pharmacy"].map((kind, i) => (
+              <span key={kind} className={cn("inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-sm", i === 1 && "-translate-y-3")}>
+                <MapPinIcon className="size-3.5 text-primary" /> {kind}
+              </span>
+            ))}
+          </div>
+          <h3 className="mt-6 flex items-center gap-1.5 text-lg font-semibold tracking-tight">
+            Shops near you, with their prices <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-1" />
+          </h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Browse what they sell and get directions — no account needed.</p>
+        </a>
+      </div>
+
+      <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-relaxed text-muted-foreground">
+        Also built in: picking from your items · a photo of every mBoB or mPay transfer · overdue reminders · Insights · printable statements · a history nothing can erase.
+      </p>
+    </section>
+  )
+}
+
+// ------------------------------------------------------------ testimonials
+
+// What shop owners and customers say, in their words — only what Bangkee has
+// read and approved. Not shown at all until there is something to show.
+// ------------------------------------------------------------------ pricing
+
+// What every plan has; the higher plans list what they add on top.
+const EVERY_PLAN = [
+  "Unlimited customers and entries",
+  "Customers see their balance on their phone",
+  "Statements and receipts, as PDFs to share",
+  "Customers confirm entries, or flag them",
+  "Remind a customer with one tap",
+  "Insights and your dashboard",
+  "Works with no signal",
+]
+
+function Pricing() {
+  const pricing = usePricing()
+  return (
+    <section id="pricing" className={cn(container, "scroll-mt-20 pb-20 sm:pb-28")}>
+      <SectionIntro eyebrow="Pricing" title="One price a year. Nothing for your customers." center>
+        The first {pricing?.trial_months ?? 3} months are free with every feature on. Then pick the plan that fits your shop.
+      </SectionIntro>
+      <div className="mx-auto mt-12 grid max-w-5xl gap-5 lg:grid-cols-3">
+        {pricing
+          ? pricing.plans.map((plan, i) => {
+              const featured = plan.key === "pro"
+              const previous = i > 0 ? pricing.plans[i - 1].name : null
+              const includes = previous ? plan.features.filter((f) => !pricing.plans[i - 1].features.includes(f)) : EVERY_PLAN
+              return (
+                <div
+                  key={plan.key}
+                  className={cn(
+                    "relative flex flex-col rounded-[1.75rem] border bg-card p-7 shadow-xs",
+                    featured && "max-lg:order-first border-primary shadow-lg ring-1 shadow-primary/15 ring-primary lg:-my-3 lg:py-10",
+                  )}
+                >
+                  {featured && <span className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm">Recommended</span>}
+                  <h3 className="text-lg font-semibold tracking-tight">{plan.name}</h3>
+                  <p className="mt-1 min-h-10 text-sm text-muted-foreground">
+                    {plan.key === "basic" ? "The shared credit book, for any shop." : plan.key === "pro" ? "Bangkee chases what you are owed." : "For a shop with people at the counter."}
+                  </p>
+                  <div className="mt-6 flex items-baseline gap-1.5">
+                    <span className="tabular text-4xl font-semibold tracking-[-0.03em]">{ngultrum(plan.monthly_price_cents)}</span>
+                    <span className="text-sm text-muted-foreground">/ month</span>
+                  </div>
+                  <p className="tabular mt-1 text-sm text-muted-foreground">{ngultrum(plan.annual_price_cents)} billed once a year</p>
+                  <Link to="/registration/new" className={buttonVariants({ size: "lg", variant: featured ? "default" : "outline", className: "mt-6 w-full" })}>
+                    Start free
+                  </Link>
+                  <div className="mt-7 border-t pt-6">
+                    <p className="text-sm font-medium">{previous ? `Everything in ${previous}, and` : "Everything a shop needs"}</p>
+                    <ul className="mt-3 grid gap-2.5 text-sm">
+                      {[...includes, ...(plan.key === "business" ? ["Manager, cashier and viewer roles, each allowed only their part"] : [])].map((feature) => (
+                        <li key={feature} className="flex items-start gap-2.5">
+                          <CheckIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+                          <span>{plan.key === "business" && feature === "Staff accounts" ? `Staff accounts — up to ${plan.max_staff} people` : feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )
+            })
+          : [0, 1, 2].map((i) => <Skeleton key={i} className="h-[30rem] rounded-[1.75rem]" />)}
+      </div>
+      <p className="mt-8 text-center text-sm text-muted-foreground">Prices in Ngultrum. Pay by bank transfer from the app; Bangkee approves it within one working day.</p>
+    </section>
+  )
+}
+
+function Testimonials() {
+  const { data } = useQuery({ queryKey: ["public_testimonials"], queryFn: api.publicTestimonials, staleTime: 60_000 })
+  if (!data || data.testimonials.length === 0) return null
+  return (
+    <section className={cn(container, "pb-20 sm:pb-28")}>
+      <SectionIntro eyebrow="In their words" title="From the counter, and the other side of it." center />
+      <div className="mt-12 columns-1 gap-4 md:columns-2 lg:columns-3">
+        {data.testimonials.map((t) => (
+          <figure key={t.id} className="mb-4 break-inside-avoid rounded-[1.75rem] border bg-card p-6 shadow-xs">
+            <span aria-hidden="true" className="block font-serif text-5xl leading-none text-primary/30">
+              “
+            </span>
+            <blockquote className="-mt-3 text-[0.9375rem] leading-relaxed text-pretty">{t.body}</blockquote>
+            <figcaption className="mt-5 flex items-center gap-3">
+              <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold", t.owner ? "bg-accent text-accent-foreground" : "bg-paid/10 text-paid")}>
+                {t.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold">{t.name}</span>
+                <span className="block truncate text-xs text-muted-foreground">{t.role}</span>
+              </span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------- the demo
+
+type Entry = { id: number; kind: "credit" | "payment"; what: string; cents: number }
+
+const CREDITS: Omit<Entry, "id" | "kind">[] = [
+  { what: "Rice 25 kg", cents: 215_000 },
+  { what: "Milk and eggs", cents: 42_000 },
+  { what: "Momo, 2 plates", cents: 24_000 },
+  { what: "Cooking oil 1 L", cents: 9_500 },
+]
+const PAYMENTS: Omit<Entry, "id" | "kind">[] = [
+  { what: "Paid by mBoB", cents: 150_000 },
+  { what: "Paid in cash", cents: 50_000 },
+]
+// What plays by itself until the visitor taps: two credits, then a payment.
+const AUTOPLAY: Entry["kind"][] = ["credit", "credit", "payment"]
+
+const balanceOf = (entries: Entry[]) => entries.reduce((sum, e) => sum + (e.kind === "credit" ? e.cents : -e.cents), 0)
+
+// The shop records; the customer's phone hears it. Tap either button, or
+// watch it play by itself.
+function Demo() {
+  const reduced = useReducedMotion()
+  const [entries, setEntries] = useState<Entry[]>([{ id: 0, kind: "credit", what: "Sugar 5 kg", cents: 31_000 }])
+  const [counts, setCounts] = useState({ credit: 0, payment: 0, step: 0 })
+  const [playing, setPlaying] = useState(true)
+
+  function record(kind: Entry["kind"]) {
+    const list = kind === "credit" ? CREDITS : PAYMENTS
+    const next = list[counts[kind] % list.length]
+    setEntries((current) => [{ id: Date.now(), kind, ...next }, ...current].slice(0, 4))
+    setCounts((c) => ({ ...c, [kind]: c[kind] + 1, step: c.step + 1 }))
+  }
+
+  useEffect(() => {
+    if (!playing || reduced) return
+    const timer = setTimeout(() => record(AUTOPLAY[counts.step % AUTOPLAY.length]), counts.step === 0 ? 1600 : 3200)
+    return () => clearTimeout(timer)
+  })
+
+  const tap = (kind: Entry["kind"]) => {
+    setPlaying(false)
+    record(kind)
+  }
+  const balance = balanceOf(entries)
+  const latest = entries[0]
+
+  return (
+    <div className="grid flex-1 gap-3 sm:grid-cols-2">
+      {/* The shop's side */}
+      <div className="flex flex-col rounded-2xl border bg-background/60 p-4">
+        <div className="text-xs font-medium text-muted-foreground">The shop's phone</div>
+        <div className="mt-3 flex items-center gap-2.5">
+          <span className="flex size-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">L</span>
+          <div className="text-left">
+            <div className="text-sm font-semibold">Lhaki Dolma</div>
+            <div className="text-xs text-muted-foreground">owes you</div>
+          </div>
+        </div>
+        <div className="tabular mt-3 text-left text-3xl font-semibold tracking-tight text-owed">{ngultrum(balance)}</div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => tap("credit")}
+            className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-owed text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+          >
+            <ArrowUpRightIcon className="size-4" /> Credit
+          </button>
+          <button
+            type="button"
+            onClick={() => tap("payment")}
+            className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-paid text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+          >
+            <ArrowDownLeftIcon className="size-4" /> Payment
+          </button>
+        </div>
+        <p className="mt-2 text-center text-xs text-muted-foreground">{playing && !reduced ? "Playing by itself — tap to try" : "Tap again"}</p>
+        <DemoEntries entries={entries} />
+      </div>
+
+      {/* The customer's side */}
+      <div className="flex flex-col rounded-2xl border bg-background/60 p-4">
+        <div className="text-xs font-medium text-muted-foreground">Lhaki's phone</div>
+        <div
+          key={latest.id}
+          role="status"
+          className="mt-3 flex items-start gap-2.5 rounded-xl border bg-card p-2.5 text-left shadow-md shadow-foreground/5 duration-500 animate-in fade-in slide-in-from-top-4"
+        >
+          <LogoMark className="size-7 shrink-0" />
+          <div className="min-w-0 text-xs leading-snug">
+            <div className="truncate font-semibold">{latest.kind === "credit" ? "New credit · Karma General Shop" : "Payment · Karma General Shop"}</div>
+            <div className="mt-0.5 truncate text-muted-foreground">
+              {latest.what} · {ngultrum(latest.cents)}
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 text-left text-xs text-muted-foreground">You owe Karma General Shop</div>
+        <div key={balance} className="tabular text-left text-3xl font-semibold tracking-tight duration-500 animate-in fade-in zoom-in-95">
+          {ngultrum(balance)}
+        </div>
+        <DemoEntries entries={entries} />
+      </div>
+    </div>
+  )
+}
+
+/** The latest entries, as both phones list them: the same book on each. */
+function DemoEntries({ entries }: { entries: Entry[] }) {
+  return (
+    <ul className="mt-4 grid gap-2 border-t pt-3 text-left">
+      {entries.slice(0, 4).map((entry) => (
+        <li key={entry.id} className="flex items-center gap-2 text-xs duration-500 animate-in fade-in">
+          {entry.kind === "credit" ? <ArrowUpRightIcon className="size-3 text-owed" /> : <ArrowDownLeftIcon className="size-3 text-paid" />}
+          <span className="min-w-0 flex-1 truncate">{entry.what}</span>
+          <span className={cn("tabular font-semibold", entry.kind === "credit" ? "text-owed" : "text-paid")}>{ngultrum(entry.cents)}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// -------------------------------------------------------------- sections
+
+function SectionIntro({ eyebrow, title, children, center }: { eyebrow: string; title: React.ReactNode; children?: React.ReactNode; center?: boolean }) {
+  return (
+    <div className={cn("max-w-2xl", center && "mx-auto text-center")}>
+      <div className="text-sm font-semibold text-primary">{eyebrow}</div>
+      <h2 className="mt-3 text-3xl leading-tight font-semibold tracking-[-0.025em] text-balance sm:text-4xl">{title}</h2>
+      {children && <p className="mt-4 text-lg leading-relaxed text-pretty text-muted-foreground">{children}</p>}
+    </div>
+  )
+}
+
 // ------------------------------------------------------------------ header
 
 const SECTIONS = [
-  ["How it works", "how"],
   ["Features", "features"],
   ["Pricing", "pricing"],
+  ["Shops", "shops"],
   ["FAQ", "faq"],
 ] as const
 
-function SiteHeader() {
+export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-transparent bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/65 [&:has(+main)]:border-border/60">
       <div className={cn(container, "flex h-16 items-center gap-6")}>
@@ -77,7 +470,7 @@ function SiteHeader() {
         </Link>
         <nav aria-label="Sections" className="hidden items-center gap-1 md:flex">
           {SECTIONS.map(([label, id]) => (
-            <a key={id} href={`#${id}`} className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            <a key={id} href={`/#${id}`} className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
               {label}
             </a>
           ))}
@@ -95,427 +488,77 @@ function SiteHeader() {
   )
 }
 
-// -------------------------------------------------------------------- hero
+// ------------------------------------------------------------------- shops
 
-function Hero() {
+const SHOPS_PAGE = 9
+
+// The shops on Bangkee, for anyone: find one by name, type or town, and open
+// it to see what it sells and where it is. No account needed.
+function Shops() {
+  const { data } = useQuery({ queryKey: ["public_shops"], queryFn: api.publicShops, staleTime: 60_000 })
+  const [q, setQ] = useState("")
+  const [kind, setKind] = useState("")
+  const [limit, setLimit] = useState(SHOPS_PAGE)
+  if (data && data.shops.length === 0) return null
+
+  // Only the types some shop actually is.
+  const kinds = data ? data.kinds.filter((k) => data.shops.some((shop) => shop.kind === k.key)) : []
+  const found = (data?.shops ?? []).filter((shop) => (!kind || shop.kind === kind) && matches(q, shop.name, shop.kind_label, shop.location))
+
   return (
-    <section className="relative overflow-hidden">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-48 left-1/2 h-[36rem] w-[64rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,oklch(0.6_0.17_264/0.16),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,black,transparent)] bg-size-[56px_56px] opacity-40" />
-      </div>
-      <div className={cn(container, "grid items-center gap-14 pt-14 pb-20 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pt-24 lg:pb-28")}>
-        <div className="max-w-xl">
-          <span className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-xs">
-            <span className="size-1.5 rounded-full bg-paid" />
-            Made for shops in Bhutan
-          </span>
-          <h1 className="mt-6 text-[2.5rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-6xl">
-            The credit book your shop <span className="text-primary">and your customers</span> share.
-          </h1>
-          <p className="mt-6 text-lg leading-relaxed text-pretty text-muted-foreground">
-            Bangkee replaces the <em className="font-medium text-foreground not-italic">khata</em> behind the counter. Every credit and every payment is written once and seen by both sides — on their own phones, the moment it happens.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link to="/registration/new" className={buttonVariants({ size: "xl" })}>
-              Start free trial <ArrowRightIcon />
-            </Link>
-            <Link to="/session/new" className={buttonVariants({ size: "xl", variant: "outline" })}>
-              Sign in
-            </Link>
-          </div>
-          <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            {["14-day free trial", "No card needed", "Customers join free"].map((point) => (
-              <li key={point} className="flex items-center gap-1.5">
-                <CheckIcon className="size-4 text-paid" /> {point}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <HeroVisual />
-      </div>
-    </section>
-  )
-}
-
-// One customer's page, as the owner's phone shows it, with the customer's
-// side of the same moment beside it.
-function HeroVisual() {
-  return (
-    <div aria-hidden="true" className="relative mx-auto w-full max-w-md select-none lg:mr-0">
-      <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-gradient-to-br from-primary/15 via-transparent to-paid/10 blur-2xl" />
-      <PhoneFrame>
-        <div className="flex items-center gap-3 border-b px-4 py-3">
-          <span className="flex size-9 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">T</span>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold">Tashi Wangmo</div>
-            <div className="text-xs text-muted-foreground">Customer since March</div>
-          </div>
-        </div>
-        <div className="px-4 pt-4">
-          <div className="text-xs text-muted-foreground">Balance</div>
-          <div className="tabular mt-0.5 text-[2rem] leading-tight font-semibold tracking-tight text-owed">Nu. 4,250</div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <span className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-owed text-xs font-semibold text-white">
-              <ArrowUpRightIcon className="size-3.5" /> Credit
-            </span>
-            <span className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-paid text-xs font-semibold text-white">
-              <ArrowDownLeftIcon className="size-3.5" /> Payment
-            </span>
-          </div>
-        </div>
-        <div className="mt-4 divide-y border-t">
-          <MiniEntry kind="credit" title="Rice 25 kg, mustard oil" meta="Today · 3 items" amount="+ Nu. 2,150" balance="Nu. 4,250" />
-          <MiniEntry kind="payment" title="Payment received" meta="Yesterday · mBoB" amount="− Nu. 1,000" balance="Nu. 2,100" />
-          <MiniEntry kind="credit" title="Milk, eggs, bread" meta="12 Oct" amount="+ Nu. 640" balance="Nu. 3,100" />
-          <MiniEntry kind="crossed_out" title="Sugar 5 kg" meta="11 Oct · crossed out" amount="+ Nu. 310" />
-        </div>
-      </PhoneFrame>
-
-      <div className="absolute -bottom-6 -left-4 w-60 rounded-2xl border bg-card/95 p-3.5 shadow-xl shadow-foreground/5 backdrop-blur sm:-left-12">
-        <div className="flex items-start gap-3">
-          <LogoMark className="size-8" />
-          <div className="min-w-0 text-xs">
-            <div className="font-semibold">Karma General Shop</div>
-            <div className="mt-0.5 text-muted-foreground">
-              Rice 25 kg, mustard oil · <span className="tabular font-medium text-owed">Nu. 2,150</span> added. Your balance is Nu. 4,250.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute top-4 -right-16 hidden w-44 rounded-2xl sm:block xl:-right-20 border bg-card/95 p-3 shadow-xl shadow-foreground/5 backdrop-blur sm:-right-10">
-        <div className="flex items-center gap-2 text-xs font-semibold">
-          <span className="flex size-6 items-center justify-center rounded-md bg-paid/10 text-paid">
-            <ImageIcon className="size-3.5" />
-          </span>
-          Payment photo
-        </div>
-        <div className="mt-2 h-16 rounded-lg bg-[repeating-linear-gradient(135deg,var(--muted)_0_6px,transparent_6px_12px)]" />
-        <div className="mt-2 flex items-center justify-between text-xs">
-          <span className="tabular font-semibold">Nu. 1,000</span>
-          <span className="rounded-full bg-paid/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-paid">mBoB</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PhoneFrame({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("mx-auto w-[18.5rem] rounded-[2.5rem] border bg-card p-2 shadow-2xl shadow-primary/10 ring-1 ring-foreground/5", className)}>
-      <div className="overflow-hidden rounded-[2rem] border bg-background pb-3">
-        <div className="flex h-7 items-center justify-center">
-          <span className="h-1.5 w-16 rounded-full bg-muted" />
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function MiniEntry({ kind, title, meta, amount, balance }: { kind: "credit" | "payment" | "crossed_out"; title: string; meta: string; amount: string; balance?: string }) {
-  const Icon = kind === "payment" ? ArrowDownLeftIcon : ArrowUpRightIcon
-  return (
-    <div className="flex items-center gap-2.5 px-4 py-2.5">
-      <span
-        className={cn(
-          "flex size-7 shrink-0 items-center justify-center rounded-full",
-          kind === "credit" && "bg-owed/10 text-owed",
-          kind === "payment" && "bg-paid/10 text-paid",
-          kind === "crossed_out" && "bg-muted text-muted-foreground",
-        )}
-      >
-        <Icon className="size-3.5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className={cn("truncate text-xs font-medium", kind === "crossed_out" && "text-muted-foreground line-through")}>{title}</div>
-        <div className="text-[0.6875rem] text-muted-foreground">{meta}</div>
-      </div>
-      <div className="text-right">
-        <div className={cn("tabular text-xs font-semibold", kind === "credit" && "text-owed", kind === "payment" && "text-paid", kind === "crossed_out" && "text-muted-foreground line-through")}>{amount}</div>
-        {balance && <div className="tabular text-[0.625rem] text-muted-foreground">Bal {balance}</div>}
-      </div>
-    </div>
-  )
-}
-
-// ----------------------------------------------------------------- problem
-
-function SectionIntro({ eyebrow, title, children, center }: { eyebrow: string; title: React.ReactNode; children?: React.ReactNode; center?: boolean }) {
-  return (
-    <div className={cn("max-w-2xl", center && "mx-auto text-center")}>
-      <div className="text-sm font-semibold text-primary">{eyebrow}</div>
-      <h2 className="mt-3 text-3xl leading-tight font-semibold tracking-[-0.025em] text-balance sm:text-4xl">{title}</h2>
-      {children && <p className="mt-4 text-lg leading-relaxed text-pretty text-muted-foreground">{children}</p>}
-    </div>
-  )
-}
-
-const PROBLEMS: [LucideIcon, string, string][] = [
-  [BookOpenIcon, "Pages get lost, torn or smudged", "One spilled cup of suja and a month of credit is unreadable. When the notebook is gone, so is the record."],
-  [MessageSquareWarningIcon, "Every disagreement is your word against theirs", "“I paid you last week.” With only the shop's copy, there is nothing both sides trust."],
-  [SmartphoneIcon, "Customers never see what they owe", "They only find out at the counter, so the total always comes as a surprise — and surprises start arguments."],
-  [TimerIcon, "Chasing overdue money is awkward", "You have to remember who is late, then bring it up in person. Most of the time it simply doesn't happen."],
-]
-
-function Problem() {
-  return (
-    <section className="border-y bg-muted/40 py-20 sm:py-28">
+    <section id="shops" className="scroll-mt-16 border-y bg-muted/40 py-20 sm:py-28">
       <div className={container}>
-        <SectionIntro eyebrow="The problem" title="The notebook behind the counter has served shops for generations. It also costs them.">
-          Credit is how neighbourhood shops keep customers. But a handwritten khata only works as long as everyone remembers the same thing.
+        <SectionIntro eyebrow="Shops on Bangkee" title="See what shops near you sell — and at what price.">
+          Browse the shops on Bangkee: their items and prices, what is out of stock, their hours and where to find them. No account needed.
         </SectionIntro>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {PROBLEMS.map(([Icon, title, body]) => (
-            <div key={title} className="rounded-2xl border bg-card p-6 shadow-xs">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-owed/10 text-owed">
-                <Icon className="size-5" />
-              </span>
-              <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
-              <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">{body}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ------------------------------------------------------------ how it works
-
-const STEPS: [string, string][] = [
-  ["Add your customers", "Type a name and phone number, then share their invite link by WhatsApp, SMS or however you talk. They join free."],
-  ["Record as you go", "Tap Credit or Payment, type the amount — or pick the items. It takes a few seconds, even without signal."],
-  ["Both sides stay in step", "The customer sees the new balance on their phone straight away. When they pay by mBoB or mPay, you photograph the payment screen with the payment."],
-]
-
-function HowItWorks() {
-  return (
-    <section id="how" className="scroll-mt-16 py-20 sm:py-28">
-      <div className={container}>
-        <SectionIntro eyebrow="How it works" title="Set up in an afternoon. Used in seconds a day." center />
-        <ol className="relative mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
-          <div aria-hidden="true" className="absolute top-5 right-[16%] left-[16%] hidden h-px bg-gradient-to-r from-transparent via-border to-transparent md:block" />
-          {STEPS.map(([title, body], index) => (
-            <li key={title} className="relative text-center">
-              <span className="tabular relative mx-auto flex size-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-md ring-8 shadow-primary/25 ring-background">{index + 1}</span>
-              <h3 className="mt-5 text-lg font-semibold tracking-tight">{title}</h3>
-              <p className="mx-auto mt-2 max-w-xs text-[0.9375rem] leading-relaxed text-muted-foreground">{body}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  )
-}
-
-// ---------------------------------------------------------------- features
-
-const FEATURES: [LucideIcon, string, string][] = [
-  [ZapIcon, "A shared, real-time ledger", "One book, two views. What you record is what your customer sees — no copying, no catching up."],
-  [ShoppingBasketIcon, "Itemized purchases", "Add the items, quantities and prices, and Bangkee does the sum. Customers see exactly what they took."],
-  [ImageIcon, "A photo of every transfer", "When a customer shows you their mBoB or mPay screen, photograph it with the payment. Bangkee straightens it and keeps it on the record."],
-  [PackageIcon, "Your items, a tap away", "List what you sell with prices and photos. Pick from them when you record a credit, and customers can browse them too."],
-  [WifiOffIcon, "Works offline", "No signal? Keep recording. Entries wait safely on the phone and send themselves when you're back online."],
-  [BellRingIcon, "Push notifications", "Customers hear about every new entry. You hear when a customer joins and when balances run late."],
-  [PrinterIcon, "Printable statements", "The whole account on one clean page — every entry, totals and balance — ready to print or save as a PDF."],
-  [FileClockIcon, "Overdue reminders", "Late balances are flagged on your home screen, and both you and the customer get a reminder — so you don't have to bring it up."],
-  [HistoryIcon, "A full audit trail", "Nothing is ever deleted. A mistake is crossed out and logged — the history stays honest."],
-]
-
-function Features() {
-  return (
-    <section id="features" className="scroll-mt-16 border-t bg-muted/40 py-20 sm:py-28">
-      <div className={container}>
-        <SectionIntro eyebrow="Features" title="Everything the notebook did — and everything it couldn't.">
-          Built for the counter: big buttons, few taps, and figures you can read at a glance.
-        </SectionIntro>
-        <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border bg-border shadow-xs sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(([Icon, title, body]) => (
-            <div key={title} className="bg-card p-6">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
-                <Icon className="size-[1.125rem]" />
-              </span>
-              <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>
-            </div>
-          ))}
-          <div className="flex flex-col justify-center bg-card p-6 sm:col-span-2 lg:col-span-2">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <UsersIcon className="size-4 text-primary" /> Customers are always free
-            </div>
-            <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted-foreground">They see their balance at every shop they use, get notified of new entries, and browse shops — without paying anything.</p>
+        <div className="mt-10 grid gap-4">
+          <div className="relative max-w-xl">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              aria-label="Search shops"
+              placeholder="Search by name, type or town"
+              className="h-11 bg-card pl-9"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value)
+                setLimit(SHOPS_PAGE)
+              }}
+            />
           </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// ----------------------------------------------------------------- preview
-
-// The owner's home screen on a wide display: today's figures and who to
-// call about money.
-function Preview() {
-  const overdue: [string, string, string][] = [
-    ["Pema Choden", "41 days overdue", "Nu. 6,800"],
-    ["Sonam Tobgay", "33 days overdue", "Nu. 2,450"],
-    ["Ugyen Lhamo", "30 days overdue", "Nu. 1,120"],
-  ]
-  return (
-    <section className="py-20 sm:py-28">
-      <div className={container}>
-        <SectionIntro eyebrow="On a bigger screen" title="Your whole book, at a glance." center>
-          Open Bangkee on the shop's computer or tablet and it lays itself out for the bigger screen.
-        </SectionIntro>
-        <div aria-hidden="true" className="relative mx-auto mt-14 max-w-5xl select-none">
-          <div className="absolute -inset-x-10 -inset-y-8 -z-10 rounded-[3rem] bg-[radial-gradient(closest-side,oklch(0.6_0.17_264/0.14),transparent)]" />
-          <div className="overflow-hidden rounded-2xl border bg-card shadow-2xl shadow-foreground/10">
-            <div className="flex h-9 items-center gap-1.5 border-b bg-muted/50 px-4">
-              <span className="size-2.5 rounded-full bg-foreground/15" />
-              <span className="size-2.5 rounded-full bg-foreground/15" />
-              <span className="size-2.5 rounded-full bg-foreground/15" />
-              <span className="mx-auto rounded-md bg-background px-10 py-0.5 text-[0.6875rem] text-muted-foreground">bangkee.bt</span>
+          {kinds.length > 1 && (
+            <Chips
+              label="Type of business"
+              chips={[{ key: "", label: "All" }, ...kinds]}
+              value={kind}
+              onChange={(key) => {
+                setKind(key)
+                setLimit(SHOPS_PAGE)
+              }}
+            />
+          )}
+          {!data ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3" aria-label="Loading shops">
+              {Array.from({ length: 3 }, (_, i) => (
+                <Skeleton key={i} className="h-24 rounded-[1.25rem]" />
+              ))}
             </div>
-            <div className="grid md:grid-cols-[13rem_1fr]">
-              <div className="hidden border-r bg-sidebar p-3 md:block">
-                <div className="flex items-center gap-2 px-2 py-1.5">
-                  <LogoMark className="size-6" />
-                  <span className="text-xs font-semibold">Karma General Shop</span>
-                </div>
-                <div className="mt-3 grid gap-0.5 text-xs font-medium">
-                  {["Home", "Customers", "Items", "Settings"].map((item, index) => (
-                    <div key={item} className={cn("flex items-center justify-between rounded-md px-2 py-1.5", index === 0 ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
-                      {item}
-                    </div>
-                  ))}
-                </div>
+          ) : found.length > 0 ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {found.slice(0, limit).map((shop) => (
+                  <ShopCard key={shop.id} shop={shop} href={`/shop/${shop.id}`} />
+                ))}
               </div>
-              <div className="grid gap-4 p-4 sm:p-6">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  <MiniStat label="Outstanding credit" value="Nu. 84,310" />
-                  <MiniStat label="Repaid this month" value="Nu. 31,900" tone="paid" />
-                  <MiniStat label="Overdue accounts" value="3" tone="owed" />
-                  <MiniStat label="Customers" value="48" />
-                </div>
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-xl border">
-                    <div className="border-b px-4 py-2.5 text-xs font-semibold">Overdue balances</div>
-                    {overdue.map(([name, late, amount]) => (
-                      <div key={name} className="flex items-center gap-3 border-b px-4 py-2.5 last:border-0">
-                        <span className="flex size-7 items-center justify-center rounded-full bg-owed/10 text-[0.6875rem] font-semibold text-owed">{name.charAt(0)}</span>
-                        <div className="flex-1">
-                          <div className="text-xs font-medium">{name}</div>
-                          <div className="text-[0.6875rem] text-warn">{late}</div>
-                        </div>
-                        <span className="tabular text-xs font-semibold text-owed">{amount}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="rounded-xl border">
-                    <div className="border-b px-4 py-2.5 text-xs font-semibold">Recent activity</div>
-                    <MiniEntry kind="payment" title="Payment · Dawa Zangmo" meta="2 minutes ago" amount="− Nu. 1,500" />
-                    <MiniEntry kind="credit" title="Credit · Tashi Wangmo" meta="18 minutes ago" amount="+ Nu. 2,150" />
-                    <MiniEntry kind="credit" title="Credit · Kinley Dorji" meta="1 hour ago" amount="+ Nu. 380" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "owed" | "paid" | "warn" }) {
-  return (
-    <div className="rounded-xl border p-3">
-      <div className="text-[0.6875rem] text-muted-foreground">{label}</div>
-      <div className={cn("tabular mt-1 text-lg font-semibold tracking-tight", tone === "owed" && "text-owed", tone === "paid" && "text-paid", tone === "warn" && "text-warn")}>{value}</div>
-    </div>
-  )
-}
-
-// ----------------------------------------------------------------- pricing
-
-const INCLUDED = [
-  "Unlimited customers and entries",
-  "Itemized credits, picked from your items",
-  "A photo of every mBoB or mPay transfer",
-  "Your shop listed for customers to browse",
-  "Offline recording and push notifications",
-  "Printable statements and the full audit trail",
-]
-
-function Pricing() {
-  const { data } = useQuery({ queryKey: ["pricing"], queryFn: api.pricing, staleTime: Infinity })
-  return (
-    <section id="pricing" className="scroll-mt-16 border-t bg-muted/40 py-20 sm:py-28">
-      <div className={container}>
-        <SectionIntro eyebrow="Pricing" title="One plan. Everything included." center>
-          No tiers to compare and no add-ons. Your customers never pay a thing.
-        </SectionIntro>
-        <div className="mx-auto mt-12 grid max-w-4xl gap-4 lg:grid-cols-[1.35fr_1fr]">
-          <div className="relative overflow-hidden rounded-3xl border bg-card p-7 shadow-lg shadow-primary/5 ring-1 ring-primary/10 sm:p-9">
-            <div aria-hidden="true" className="absolute -top-24 -right-24 size-64 rounded-full bg-primary/10 blur-3xl" />
-            <div className="relative">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold tracking-tight">Bangkee for shops</h3>
-                {data && <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">{data.trial_days}-day free trial</span>}
-              </div>
-              {data ? (
-                <>
-                  <div className="mt-6 flex items-baseline gap-1.5">
-                    <span className="tabular text-5xl font-semibold tracking-[-0.03em]">{ngultrum(data.monthly_price_cents)}</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Billed annually — <span className="tabular font-medium text-foreground">{ngultrum(data.annual_price_cents)}</span> per year.
-                  </p>
-                </>
-              ) : (
-                <div className="mt-6 grid gap-3" aria-label="Loading prices">
-                  <Skeleton className="h-12 w-52" />
-                  <Skeleton className="h-4 w-60" />
-                </div>
+              {found.length > limit && (
+                <button type="button" onClick={() => setLimit((n) => n + SHOPS_PAGE)} className={buttonVariants({ variant: "outline", size: "lg", className: "mx-auto bg-card" })}>
+                  Show more shops <span className="tabular text-muted-foreground">{found.length - limit} more</span>
+                </button>
               )}
-              <Link to="/registration/new" className={buttonVariants({ size: "xl", className: "mt-7 w-full" })}>
-                Start your free trial <ArrowRightIcon />
-              </Link>
-              <p className="mt-3 text-center text-xs text-muted-foreground">{data ? `${data.trial_days} days free` : "Free to start"} · No card needed · Pay by bank transfer when you're ready</p>
-              <div className="mt-7 border-t pt-6">
-                <div className="text-sm font-semibold">Everything included</div>
-                <ul className="mt-3 grid gap-2.5 text-sm">
-                  {INCLUDED.map((item) => (
-                    <li key={item} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-paid/15 text-paid">
-                        <CheckIcon className="size-3" strokeWidth={3} />
-                      </span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col rounded-3xl border bg-card p-7 shadow-xs sm:p-9">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-paid/10 text-paid">
-              <UsersIcon className="size-5" />
-            </span>
-            <h3 className="mt-5 text-lg font-semibold tracking-tight">Customers</h3>
-            <div className="mt-2 text-3xl font-semibold tracking-tight">Always free</div>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Anyone you invite gets their own account: their balance at every shop they use, a note when something is added, and shops to browse.
-            </p>
-            <div className="mt-auto pt-6">
-              <div className="flex items-center gap-2 rounded-xl bg-muted/60 px-3.5 py-3 text-sm">
-                <ScrollTextIcon className="size-4 shrink-0 text-muted-foreground" />
-                <span className="text-muted-foreground">If a shop's subscription lapses, its customers can still read their balances.</span>
-              </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <p className="rounded-2xl border bg-card px-5 py-8 text-center text-muted-foreground">No shop matches that. Try another name, type or town.</p>
+          )}
         </div>
       </div>
     </section>
@@ -525,8 +568,8 @@ function Pricing() {
 // --------------------------------------------------------------------- faq
 
 function Faq() {
-  const { data } = useQuery({ queryKey: ["pricing"], queryFn: api.pricing, staleTime: Infinity })
-  const annual = data ? `${ngultrum(data.annual_price_cents)} for one year` : "one year"
+  const data = usePricing()
+  const annual = data ? `a year of your plan (Basic is ${ngultrum(data.annual_price_cents)})` : "a year of your plan"
   const faqs: [string, React.ReactNode][] = [
     [
       "Who can see my book?",
@@ -542,16 +585,17 @@ function Faq() {
     ],
     [
       "How do customers join?",
-      "Add the customer, then share the invite link Bangkee gives you — by WhatsApp, SMS or however you usually talk. They create a free account and see their balance straight away.",
+      "Add the customer with their phone number, then share the invite link Bangkee gives you — by WhatsApp, SMS or however you usually talk. They choose a 4-digit PIN, no email needed, and see their balance straight away.",
+    ],
+    [
+      "What happens when a customer settles up?",
+      "Record the payment and their balance reads zero. There is no page to cross out and nothing to start again: their account stays open, the next credit goes on the same account, and every month before it is still in the history and on their statement.",
     ],
     [
       "How do I pay for Bangkee?",
       `By bank transfer. From Billing in the app, transfer ${annual} to Bangkee's account and attach the screenshot. We check it and approve it, usually within one working day.`,
     ],
-    [
-      "Do I need to install an app?",
-      "No app store needed. Bangkee opens in any phone browser, and you can add it to your home screen so it opens like an app, with notifications.",
-    ],
+    ["Do I need to install an app?", "No app store needed. Bangkee opens in any phone browser, and you can add it to your home screen so it opens like an app, with notifications."],
   ]
   return (
     <section id="faq" className="scroll-mt-16 py-20 sm:py-28">
@@ -598,7 +642,7 @@ function FinalCta() {
 
 // ------------------------------------------------------------------ footer
 
-function SiteFooter() {
+export function SiteFooter() {
   return (
     <footer className="border-t">
       <div className={cn(container, "flex flex-col gap-6 py-10 sm:flex-row sm:items-center sm:justify-between")}>
@@ -607,10 +651,10 @@ function SiteFooter() {
           <p className="mt-2 text-sm text-muted-foreground">The shared credit book for shops in Bhutan.</p>
         </div>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          <a href="#pricing" className="hover:text-foreground">
+          <a href="/#pricing" className="hover:text-foreground">
             Pricing
           </a>
-          <a href="#faq" className="hover:text-foreground">
+          <a href="/#faq" className="hover:text-foreground">
             FAQ
           </a>
           <Link to="/session/new" className="hover:text-foreground">

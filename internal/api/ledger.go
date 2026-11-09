@@ -27,7 +27,7 @@ func (s *Server) transaction(c *echo.Context) error {
 		return err
 	}
 	ctx := c.Request().Context()
-	entry, err := domain.TransactionForOwner(ctx, s.Q, o.User.ID, paramID(c))
+	entry, err := domain.TransactionForOwner(ctx, s.Q, o.Shop.OwnerID, paramID(c))
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (s *Server) updateTransaction(c *echo.Context) error {
 		if err := s.requireWritable(ctx, q, o.Shop.ID); err != nil {
 			return err
 		}
-		entry, err := domain.TransactionForOwner(ctx, q, o.User.ID, paramID(c))
+		entry, err := domain.TransactionForOwner(ctx, q, o.Shop.OwnerID, paramID(c))
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func (s *Server) crossOutTransaction(c *echo.Context) error {
 		if err := s.requireWritable(ctx, q, o.Shop.ID); err != nil {
 			return err
 		}
-		entry, err = domain.TransactionForOwner(ctx, q, o.User.ID, paramID(c))
+		entry, err = domain.TransactionForOwner(ctx, q, o.Shop.OwnerID, paramID(c))
 		if err != nil {
 			return err
 		}

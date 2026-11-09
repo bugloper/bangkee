@@ -32,7 +32,7 @@ export default defineConfig({
         scope: "/",
         display: "standalone",
         orientation: "portrait-primary",
-        theme_color: "#2751b8",
+        theme_color: "#4d35f1",
         background_color: "#fafbfd",
         lang: "en",
         dir: "ltr",
@@ -51,12 +51,9 @@ export default defineConfig({
     }),
   ],
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
-  // The operator's console is the same app opened at admin.<host>; in
-  // development that is http://admin.localhost:5173. The proxy keeps the
-  // Host header (changeOrigin: false) because the server decides which
-  // front door a request came through by it.
+  // The proxy keeps the Host header (changeOrigin: false): the server writes
+  // the page's own address into links and preview tags from it.
   server: {
-    allowedHosts: ["admin.localhost"],
     proxy: {
       "/api": { target: api, changeOrigin: false, ws: true },
       "/up": { target: api, changeOrigin: false },
