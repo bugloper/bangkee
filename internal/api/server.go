@@ -137,6 +137,7 @@ func (s *Server) routes(g *echo.Group) {
 	g.POST("/accounts/:id/credits", s.createCredit)
 	g.POST("/accounts/:id/payments", s.createPayment)
 	g.GET("/accounts/:id/statement", s.statement)
+	g.GET("/accounts/:id/statement.pdf", s.statementPDF)
 	g.GET("/accounts/:id/invite", s.invite)
 	g.POST("/accounts/:id/pin_reset", s.pinReset)
 	g.GET("/transactions/:id", s.transaction)

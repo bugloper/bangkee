@@ -65,6 +65,8 @@ const qs = (params: Record<string, string | undefined | null>) => {
   return encoded ? `?${encoded}` : ""
 }
 
+export type StatementRange = { from?: string; to?: string }
+
 export const api = {
   // identity
   me: () => get<T.Me>("/api/me"),
@@ -92,7 +94,9 @@ export const api = {
   deleteAccount: (id: number) => del<T.Notice>(`/api/accounts/${id}`),
   createCredit: (accountId: number, input: T.CreditInput) => post<T.RecordedEntry>(`/api/accounts/${accountId}/credits`, input),
   createPayment: (accountId: number, input: T.PaymentInput) => post<T.RecordedEntry>(`/api/accounts/${accountId}/payments`, input),
-  statement: (accountId: number) => get<T.Statement>(`/api/accounts/${accountId}/statement`),
+  statement: (accountId: number, range: StatementRange = {}) => get<T.Statement>(`/api/accounts/${accountId}/statement${qs(range)}`),
+  /** The PDF, for a link or a download — not fetched as JSON. */
+  statementPdfUrl: (accountId: number, range: StatementRange = {}) => `/api/accounts/${accountId}/statement.pdf${qs(range)}`,
   invite: (accountId: number) => get<T.Invite>(`/api/accounts/${accountId}/invite`),
   pinReset: (accountId: number) => post<T.Invite>(`/api/accounts/${accountId}/pin_reset`),
   /** A payment with a photo of the customer's payment screen goes up as form data, the photo as "screenshot". */

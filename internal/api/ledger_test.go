@@ -203,10 +203,11 @@ func TestTheStatementLeavesCrossedOutEntriesOut(t *testing.T) {
 	owner.post(fmt.Sprintf("/api/accounts/%d/payments", account), map[string]any{"amount": "250"})
 
 	statement := owner.get(fmt.Sprintf("/api/accounts/%d/statement", account))
-	equal(t, statement.len("rows"), 2, "rows")
-	equal(t, statement.num("debit_cents"), 75_000, "debit")
-	equal(t, statement.num("credit_cents"), 25_000, "credit")
-	equal(t, statement.num("rows.1.running_balance_cents"), 50_000, "running")
+	equal(t, statement.len("statement.rows"), 2, "rows")
+	equal(t, statement.num("statement.credit_cents"), 75_000, "taken on credit")
+	equal(t, statement.num("statement.payment_cents"), 25_000, "paid")
+	equal(t, statement.num("statement.rows.1.running_balance_cents"), 50_000, "running")
+	equal(t, statement.num("statement.closing_cents"), owner.balance(account), "closing is the balance")
 }
 
 func TestInsightsShowTheMonthsAndWhoOwes(t *testing.T) {

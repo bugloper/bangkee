@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"github.com/labstack/echo/v5"
 
 	"bangkee/internal/apperr"
+	"bangkee/internal/document"
 	"bangkee/internal/domain"
 	"bangkee/internal/money"
 	"bangkee/internal/store"
@@ -384,24 +387,12 @@ func (s *Server) record(c *echo.Context, kind int32) error {
 func (s *Server) createCredit(c *echo.Context) error  { return s.record(c, domain.Credit) }
 func (s *Server) createPayment(c *echo.Context) error { return s.record(c, domain.Payment) }
 
-// statement is the printable page an owner hands over or a customer prints
-// for their own records. Crossed-out entries are left out.
+// statement is one account's book over a range of days, for the owner to
+// hand over or the customer to keep: as JSON for the screen, or as a PDF.
 func (s *Server) statement(c *echo.Context) error {
-	account, shop, isOwner, err := s.visibleAccount(c)
+	account, shop, isOwner, statement, err := s.cutStatement(c)
 	if err != nil {
 		return err
-	}
-	rows, err := domain.Ledger(c.Request().Context(), s.Q, account.ID, false)
-	if err != nil {
-		return err
-	}
-	var debit, credit int64
-	for _, row := range rows {
-		if row.Kind == "credit" {
-			debit += row.AmountCents
-		} else {
-			credit += row.AmountCents
-		}
 	}
 	viewer := "customer"
 	if isOwner {
@@ -409,8 +400,56 @@ func (s *Server) statement(c *echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, M{
 		"account": domain.AccountView(account, shop.CreditDueDays), "shop": M{"id": shop.ID, "name": shop.Name},
-		"rows": rows, "debit_cents": debit, "credit_cents": credit, "viewer": viewer, "printed_on": time.Now().UTC(),
+		"statement": statement, "viewer": viewer,
 	})
+}
+
+func (s *Server) statementPDF(c *echo.Context) error {
+	account, shop, _, statement, err := s.cutStatement(c)
+	if err != nil {
+		return err
+	}
+	pdf, err := document.Statement(document.StatementInput{
+		ShopName: shop.Name, ShopLine: shopLine(shop), CustomerName: account.CustomerName, Customer: util.Deref(account.CustomerPhone),
+		Statement: statement,
+	})
+	if err != nil {
+		return err
+	}
+	name := fmt.Sprintf("Statement %s %s.pdf", account.CustomerName, statement.GeneratedAt.In(domain.Thimphu).Format("2006-01-02"))
+	return sendPDF(c, name, pdf)
+}
+
+func (s *Server) cutStatement(c *echo.Context) (store.Account, store.Shop, bool, domain.Statement, error) {
+	account, shop, isOwner, err := s.visibleAccount(c)
+	if err != nil {
+		return account, shop, false, domain.Statement{}, err
+	}
+	from, to, err := domain.ParseStatementRange(c.QueryParam("from"), c.QueryParam("to"))
+	if err != nil {
+		return account, shop, false, domain.Statement{}, err
+	}
+	statement, err := domain.AccountStatement(c.Request().Context(), s.Q, account.ID, from, to)
+	return account, shop, isOwner, statement, err
+}
+
+// shopLine is what a document prints under the shop's name.
+func shopLine(shop store.Shop) string {
+	var parts []string
+	for _, part := range []*string{shop.Location, shop.Phone} {
+		if part != nil && strings.TrimSpace(*part) != "" {
+			parts = append(parts, strings.TrimSpace(*part))
+		}
+	}
+	return strings.Join(parts, " · ")
+}
+
+// sendPDF hands a document over as a download, private to whoever asked.
+func sendPDF(c *echo.Context, filename string, pdf []byte) error {
+	header := c.Response().Header()
+	header.Set("Cache-Control", "private, no-store")
+	header.Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
+	return c.Blob(http.StatusOK, "application/pdf", pdf)
 }
 
 func (s *Server) invite(c *echo.Context) error {

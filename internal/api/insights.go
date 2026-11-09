@@ -16,7 +16,7 @@ import (
 
 // thimphu is Bhutan's clock: UTC+6 all year. A month on the chart is a month
 // as the shop lived it.
-var thimphu = time.FixedZone("BTT", 6*60*60)
+var thimphu = domain.Thimphu
 
 // insightMonths is how far back the chart reaches, this month included.
 const insightMonths = 6

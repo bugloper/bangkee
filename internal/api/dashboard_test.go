@@ -31,8 +31,8 @@ func TestTheDashboardReconcilesWithTheBook(t *testing.T) {
 	record(sonam, "payments", "50", now) // paid in advance
 
 	d := owner.get("/api/dashboard")
-	statements := owner.get(fmt.Sprintf("/api/accounts/%d/statement", pema)).num("account.balance_cents") +
-		owner.get(fmt.Sprintf("/api/accounts/%d/statement", dorji)).num("account.balance_cents")
+	statements := owner.get(fmt.Sprintf("/api/accounts/%d/statement", pema)).num("statement.closing_cents") +
+		owner.get(fmt.Sprintf("/api/accounts/%d/statement", dorji)).num("statement.closing_cents")
 	equal(t, d.num("total_outstanding_cents"), statements, "outstanding is what the statements owe")
 	equal(t, d.num("total_outstanding_cents"), int64(80050+50000), "Nu 800.50 + Nu 500")
 	equal(t, d.num("owing_count"), int64(2), "two owe; the one in credit does not")

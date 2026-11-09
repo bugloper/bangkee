@@ -276,15 +276,22 @@ export interface TransactionUpdateInput {
   occurred_at?: string
 }
 
-/** GET /api/accounts/:id/statement — active entries only, oldest first. */
+/** GET /api/accounts/:id/statement?from=&to= — active entries only, oldest first. Days are YYYY-MM-DD in Thimphu; `to` is inclusive. */
 export interface Statement {
   account: AccountSummary
   shop: { id: number; name: string }
-  rows: LedgerEntry[]
-  debit_cents: Cents // total taken on credit
-  credit_cents: Cents // total paid
   viewer: "owner" | "customer"
-  printed_on: Timestamp
+  statement: {
+    from: Timestamp | null
+    to: Timestamp | null
+    opening_cents: Cents // owed before `from`
+    rows: LedgerEntry[]
+    credit_cents: Cents // taken on credit in the range
+    payment_cents: Cents // paid in the range
+    closing_cents: Cents // opening + credit − paid
+    generated_at: Timestamp
+    through_to_today: boolean
+  }
 }
 
 /** GET /api/accounts/:id/invite */
