@@ -4,7 +4,4 @@ web/node_modules
 web/dist
 storage
 .env
-*.docx
-bangkee.html
-design
 mobile
