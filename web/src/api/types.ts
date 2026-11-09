@@ -157,6 +157,15 @@ export interface LedgerEntry {
   running_balance_cents: Cents | null // null for crossed-out rows (BR-11)
   line_items: LineItem[]
   screenshot_url: string | null // a payment's photo of the customer's payment screen; /api/attachments/:id
+  confirmation: "pending" | "confirmed" | "disputed" // the customer's word on it; never moves the balance
+  responses: EntryResponse[] // that word's history, oldest first
+}
+
+export interface EntryResponse {
+  action: "confirmed" | "disputed" | "shop_replied" | "changed"
+  note: string | null
+  by: string
+  at: Timestamp
 }
 
 export interface AccountSummary {
@@ -345,6 +354,7 @@ export interface OwnerDashboard {
   payments_today_cents: Cents
   repaid_month_cents: Cents
   trend: { day: string; credit_cents: Cents; payment_cents: Cents }[] // the last 14 days, today last
+  disputed: (LedgerEntry & { account: { id: number; display_name: string } })[] // entries customers flagged, oldest first
   recent_transactions: (LedgerEntry & { account: { id: number; display_name: string } })[]
 }
 

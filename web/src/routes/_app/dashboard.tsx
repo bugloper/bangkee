@@ -120,6 +120,32 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
             <DayBars label="Payments collected each day" bars={data.trend.map((day) => ({ day: day.day, cents: day.payment_cents, aside: `${ngultrum(day.credit_cents)} given on credit` }))} />
           </Panel>
 
+          {data.disputed.length > 0 && (
+            <Panel
+              flush
+              title={
+                <span className="flex items-center gap-2">
+                  Flagged by customers <Count tone="owed">{data.disputed.length}</Count>
+                </span>
+              }
+              description="They say these entries are wrong. The balance is unchanged until you edit or cross one out."
+            >
+              <Rows>
+                {data.disputed.map((entry) => (
+                  <Row
+                    key={entry.id}
+                    href={`/accounts/${entry.account.id}?entry=${entry.id}`}
+                    leading={<Direction kind={entry.kind} />}
+                    title={`${entry.kind === "credit" ? "Credit" : "Payment"} · ${entry.account.display_name}`}
+                    subtitle={<span className="text-owed">“{[...entry.responses].reverse().find((r) => r.action === "disputed")?.note ?? "Flagged"}”</span>}
+                    trailing={<Money cents={entry.amount_cents} tone={entry.kind === "credit" ? "owed" : "paid"} />}
+                    chevron
+                  />
+                ))}
+              </Rows>
+            </Panel>
+          )}
+
           {data.overdue_accounts.length > 0 && (
             <Panel
               flush

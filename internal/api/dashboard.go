@@ -113,6 +113,24 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 		recent = append(recent, withField(entry, "account", M{"id": accountIDs[i], "display_name": nameOf[accountIDs[i]]}))
 	}
 
+	// Entries customers have flagged, for the shop to look at.
+	disputedRows, err := q.DisputedEntries(ctx, shop.ID)
+	if err != nil {
+		return err
+	}
+	disputedEntries := make([]domain.Entry, len(disputedRows))
+	for i, row := range disputedRows {
+		disputedEntries[i] = domain.Entry{Transaction: row.Transaction, CreatedByName: row.CreatedByName}
+	}
+	disputedViews, err := domain.Entries(ctx, q, disputedEntries)
+	if err != nil {
+		return err
+	}
+	disputed := make([]M, 0, len(disputedViews))
+	for i, view := range disputedViews {
+		disputed = append(disputed, withField(view, "account", M{"id": disputedRows[i].Transaction.AccountID, "display_name": disputedRows[i].AccountName}))
+	}
+
 	// One photo lookup for both lists.
 	photos, err := s.customerPhotos(ctx, append(append([]store.Account{}, totals.overdue...), totals.top...))
 	if err != nil {
@@ -133,6 +151,6 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 		"top_accounts":    views(totals.top),
 		"customers_count": counts.Customers, "items_count": counts.MenuItems,
 		"credit_today_cents": todayRow.CreditCents, "payments_today_cents": todayRow.PaymentCents,
-		"repaid_month_cents": repaid, "trend": trend, "recent_transactions": recent,
+		"repaid_month_cents": repaid, "trend": trend, "recent_transactions": recent, "disputed": disputed,
 	})
 }

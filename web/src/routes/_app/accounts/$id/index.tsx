@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowDownLeftIcon, ArrowUpRightIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon, CheckCheckIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
 import { useEffect } from "react"
 
 import { api } from "@/api/client"
@@ -12,11 +12,13 @@ import { Empty, Initial, Money, Note, Panel, Row, Rows } from "@/components/kit"
 import { LedgerRow } from "@/components/ledger"
 import { QueuedWrites } from "@/components/queued-writes"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { flashNotice } from "@/lib/flash"
 import { useT } from "@/lib/i18n"
 import { ngultrum, pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { offerNotifications } from "@/lib/pwa"
+import { refreshAll } from "@/lib/query"
 import { dateTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -159,7 +161,7 @@ function OwnerView({ data }: { data: OwnerData }) {
           {data.ledger.length > 0 ? (
             <div className="divide-y">
               {data.ledger.map((entry) => (
-                <LedgerRow key={entry.id} entry={entry} owner locked={locked} highlight={entry.id === highlighted} />
+                <LedgerRow key={entry.id} entry={entry} owner locked={locked} highlight={entry.id === highlighted} joined={account.joined} />
               ))}
             </div>
           ) : (
@@ -213,6 +215,14 @@ function CustomerView({ data }: { data: CustomerData }) {
   const { account, shop } = data
   const { entry: highlighted } = Route.useSearch()
   usePage(shop.name, "/dashboard")
+  const pending = data.ledger.filter((entry) => !entry.crossed_out && entry.confirmation === "pending").length
+  const confirmAll = useMutation({
+    mutationFn: () => api.confirmAll(account.id),
+    onSuccess: async (result) => {
+      flashNotice(result.notice)
+      await refreshAll()
+    },
+  })
   // A customer never records anything, so opening their account at a shop is
   // the moment to offer notifications (once, until they answer).
   useEffect(() => offerNotifications(), [])
@@ -253,10 +263,18 @@ function CustomerView({ data }: { data: CustomerData }) {
       <Panel
         flush
         title={t("account.transaction_history")}
+        description={pending > 0 ? `${pluralize(pending, "entry", "entries")} to check` : undefined}
         action={
-          <AppLink href={`/accounts/${account.id}/receipts`} className="text-[0.8125rem] font-medium text-primary hover:underline">
-            Receipts
-          </AppLink>
+          <div className="flex items-center gap-3">
+            {pending > 1 && (
+              <Button size="sm" variant="payment" disabled={confirmAll.isPending} onClick={() => confirmAll.mutate()}>
+                <CheckCheckIcon /> Confirm all
+              </Button>
+            )}
+            <AppLink href={`/accounts/${account.id}/receipts`} className="text-[0.8125rem] font-medium text-primary hover:underline">
+              Receipts
+            </AppLink>
+          </div>
         }
       >
         {data.ledger.length > 0 ? (

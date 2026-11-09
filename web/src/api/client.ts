@@ -107,6 +107,10 @@ export const api = {
   receipt: (transactionId: number) => get<{ receipt: T.Receipt }>(`/api/transactions/${transactionId}/receipt`),
   receiptPdfUrl: (transactionId: number) => `/api/transactions/${transactionId}/receipt.pdf`,
   receipts: (accountId: number) => get<{ account: T.AccountSummary; receipts: T.Receipt[] }>(`/api/accounts/${accountId}/receipts`),
+  confirmEntry: (id: number) => post<T.Notice>(`/api/transactions/${id}/confirm`),
+  disputeEntry: (id: number, reason: string) => post<T.Notice>(`/api/transactions/${id}/dispute`, { reason }),
+  replyToDispute: (id: number, note: string) => post<T.Notice>(`/api/transactions/${id}/dispute_reply`, { note }),
+  confirmAll: (accountId: number) => post<T.Notice & { confirmed: number }>(`/api/accounts/${accountId}/confirm_all`),
   crossOutTransaction: (id: number) => post<T.Notice & { account_id: number }>(`/api/transactions/${id}/cross_out`),
 
   bankAccounts: () => get<{ bank_accounts: T.BankAccount[] }>("/api/bank_accounts"),

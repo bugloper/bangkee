@@ -157,6 +157,7 @@ func DestroyAccount(ctx context.Context, q *store.Queries, accountID int64) ([]s
 			return q.DeleteAuditEvents(ctx, store.DeleteAuditEventsParams{AuditableType: TransactionRecordType, Ids: transactionIDs})
 		},
 		func() error { return q.DeleteLineItemsOf(ctx, transactionIDs) },
+		func() error { return q.DeleteTransactionResponses(ctx, transactionIDs) },
 		func() error { return q.DeleteAccountTransactions(ctx, accountID) },
 		func() error {
 			return q.DeleteAuditEvents(ctx, store.DeleteAuditEventsParams{AuditableType: "Account", Ids: []int64{accountID}})

@@ -59,3 +59,15 @@ func TestLinesRoundHalfAwayFromZero(t *testing.T) {
 		t.Errorf("MajorUnits = %q", got)
 	}
 }
+
+func TestPluralizeEntriesAndDays(t *testing.T) {
+	for _, c := range []struct {
+		n    int64
+		word string
+		want string
+	}{{2, "entry", "2 entries"}, {3, "day", "3 days"}, {1, "entry", "1 entry"}, {2, "customer", "2 customers"}} {
+		if got := Pluralize(c.n, c.word); got != c.want {
+			t.Errorf("Pluralize(%d, %q) = %q, want %q", c.n, c.word, got, c.want)
+		}
+	}
+}

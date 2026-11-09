@@ -211,6 +211,16 @@ type Transaction struct {
 	CrossedOutAt   *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+	Confirmation   int32
+}
+
+type TransactionResponse struct {
+	ID            int64
+	TransactionID int64
+	UserID        int64
+	Action        string
+	Note          *string
+	CreatedAt     time.Time
 }
 
 type User struct {

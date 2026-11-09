@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { api } from "@/api/client"
 import type { LedgerEntry } from "@/api/types"
 import { AppLink } from "@/components/app-link"
+import { ConfirmationBadge, ConfirmationPanel } from "@/components/confirmation"
 import { buttonVariants } from "@/components/ui/button"
 import { Thumb } from "@/components/viewer"
 import { confirm } from "@/lib/confirm"
@@ -37,7 +38,7 @@ function KindGlyph({ entry }: { entry: LedgerEntry }) {
 }
 
 /** One entry in the book, as the account screen shows it. */
-export function LedgerRow({ entry, owner, locked, highlight = false }: { entry: LedgerEntry; owner: boolean; locked: boolean; highlight?: boolean }) {
+export function LedgerRow({ entry, owner, locked, highlight = false, joined = true }: { entry: LedgerEntry; owner: boolean; locked: boolean; highlight?: boolean; joined?: boolean }) {
   const [itemsOpen, setItemsOpen] = useState(false)
   // The entry a notification was about: brought into view and marked.
   const row = useRef<HTMLDivElement>(null)
@@ -77,6 +78,11 @@ export function LedgerRow({ entry, owner, locked, highlight = false }: { entry: 
                 {dateTime(entry.occurred_at)} · by {entry.created_by_name}
                 {entry.payment_method && ` · ${entry.payment_method}`}
               </div>
+              {joined && (
+                <div className="mt-1">
+                  <ConfirmationBadge entry={entry} owner={owner} />
+                </div>
+              )}
               {entry.notes && <div className="mt-1 text-[0.8125rem] text-muted-foreground">{entry.notes}</div>}
               {entry.screenshot_url && (
                 <div className="mt-2">
@@ -118,6 +124,8 @@ export function LedgerRow({ entry, owner, locked, highlight = false }: { entry: 
               )}
             </div>
           )}
+
+          <ConfirmationPanel entry={entry} owner={owner} joined={joined} />
 
           {entry.kind === "payment" && (owner ? entry.crossed_out || locked : true) && (
             <div className="mt-2.5 flex gap-1.5">

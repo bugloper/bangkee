@@ -11,6 +11,7 @@ sql:
       - migrations/20261105041340_add_profile_to_shops.sql
       - migrations/20261106101222_add_coordinates_to_shops.sql
       - migrations/20261108135517_create_testimonials.sql
+      - migrations/20261109090838_add_confirmation_to_transactions.sql
     queries: db/queries
     gen:
       go:

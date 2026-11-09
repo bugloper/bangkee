@@ -148,6 +148,21 @@ func (n *Notifier) TransactionCrossedOut(ctx context.Context, accountID, entryID
 	})
 }
 
+// EntryDisputed tells the shop a customer has flagged an entry.
+func (n *Notifier) EntryDisputed(ctx context.Context, accountID, entryID int64, kind string, amountCents int64, reason string) {
+	if c, ok := n.context(ctx, accountID); ok {
+		n.deliver(ctx, note{userID: c.ownerID, kind: "dispute", title: c.account.CustomerName + " flagged a " + kind + " of " + money.Ngultrum(amountCents, false),
+			body: snippet(reason), path: entryPath(accountID, entryID)})
+	}
+}
+
+// DisputeReplied tells the customer the shop has answered their flag.
+func (n *Notifier) DisputeReplied(ctx context.Context, accountID, entryID int64, reply string) {
+	n.toCustomer(ctx, accountID, func(c *accountContext) note {
+		return note{kind: "dispute", title: c.shopName + " replied about an entry you flagged", body: snippet(reply), path: entryPath(accountID, entryID)}
+	})
+}
+
 func (n *Notifier) AccountJoined(ctx context.Context, accountID int64) {
 	if c, ok := n.context(ctx, accountID); ok {
 		n.deliver(ctx, note{userID: c.ownerID, kind: "credit", title: c.account.CustomerName + " joined",
