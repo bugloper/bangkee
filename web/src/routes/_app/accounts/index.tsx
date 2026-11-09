@@ -1,15 +1,18 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { PlusIcon, SearchIcon, UsersIcon } from "lucide-react"
+import { BellRingIcon, PlusIcon, SearchIcon, UsersIcon } from "lucide-react"
 
 import { api } from "@/api/client"
 import { Empty, Initial, Money, Panel, Row, Rows } from "@/components/kit"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { flashNotice } from "@/lib/flash"
 import { useT } from "@/lib/i18n"
 import { balanceBadge, balanceWord } from "@/lib/ledger"
+import { useCan, useFeature } from "@/lib/me"
 import { usePage } from "@/lib/page"
+import { refreshAll } from "@/lib/query"
 import { timeAgoInWords } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -37,6 +40,10 @@ function Accounts() {
   const navigate = useNavigate({ from: Route.fullPath })
   const { data } = useQuery({ queryKey: ["accounts", q ?? "", filter ?? ""], queryFn: () => api.accounts({ q, filter }), placeholderData: (previous) => previous })
   const accounts = data?.accounts ?? []
+  const bulkPlan = useFeature("bulk_reminders")
+  const canManage = useCan("manage")
+  const bulk = bulkPlan && canManage
+  const canRecord = useCan("record")
 
   return (
     <div className="grid gap-4">
@@ -53,9 +60,11 @@ function Accounts() {
             onChange={(event) => void navigate({ search: { q: event.target.value || undefined, filter }, replace: true })}
           />
         </form>
-        <Link to="/accounts/new" className={buttonVariants({ size: "lg", className: "max-md:hidden" })}>
-          <PlusIcon /> Add customer
-        </Link>
+        {canRecord && (
+          <Link to="/accounts/new" className={buttonVariants({ size: "lg", className: "max-md:hidden" })}>
+            <PlusIcon /> Add customer
+          </Link>
+        )}
       </div>
 
       <nav aria-label="Filter customers" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
@@ -73,6 +82,8 @@ function Accounts() {
           </Link>
         ))}
       </nav>
+
+      {filter === "overdue" && accounts.length > 0 && bulk && <RemindAll count={accounts.length} />}
 
       <Panel flush>
         {accounts.length > 0 ? (
@@ -152,13 +163,35 @@ function Accounts() {
         )}
       </Panel>
 
-      <Link
-        to="/accounts/new"
-        aria-label="Add customer"
-        className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95 md:hidden"
-      >
-        <PlusIcon className="size-6" />
-      </Link>
+      {canRecord && (
+        <Link
+          to="/accounts/new"
+          aria-label="Add customer"
+          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95 md:hidden"
+        >
+          <PlusIcon className="size-6" />
+        </Link>
+      )}
+    </div>
+  )
+}
+
+/** On the overdue list: remind everyone on it at once, through Bangkee. */
+function RemindAll({ count }: { count: number }) {
+  const remind = useMutation({
+    mutationFn: () => api.remindAllOverdue(),
+    onSuccess: async (result) => {
+      const skipped = result.outcomes.filter((o) => o.status === "skipped" || o.status === "failed").length
+      flashNotice(skipped > 0 ? `${result.notice} ${skipped} could not be reminded through Bangkee — open them to remind by WhatsApp or SMS.` : result.notice)
+      await refreshAll()
+    },
+  })
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border bg-card px-4 py-3 sm:px-5">
+      <span className="text-sm text-muted-foreground">{count === 1 ? "1 customer is overdue." : `${count} customers are overdue.`}</span>
+      <Button size="sm" disabled={remind.isPending} onClick={() => remind.mutate()}>
+        <BellRingIcon /> Remind all
+      </Button>
     </div>
   )
 }

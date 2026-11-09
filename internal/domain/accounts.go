@@ -149,18 +149,28 @@ func DestroyAccount(ctx context.Context, q *store.Queries, accountID int64) ([]s
 	}
 	var keys []string
 	steps := []func() error{
+		// Documents first: detaching the screenshots removes every attachment
+		// row on these entries, which would leave the documents' files behind.
 		func() error {
-			keys, err = DetachScreenshots(ctx, q, transactionIDs)
+			keys, err = detachDocuments(ctx, q, transactionIDs)
+			return err
+		},
+		func() error {
+			shots, err := DetachScreenshots(ctx, q, transactionIDs)
+			keys = append(keys, shots...)
 			return err
 		},
 		func() error {
 			return q.DeleteAuditEvents(ctx, store.DeleteAuditEventsParams{AuditableType: TransactionRecordType, Ids: transactionIDs})
 		},
 		func() error { return q.DeleteLineItemsOf(ctx, transactionIDs) },
+		func() error { return q.DeleteTransactionResponses(ctx, transactionIDs) },
 		func() error { return q.DeleteAccountTransactions(ctx, accountID) },
 		func() error {
 			return q.DeleteAuditEvents(ctx, store.DeleteAuditEventsParams{AuditableType: "Account", Ids: []int64{accountID}})
 		},
+		func() error { return q.DeleteAccountReminders(ctx, accountID) },
+		func() error { return q.DeleteAccountInstallmentPlans(ctx, accountID) },
 		func() error { return q.DeleteAccount(ctx, accountID) },
 	}
 	for _, step := range steps {

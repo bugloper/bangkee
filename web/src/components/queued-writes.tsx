@@ -1,6 +1,7 @@
 import { CloudOffIcon, RefreshCwIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import { AppLink } from "@/components/app-link"
 import { Count, Panel } from "@/components/kit"
 import { Button } from "@/components/ui/button"
 import { confirm } from "@/lib/confirm"
@@ -81,5 +82,35 @@ export function QueuedWrites({ queueKey, caption }: { queueKey: string; caption?
         })}
       </div>
     </Panel>
+  )
+}
+
+/**
+ * The whole device's queue in one line, for the home screen: how many
+ * entries are still waiting to send, and — so none is lost without anyone
+ * noticing — which the server refused, with a link to each customer.
+ */
+export function QueueSummary() {
+  const entries = useQueue("")
+  if (entries.length === 0) return null
+  const refused = entries.filter((entry) => entry.rejected)
+  const waiting = entries.length - refused.length
+  const accounts = [...new Set(refused.map((entry) => entry.queueKey))].filter((key) => key.startsWith("account:"))
+  return (
+    <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[1.25rem] border px-4 py-3 text-sm sm:px-5", refused.length > 0 ? "border-owed/40 bg-owed/5" : "border-warn/40 bg-warn/5")}>
+      <CloudOffIcon className={cn("size-4 shrink-0", refused.length > 0 ? "text-owed" : "text-warn")} />
+      <span className="min-w-0 flex-1">
+        {waiting > 0 && `${waiting} ${waiting === 1 ? "entry is" : "entries are"} on this phone, waiting to send. `}
+        {refused.length > 0 && `${refused.length} ${refused.length === 1 ? "was" : "were"} refused and need re-entering: `}
+        {accounts.map((key, i) => (
+          <span key={key}>
+            {i > 0 && ", "}
+            <AppLink href={`/accounts/${key.slice("account:".length)}`} className="font-medium text-primary hover:underline">
+              open customer
+            </AppLink>
+          </span>
+        ))}
+      </span>
+    </div>
   )
 }

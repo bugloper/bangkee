@@ -11,11 +11,13 @@ import {
   ShieldCheckIcon,
   ShoppingBagIcon,
   StoreIcon,
+  TruckIcon,
 } from "lucide-react"
 
 import { api } from "@/api/client"
 import type { CustomerDashboard, LedgerEntry, Me, OwnerDashboard } from "@/api/types"
 import { AppLink } from "@/components/app-link"
+import { DayBars } from "@/components/charts"
 import { Loading } from "@/components/form"
 import { Count, Empty, Initial, Money, Panel, Row, Rows, Stat, StatGrid } from "@/components/kit"
 import { InstallCard } from "@/components/pwa"
@@ -74,6 +76,7 @@ function Direction({ kind }: { kind: LedgerEntry["kind"] }) {
 function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
   usePage(data.shop.name)
   const subscription = me.subscription
+  const owns = me.permissions.includes("owner")
   return (
     <div className="grid gap-6">
       <section className="relative overflow-hidden rounded-[1.25rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-5 text-white shadow-lg shadow-primary/25 sm:p-7">
@@ -84,23 +87,94 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
             <div className="tabular mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{ngultrum(data.total_outstanding_cents)}</div>
             <div className="mt-2 text-sm text-white/75">{pluralize(data.customers_count, "customer")} · updated just now</div>
           </div>
-          <AppLink href="/accounts/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90 max-sm:w-full" })}>
-            <PlusIcon /> Add customer
-          </AppLink>
+          {me.permissions.includes("record") && (
+            <AppLink href="/accounts/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90 max-sm:w-full" })}>
+              <PlusIcon /> Add customer
+            </AppLink>
+          )}
         </div>
       </section>
 
       <InstallCard />
 
       <StatGrid>
-        <Stat label="Customers" value={data.customers_count} href="/accounts" />
-        <Stat label="Repaid this month" value={ngultrum(data.repaid_month_cents)} tone="paid" />
-        <Stat label="Overdue accounts" value={data.overdue_count} tone={data.overdue_count > 0 ? "owed" : undefined} />
-        <Stat label="Items" value={data.items_count} href="/menu_items" />
+        <Stat label="Credit given today" value={ngultrum(data.credit_today_cents)} tone="owed" />
+        <Stat label="Collected today" value={ngultrum(data.payments_today_cents)} tone="paid" />
+        <Stat
+          label="Overdue"
+          value={ngultrum(data.overdue_cents)}
+          tone={data.overdue_count > 0 ? "warn" : undefined}
+          href="/accounts?filter=overdue"
+          hint={pluralize(data.overdue_count, "customer")}
+        />
+        <Stat label="Customers owing" value={data.owing_count} href="/accounts?filter=outstanding" hint={`of ${data.customers_count}`} />
       </StatGrid>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="grid gap-6">
+          <Panel
+            title="Collected, last 14 days"
+            description={`${ngultrum(data.trend.reduce((sum, day) => sum + day.payment_cents, 0))} in · ${ngultrum(data.trend.reduce((sum, day) => sum + day.credit_cents, 0))} given on credit · ${ngultrum(data.repaid_month_cents)} this month`}
+            footer={
+              <AppLink href="/insights" className="text-[0.8125rem] font-medium text-primary hover:underline">
+                Month by month in Insights
+              </AppLink>
+            }
+          >
+            <DayBars label="Payments collected each day" bars={data.trend.map((day) => ({ day: day.day, cents: day.payment_cents, aside: `${ngultrum(day.credit_cents)} given on credit` }))} />
+          </Panel>
+
+          {data.disputed.length > 0 && (
+            <Panel
+              flush
+              title={
+                <span className="flex items-center gap-2">
+                  Flagged by customers <Count tone="owed">{data.disputed.length}</Count>
+                </span>
+              }
+              description="They say these entries are wrong. The balance is unchanged until you edit or cross one out."
+            >
+              <Rows>
+                {data.disputed.map((entry) => (
+                  <Row
+                    key={entry.id}
+                    href={`/accounts/${entry.account.id}?entry=${entry.id}`}
+                    leading={<Direction kind={entry.kind} />}
+                    title={`${entry.kind === "credit" ? "Credit" : "Payment"} · ${entry.account.display_name}`}
+                    subtitle={<span className="text-owed">“{[...entry.responses].reverse().find((r) => r.action === "disputed")?.note ?? "Flagged"}”</span>}
+                    trailing={<Money cents={entry.amount_cents} tone={entry.kind === "credit" ? "owed" : "paid"} />}
+                    chevron
+                  />
+                ))}
+              </Rows>
+            </Panel>
+          )}
+
+          {data.late_installments.length > 0 && (
+            <Panel
+              flush
+              title={
+                <span className="flex items-center gap-2">
+                  Late installments <Count tone="owed">{data.late_installments.length}</Count>
+                </span>
+              }
+            >
+              <Rows>
+                {data.late_installments.map((plan) => (
+                  <Row
+                    key={plan.id}
+                    href={`/accounts/${plan.account_id}/installments`}
+                    leading={<Initial text={plan.customer_name} tone="owed" />}
+                    title={plan.customer_name}
+                    subtitle={<span className="text-warn">{plan.overdue_count === 1 ? "1 installment late" : `${plan.overdue_count} installments late`}</span>}
+                    trailing={<Money cents={plan.overdue_cents} tone="owed" />}
+                    chevron
+                  />
+                ))}
+              </Rows>
+            </Panel>
+          )}
+
           {data.overdue_accounts.length > 0 && (
             <Panel
               flush
@@ -153,19 +227,42 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
           </Panel>
         </div>
 
+        <div className="grid gap-6">
+        {data.top_accounts.length > 0 && (
+          <Panel flush title="Largest balances">
+            <Rows>
+              {data.top_accounts.map((account) => (
+                <Row
+                  key={account.id}
+                  href={`/accounts/${account.id}`}
+                  leading={<Initial text={account.display_name} src={account.customer_photo_url} />}
+                  title={account.display_name}
+                  subtitle={account.overdue ? <span className="text-warn">{pluralize(account.days_overdue, "day")} overdue</span> : account.last_activity_at ? `Last entry ${timeAgoInWords(account.last_activity_at)} ago` : "No entries yet"}
+                  trailing={<Money cents={account.balance_cents} tone="owed" />}
+                  chevron
+                />
+              ))}
+            </Rows>
+          </Panel>
+        )}
+
         <Panel flush title="Shop">
           <Rows>
             <Row href="/menu_items" leading={<RowIcon icon={PackageIcon} />} title="Items" subtitle="What you sell, to pick from when recording credit" chevron />
-            <Row href="/bank_accounts" leading={<RowIcon icon={LandmarkIcon} />} title="Bank details" subtitle="What customers see when they pay you" chevron />
-            <Row
-              href="/subscription"
-              leading={<RowIcon icon={CreditCardIcon} />}
-              title="Billing"
-              subtitle={subscription ? `${subscription.status_label} · ${subscription.summary}` : "No subscription"}
-              chevron
-            />
+            {owns && <Row href="/bank_accounts" leading={<RowIcon icon={LandmarkIcon} />} title="Bank details" subtitle="What customers see when they pay you" chevron />}
+            <Row href="/suppliers" leading={<RowIcon icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
+            {owns && (
+              <Row
+                href="/subscription"
+                leading={<RowIcon icon={CreditCardIcon} />}
+                title="Billing"
+                subtitle={subscription ? `${subscription.status_label} · ${subscription.summary}` : "No subscription"}
+                chevron
+              />
+            )}
           </Rows>
         </Panel>
+        </div>
       </div>
     </div>
   )

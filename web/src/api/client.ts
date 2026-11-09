@@ -24,6 +24,10 @@ export class ApiError extends Error {
   get writeLocked(): boolean {
     return this.body.code === "write_locked"
   }
+  /** The shop's plan does not include this; Billing is where to change it. */
+  get planRequired(): boolean {
+    return this.body.code === "plan_required"
+  }
   get unauthenticated(): boolean {
     return this.status === 401
   }
@@ -65,6 +69,8 @@ const qs = (params: Record<string, string | undefined | null>) => {
   return encoded ? `?${encoded}` : ""
 }
 
+export type StatementRange = { from?: string; to?: string }
+
 export const api = {
   // identity
   me: () => get<T.Me>("/api/me"),
@@ -92,7 +98,9 @@ export const api = {
   deleteAccount: (id: number) => del<T.Notice>(`/api/accounts/${id}`),
   createCredit: (accountId: number, input: T.CreditInput) => post<T.RecordedEntry>(`/api/accounts/${accountId}/credits`, input),
   createPayment: (accountId: number, input: T.PaymentInput) => post<T.RecordedEntry>(`/api/accounts/${accountId}/payments`, input),
-  statement: (accountId: number) => get<T.Statement>(`/api/accounts/${accountId}/statement`),
+  statement: (accountId: number, range: StatementRange = {}) => get<T.Statement>(`/api/accounts/${accountId}/statement${qs(range)}`),
+  /** The PDF, for a link or a download — not fetched as JSON. */
+  statementPdfUrl: (accountId: number, range: StatementRange = {}) => `/api/accounts/${accountId}/statement.pdf${qs(range)}`,
   invite: (accountId: number) => get<T.Invite>(`/api/accounts/${accountId}/invite`),
   pinReset: (accountId: number) => post<T.Invite>(`/api/accounts/${accountId}/pin_reset`),
   /** A payment with a photo of the customer's payment screen goes up as form data, the photo as "screenshot". */
@@ -100,8 +108,46 @@ export const api = {
 
   transaction: (id: number) => get<T.TransactionDetail>(`/api/transactions/${id}`),
   updateTransaction: (id: number, input: T.TransactionUpdateInput) => patch<T.Notice & { account_id: number }>(`/api/transactions/${id}`, input),
+  receipt: (transactionId: number) => get<{ receipt: T.Receipt }>(`/api/transactions/${transactionId}/receipt`),
+  receiptPdfUrl: (transactionId: number) => `/api/transactions/${transactionId}/receipt.pdf`,
+  receipts: (accountId: number) => get<{ account: T.AccountSummary; receipts: T.Receipt[] }>(`/api/accounts/${accountId}/receipts`),
+  confirmEntry: (id: number) => post<T.Notice>(`/api/transactions/${id}/confirm`),
+  disputeEntry: (id: number, reason: string) => post<T.Notice>(`/api/transactions/${id}/dispute`, { reason }),
+  replyToDispute: (id: number, note: string) => post<T.Notice>(`/api/transactions/${id}/dispute_reply`, { note }),
+  confirmAll: (accountId: number) => post<T.Notice & { confirmed: number }>(`/api/accounts/${accountId}/confirm_all`),
+  installmentPlans: (accountId: number) => get<{ plans: T.InstallmentPlan[]; balance_cents: T.Cents }>(`/api/accounts/${accountId}/installments`),
+  createInstallmentPlan: (accountId: number, input: { total: string; count: number; frequency: string; first_due_on: string; notes?: string }) =>
+    post<T.Notice & { plan_id: number }>(`/api/accounts/${accountId}/installments`, input),
+  cancelInstallmentPlan: (planId: number) => post<T.Notice>(`/api/installment_plans/${planId}/cancel`),
+  remind: (accountId: number) => post<T.Notice & { outcome: T.ReminderOutcome }>(`/api/accounts/${accountId}/remind`),
+  logReminder: (accountId: number, channel: "whatsapp" | "sms") => post<T.Notice>(`/api/accounts/${accountId}/reminders/log`, { channel }),
+  accountReminders: (accountId: number) => get<{ paused: boolean; reminders: T.Reminder[] }>(`/api/accounts/${accountId}/reminders`),
+  pauseReminders: (accountId: number, paused: boolean) => patch<T.Notice>(`/api/accounts/${accountId}/reminders`, { paused }),
+  remindAllOverdue: (accountIds: number[] = []) => post<T.Notice & { sent: number; outcomes: T.ReminderOutcome[] }>("/api/reminders/overdue", { account_ids: accountIds }),
+  reminderSettings: () => get<T.ReminderSettings>("/api/shop/reminders"),
+  updateReminderSettings: (input: { enabled: boolean; every_days: number; hour: number }) => patch<T.Notice>("/api/shop/reminders", input),
+  setMyReminders: (optOut: boolean) => patch<T.Notice>("/api/me/reminders", { opt_out: optOut }),
+  /** The file goes up as form data, field "file". */
+  addDocument: (transactionId: number, form: FormData) => post<T.Notice>(`/api/transactions/${transactionId}/documents`, form),
+  removeDocument: (transactionId: number, documentId: number) => del<T.Notice>(`/api/transactions/${transactionId}/documents/${documentId}`),
   crossOutTransaction: (id: number) => post<T.Notice & { account_id: number }>(`/api/transactions/${id}/cross_out`),
 
+  suppliers: () => get<{ suppliers: T.Supplier[]; total_payable_cents: T.Cents; plan_allows: boolean }>("/api/suppliers"),
+  supplier: (id: number) => get<{ supplier: T.Supplier; ledger: T.SupplierEntry[] }>(`/api/suppliers/${id}`),
+  createSupplier: (input: T.SupplierInput) => post<T.Notice & { supplier_id: number }>("/api/suppliers", input),
+  updateSupplier: (id: number, input: T.SupplierInput) => patch<T.Notice>(`/api/suppliers/${id}`, input),
+  deleteSupplier: (id: number) => del<T.Notice>(`/api/suppliers/${id}`),
+  recordSupplierEntry: (id: number, kind: "purchases" | "payments", input: T.SupplierEntryInput) => post<T.Notice & { duplicate: boolean }>(`/api/suppliers/${id}/${kind}`, input),
+  crossOutSupplierEntry: (entryId: number) => post<T.Notice & { supplier_id: number }>(`/api/supplier_entries/${entryId}/cross_out`),
+  supplierStatement: (id: number, range: StatementRange = {}) => get<{ supplier: T.Supplier; statement: T.Statement["statement"] }>(`/api/suppliers/${id}/statement${qs(range)}`),
+  supplierStatementPdfUrl: (id: number, range: StatementRange = {}) => `/api/suppliers/${id}/statement.pdf${qs(range)}`,
+  staff: () => get<T.StaffList>("/api/staff"),
+  inviteStaff: (input: { name: string; email_address: string; role: T.StaffRole }) => post<T.Notice & { join_path: string }>("/api/staff/invitations", input),
+  withdrawStaffInvitation: (id: number) => del<T.Notice>(`/api/staff/invitations/${id}`),
+  changeStaffRole: (id: number, role: T.StaffRole) => patch<T.Notice>(`/api/staff/${id}`, { role }),
+  removeStaff: (id: number) => del<T.Notice>(`/api/staff/${id}`),
+  staffInvitation: (token: string) => get<{ shop_name: string; name: string; email_address: string; role: T.StaffRole; role_name: string }>(`/api/staff_invitations/${token}`),
+  acceptStaffInvitation: (token: string, input: { name: string; password: string }) => post<T.Notice>(`/api/staff_invitations/${token}/accept`, input),
   bankAccounts: () => get<{ bank_accounts: T.BankAccount[] }>("/api/bank_accounts"),
   bankAccount: (id: number) => get<T.BankAccount>(`/api/bank_accounts/${id}`),
   createBankAccount: (input: T.BankAccountInput) => post<T.Notice>("/api/bank_accounts", input),

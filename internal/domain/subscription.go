@@ -99,6 +99,11 @@ type SubscriptionDTO struct {
 	DaysRemaining      int64      `json:"days_remaining"`
 	GraceDaysRemaining int64      `json:"grace_days_remaining"`
 	WriteLocked        bool       `json:"write_locked"`
+	Plan               string     `json:"plan"`      // basic | pro | business
+	PlanName           string     `json:"plan_name"` // Basic, Pro, Business
+	// Features the shop can use now: its plan's, or all of them in a trial.
+	Features []Feature `json:"features"`
+	MaxStaff int       `json:"max_staff"`
 }
 
 func SubscriptionView(s store.Subscription) SubscriptionDTO {
@@ -107,6 +112,7 @@ func SubscriptionView(s store.Subscription) SubscriptionDTO {
 		Status: status.key(), StatusLabel: status.Label(), Summary: Summary(s), PriceCents: s.PriceCents,
 		CurrentPeriodEnd: s.CurrentPeriodEnd, GraceUntil: s.GraceUntil, DaysRemaining: DaysRemaining(s),
 		GraceDaysRemaining: GraceDaysRemaining(s), WriteLocked: status == Disabled,
+		Plan: s.Plan, PlanName: planName(s.Plan), Features: availableFeatures(&s), MaxStaff: MaxStaffFor(&s, time.Now()),
 	}
 }
 

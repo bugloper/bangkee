@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowDownLeftIcon, ArrowUpRightIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon, BellRingIcon, CalendarClockIcon, CheckCheckIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
 import { useEffect } from "react"
 
 import { api } from "@/api/client"
@@ -12,12 +12,15 @@ import { Empty, Initial, Money, Note, Panel, Row, Rows } from "@/components/kit"
 import { LedgerRow } from "@/components/ledger"
 import { QueuedWrites } from "@/components/queued-writes"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { flashNotice } from "@/lib/flash"
 import { useT } from "@/lib/i18n"
 import { ngultrum, pluralize } from "@/lib/money"
+import { useCan } from "@/lib/me"
 import { usePage } from "@/lib/page"
 import { offerNotifications } from "@/lib/pwa"
-import { dateTime } from "@/lib/time"
+import { refreshAll } from "@/lib/query"
+import { dateTime, longDate } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
 // ?entry= is where a notification opens the account: that entry is highlighted.
@@ -54,6 +57,9 @@ function Balance({ label, cents, overdue }: { label: string; cents: number; over
 /** The owner's view of one customer: balance, the actions, the ledger, the audit trail. */
 function OwnerView({ data }: { data: OwnerData }) {
   const { account } = data
+  const { entry: highlighted } = Route.useSearch()
+  const canRecord = useCan("record")
+  const canManage = useCan("manage")
   usePage(account.display_name, "/accounts")
   const locked = data.write_locked
   const rail = useQuery({ queryKey: ["accounts", "", ""], queryFn: () => api.accounts({}) })
@@ -92,12 +98,19 @@ function OwnerView({ data }: { data: OwnerData }) {
               </div>
             </div>
             <div className="flex gap-1.5">
-              <AppLink href={`/accounts/${account.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                <PencilIcon /> <span className="max-sm:sr-only">Edit</span>
-              </AppLink>
+              {canManage && (
+                <AppLink href={`/accounts/${account.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  <PencilIcon /> <span className="max-sm:sr-only">Edit</span>
+                </AppLink>
+              )}
               <AppLink href={`/accounts/${account.id}/statement`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <PrinterIcon /> <span className="max-sm:sr-only">Statement</span>
               </AppLink>
+              {account.balance_cents > 0 && canRecord && (
+                <AppLink href={`/accounts/${account.id}/reminders`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  <BellRingIcon /> <span className="max-sm:sr-only">Remind</span>
+                </AppLink>
+              )}
             </div>
           </div>
 
@@ -119,7 +132,7 @@ function OwnerView({ data }: { data: OwnerData }) {
             </Note>
           )}
 
-          <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {canRecord && <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             <AppLink
               href={action(`/accounts/${account.id}/credits/new`)}
               className={buttonVariants({ variant: "credit", className: cn(big, locked && "opacity-50") })}
@@ -141,16 +154,24 @@ function OwnerView({ data }: { data: OwnerData }) {
             >
               <ShoppingBasketIcon /> Itemized purchase
             </AppLink>
-          </div>
+          </div>}
         </Panel>
 
         <QueuedWrites queueKey={`account:${account.id}`} />
 
-        <Panel flush title="Transaction history">
+        <Panel
+          flush
+          title="Transaction history"
+          action={
+            <AppLink href={`/accounts/${account.id}/receipts`} className="text-[0.8125rem] font-medium text-primary hover:underline">
+              Receipts
+            </AppLink>
+          }
+        >
           {data.ledger.length > 0 ? (
             <div className="divide-y">
               {data.ledger.map((entry) => (
-                <LedgerRow key={entry.id} entry={entry} owner locked={locked} />
+                <LedgerRow key={entry.id} entry={entry} owner locked={locked} highlight={entry.id === highlighted} joined={account.joined} />
               ))}
             </div>
           ) : (
@@ -160,7 +181,34 @@ function OwnerView({ data }: { data: OwnerData }) {
           )}
         </Panel>
 
-        <Panel flush title={`Invite ${account.customer_name}`}>
+        <Panel flush title="Getting paid">
+          <Rows>
+            <Row
+              href={`/accounts/${account.id}/installments`}
+              leading={
+                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+                  <CalendarClockIcon className="size-4" />
+                </span>
+              }
+              title="Installment plan"
+              subtitle="Agree how they pay back what they owe, in parts"
+              chevron
+            />
+            <Row
+              href={`/accounts/${account.id}/reminders`}
+              leading={
+                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+                  <BellRingIcon className="size-4" />
+                </span>
+              }
+              title="Reminders"
+              subtitle="Remind them what they owe, and see past reminders"
+              chevron
+            />
+          </Rows>
+        </Panel>
+
+        {canRecord && <Panel flush title={`Invite ${account.customer_name}`}>
           <Rows>
             <Row
               href={`/accounts/${account.id}/invite`}
@@ -174,7 +222,7 @@ function OwnerView({ data }: { data: OwnerData }) {
               chevron
             />
           </Rows>
-        </Panel>
+        </Panel>}
 
         {data.audit_events.length > 0 && (
           <Panel flush title="Audit log" footer={<span className="text-xs text-muted-foreground">Append-only — the most recent events for this account.</span>}>
@@ -204,6 +252,16 @@ function CustomerView({ data }: { data: CustomerData }) {
   const { account, shop } = data
   const { entry: highlighted } = Route.useSearch()
   usePage(shop.name, "/dashboard")
+  const plans = useQuery({ queryKey: ["installments", account.id], queryFn: () => api.installmentPlans(account.id) })
+  const plan = plans.data?.plans.find((p) => p.status === "active")
+  const pending = data.ledger.filter((entry) => !entry.crossed_out && entry.confirmation === "pending").length
+  const confirmAll = useMutation({
+    mutationFn: () => api.confirmAll(account.id),
+    onSuccess: async (result) => {
+      flashNotice(result.notice)
+      await refreshAll()
+    },
+  })
   // A customer never records anything, so opening their account at a shop is
   // the moment to offer notifications (once, until they answer).
   useEffect(() => offerNotifications(), [])
@@ -234,6 +292,25 @@ function CustomerView({ data }: { data: CustomerData }) {
 
       </Panel>
 
+      {plan && (
+        <Panel flush>
+          <Rows>
+            <Row
+              href={`/accounts/${account.id}/installments`}
+              leading={
+                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+                  <CalendarClockIcon className="size-4" />
+                </span>
+              }
+              title="Your installment plan"
+              subtitle={plan.next ? `Next: ${ngultrum(plan.next.amount_cents - plan.next.paid_cents)} by ${longDate(plan.next.due_on.slice(0, 10) + "T00:00")}` : "Paid off"}
+              trailing={plan.overdue_count > 0 ? <Badge variant="owed">Late</Badge> : undefined}
+              chevron
+            />
+          </Rows>
+        </Panel>
+      )}
+
       {data.bank_accounts.length > 0 && (
         <Panel title={t("account.how_to_pay", { shop: shop.name })}>
           <BankDetails banks={data.bank_accounts} full />
@@ -241,7 +318,23 @@ function CustomerView({ data }: { data: CustomerData }) {
       )}
       </div>
 
-      <Panel flush title={t("account.transaction_history")}>
+      <Panel
+        flush
+        title={t("account.transaction_history")}
+        description={pending > 0 ? `${pluralize(pending, "entry", "entries")} to check` : undefined}
+        action={
+          <div className="flex items-center gap-3">
+            {pending > 1 && (
+              <Button size="sm" variant="payment" disabled={confirmAll.isPending} onClick={() => confirmAll.mutate()}>
+                <CheckCheckIcon /> Confirm all
+              </Button>
+            )}
+            <AppLink href={`/accounts/${account.id}/receipts`} className="text-[0.8125rem] font-medium text-primary hover:underline">
+              Receipts
+            </AppLink>
+          </div>
+        }
+      >
         {data.ledger.length > 0 ? (
           <div className="divide-y">
             {data.ledger.map((entry) => (

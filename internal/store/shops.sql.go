@@ -69,7 +69,7 @@ func (q *Queries) AdminStats(ctx context.Context, monthStart time.Time) (AdminSt
 }
 
 const allShops = `-- name: AllShops :many
-SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude FROM shops ORDER BY id
+SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude, reminders_enabled, reminder_every_days, reminder_hour FROM shops ORDER BY id
 `
 
 func (q *Queries) AllShops(ctx context.Context) ([]Shop, error) {
@@ -95,6 +95,9 @@ func (q *Queries) AllShops(ctx context.Context) ([]Shop, error) {
 			&i.Hours,
 			&i.Latitude,
 			&i.Longitude,
+			&i.RemindersEnabled,
+			&i.ReminderEveryDays,
+			&i.ReminderHour,
 		); err != nil {
 			return nil, err
 		}
@@ -138,8 +141,20 @@ func (q *Queries) ExtendSubscription(ctx context.Context, arg ExtendSubscription
 	return err
 }
 
+const lockShop = `-- name: LockShop :one
+SELECT id FROM shops WHERE id = $1 FOR UPDATE
+`
+
+// Holds the shop's row until the transaction ends: what is decided about the
+// shop in it (a staff place) is decided one at a time.
+func (q *Queries) LockShop(ctx context.Context, id int64) (int64, error) {
+	row := q.db.QueryRow(ctx, lockShop, id)
+	err := row.Scan(&id)
+	return id, err
+}
+
 const overdueAccounts = `-- name: OverdueAccounts :many
-SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at FROM accounts
+SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts
 WHERE shop_id = $1 AND balance_cents > 0
   AND (last_activity_at IS NULL OR last_activity_at < $2::timestamptz)
 ORDER BY balance_cents DESC, id
@@ -171,6 +186,7 @@ func (q *Queries) OverdueAccounts(ctx context.Context, arg OverdueAccountsParams
 			&i.LastActivityAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RemindersPaused,
 		); err != nil {
 			return nil, err
 		}
@@ -203,6 +219,21 @@ func (q *Queries) ProvisionSubscription(ctx context.Context, arg ProvisionSubscr
 	return err
 }
 
+const setSubscriptionPlan = `-- name: SetSubscriptionPlan :exec
+UPDATE subscriptions SET plan = $2, price_cents = $3, updated_at = now() WHERE id = $1
+`
+
+type SetSubscriptionPlanParams struct {
+	ID         int64
+	Plan       string
+	PriceCents int64
+}
+
+func (q *Queries) SetSubscriptionPlan(ctx context.Context, arg SetSubscriptionPlanParams) error {
+	_, err := q.db.Exec(ctx, setSubscriptionPlan, arg.ID, arg.Plan, arg.PriceCents)
+	return err
+}
+
 const setSubscriptionStatus = `-- name: SetSubscriptionStatus :exec
 UPDATE subscriptions SET status = $2, disabled_at = $3, updated_at = now() WHERE id = $1
 `
@@ -219,7 +250,7 @@ func (q *Queries) SetSubscriptionStatus(ctx context.Context, arg SetSubscription
 }
 
 const shopByID = `-- name: ShopByID :one
-SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude FROM shops WHERE id = $1
+SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude, reminders_enabled, reminder_every_days, reminder_hour FROM shops WHERE id = $1
 `
 
 func (q *Queries) ShopByID(ctx context.Context, id int64) (Shop, error) {
@@ -239,6 +270,9 @@ func (q *Queries) ShopByID(ctx context.Context, id int64) (Shop, error) {
 		&i.Hours,
 		&i.Latitude,
 		&i.Longitude,
+		&i.RemindersEnabled,
+		&i.ReminderEveryDays,
+		&i.ReminderHour,
 	)
 	return i, err
 }
@@ -318,7 +352,7 @@ func (q *Queries) ShopDirectory(ctx context.Context, arg ShopDirectoryParams) ([
 }
 
 const shopForOwner = `-- name: ShopForOwner :one
-SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude FROM shops WHERE owner_id = $1 ORDER BY id LIMIT 1
+SELECT id, owner_id, name, kind, credit_due_days, created_at, updated_at, about, location, phone, hours, latitude, longitude, reminders_enabled, reminder_every_days, reminder_hour FROM shops WHERE owner_id = $1 ORDER BY id LIMIT 1
 `
 
 func (q *Queries) ShopForOwner(ctx context.Context, ownerID int64) (Shop, error) {
@@ -338,6 +372,9 @@ func (q *Queries) ShopForOwner(ctx context.Context, ownerID int64) (Shop, error)
 		&i.Hours,
 		&i.Latitude,
 		&i.Longitude,
+		&i.RemindersEnabled,
+		&i.ReminderEveryDays,
+		&i.ReminderHour,
 	)
 	return i, err
 }
@@ -362,17 +399,6 @@ func (q *Queries) SubscriptionForShop(ctx context.Context, shopID int64) (Subscr
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const totalOutstanding = `-- name: TotalOutstanding :one
-SELECT COALESCE(SUM(balance_cents), 0)::bigint FROM accounts WHERE shop_id = $1 AND balance_cents > 0
-`
-
-func (q *Queries) TotalOutstanding(ctx context.Context, shopID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, totalOutstanding, shopID)
-	var column_1 int64
-	err := row.Scan(&column_1)
-	return column_1, err
 }
 
 const updateShopProfile = `-- name: UpdateShopProfile :exec

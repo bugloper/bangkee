@@ -89,7 +89,9 @@ function Review({ payment }: { payment: AdminPayment }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-2">
           <span className="tabular text-lg font-semibold tracking-tight">{ngultrum(payment.amount_cents)}</span>
-          <span className="text-sm text-muted-foreground">for {period}</span>
+          <span className="text-sm text-muted-foreground">
+            for {period} of {payment.plan_name}
+          </span>
         </div>
         <div className="mt-1 text-sm">
           <span className="font-medium">{payment.shop.name}</span> <span className="text-muted-foreground">· {payment.submitted_by_name} · {dateTime(payment.created_at)}</span>
@@ -110,7 +112,7 @@ function Review({ payment }: { payment: AdminPayment }) {
                 variant="payment"
                 disabled={approve.isPending}
                 onClick={async () => {
-                  const ok = await confirm(`Approve ${ngultrum(payment.amount_cents)}?|${payment.shop.name} is extended by ${period} and any lockout is cleared.`)
+                  const ok = await confirm(`Approve ${ngultrum(payment.amount_cents)}?|${payment.shop.name} is extended by ${period} on ${payment.plan_name}, and any lockout is cleared.`)
                   if (ok) approve.mutate()
                 }}
               >

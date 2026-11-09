@@ -16,9 +16,6 @@ WHERE shop_id = $1 AND balance_cents > 0
   AND (last_activity_at IS NULL OR last_activity_at < sqlc.arg(threshold)::timestamptz)
 ORDER BY balance_cents DESC, id;
 
--- name: TotalOutstanding :one
-SELECT COALESCE(SUM(balance_cents), 0)::bigint FROM accounts WHERE shop_id = $1 AND balance_cents > 0;
-
 -- name: ShopCounts :one
 SELECT (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = $1)::bigint AS menu_items,
        (SELECT COUNT(*) FROM bank_accounts b WHERE b.shop_id = $1)::bigint AS bank_accounts,
@@ -33,6 +30,9 @@ INSERT INTO subscriptions (shop_id, status, current_period_end, grace_until, pri
 -- name: ExtendSubscription :exec
 UPDATE subscriptions SET status = 1, current_period_end = $2, grace_until = $3, disabled_at = NULL, updated_at = now()
 WHERE id = $1;
+
+-- name: SetSubscriptionPlan :exec
+UPDATE subscriptions SET plan = $2, price_cents = $3, updated_at = now() WHERE id = $1;
 
 -- name: SetSubscriptionStatus :exec
 UPDATE subscriptions SET status = $2, disabled_at = $3, updated_at = now() WHERE id = $1;
@@ -63,3 +63,8 @@ WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
   AND (sqlc.narg(search)::varchar IS NULL OR s.name ILIKE '%' || sqlc.narg(search) || '%')
 ORDER BY s.name, s.id
 LIMIT 200;
+
+-- name: LockShop :one
+-- Holds the shop's row until the transaction ends: what is decided about the
+-- shop in it (a staff place) is decided one at a time.
+SELECT id FROM shops WHERE id = $1 FOR UPDATE;

@@ -25,8 +25,8 @@ func (s *Server) settings(c *echo.Context) error {
 		return err
 	}
 	counts := store.ShopCountsRow{}
-	if cur.User.Role == domain.RoleShopOwner {
-		shop, err := domain.ShopForOwner(c.Request().Context(), s.Q, cur.User.ID)
+	if cur.User.Role != domain.RoleCustomer {
+		shop, _, err := s.shopOf(c.Request().Context(), cur.User)
 		if err != nil {
 			return err
 		}
@@ -41,12 +41,34 @@ func (s *Server) settings(c *echo.Context) error {
 	})
 }
 
-// pricing is the homepage's pricing section: one plan, billed annually.
+// pricing is the homepage's pricing section: the plans, billed annually.
 func (s *Server) pricing(c *echo.Context) error {
 	operator := s.Cfg.Operator
 	return c.JSON(http.StatusOK, M{
 		"monthly_price_cents": operator.PriceCents, "annual_price_cents": operator.AnnualPriceCents(), "trial_months": domain.TrialMonths,
+		"plans": s.planViews(nil),
 	})
+}
+
+// planViews are the plans with their prices and what each includes. With a
+// subscription, Basic is priced at what that shop pays for it now.
+func (s *Server) planViews(sub *store.Subscription) []M {
+	out := make([]M, 0, len(domain.Plans))
+	for _, plan := range domain.Plans {
+		monthly := s.Cfg.Operator.PlanPriceCents(plan.Key)
+		if sub != nil && sub.Plan == plan.Key {
+			monthly = sub.PriceCents
+		}
+		features := make([]string, 0, len(plan.Features))
+		for _, f := range plan.Features {
+			features = append(features, domain.FeatureNames[f])
+		}
+		out = append(out, M{
+			"key": plan.Key, "name": plan.Name, "summary": plan.Summary, "features": features, "max_staff": plan.MaxStaff,
+			"monthly_price_cents": monthly, "annual_price_cents": 12 * monthly,
+		})
+	}
+	return out
 }
 
 // setLanguage stores the reading language on the account, so it follows the
@@ -112,6 +134,7 @@ func (s *Server) billing(c *echo.Context) error {
 	return c.JSON(http.StatusOK, M{
 		"subscription": domain.SubscriptionView(*sub),
 		"payments":     payments,
+		"plans":        s.planViews(sub),
 		"operator": M{
 			"annual_price_cents": operator.AnnualPriceCents(),
 			"bank_name":          operator.BankName, "account_name": operator.AccountName, "account_number": operator.AccountNumber,
@@ -144,9 +167,21 @@ func (s *Server) submitSubscriptionPayment(c *echo.Context) error {
 	var amount int64
 	var months int32
 	err = s.tx(ctx, func(q *store.Queries) error {
+		// A payment that names no plan renews the one the shop is on.
+		plan := formValue(form, "plan")
+		if plan == "" {
+			sub, err := domain.SubscriptionFor(ctx, q, o.Shop.ID)
+			if err != nil {
+				return err
+			}
+			plan = domain.PlanBasic
+			if sub != nil {
+				plan = sub.Plan
+			}
+		}
 		_, amount, months, err = domain.CreateSubscriptionPayment(ctx, q, s.Files, o.Shop.ID, o.User.ID, domain.NewSubscriptionPayment{
 			Amount: formValue(form, "amount"), Months: formValue(form, "months"),
-			Method: formValue(form, "method"), Reference: formValue(form, "reference"),
+			Method: formValue(form, "method"), Reference: formValue(form, "reference"), Plan: plan,
 		}, screenshot)
 		return err
 	})
@@ -259,7 +294,7 @@ func (s *Server) approvePayment(c *echo.Context) error {
 		if err != nil {
 			return err
 		}
-		paidThrough, err = domain.ApproveSubscriptionPayment(ctx, q, row.SubscriptionPayment, admin.User.ID)
+		paidThrough, err = domain.ApproveSubscriptionPayment(ctx, q, row.SubscriptionPayment, admin.User.ID, s.Cfg.Operator.PlanPriceCents)
 		if err == nil && paidThrough == nil {
 			err = apperr.NewRule("That payment was already reviewed.")
 		}
@@ -470,6 +505,10 @@ func (s *Server) attachment(c *echo.Context) error {
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	c.Response().Header().Set("Cache-Control", "private, max-age=86400")
+	header := c.Response().Header()
+	header.Set("Cache-Control", "private, max-age=86400")
+	// Shown in the page, never sniffed into something it is not.
+	header.Set("X-Content-Type-Options", "nosniff")
+	header.Set("Content-Disposition", "inline")
 	return c.Blob(http.StatusOK, contentType, data)
 }

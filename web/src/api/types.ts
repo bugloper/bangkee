@@ -21,7 +21,8 @@ export type Timestamp = string
 export interface ApiErrorBody {
   error?: string
   errors?: string[]
-  code?: "write_locked" | "unauthenticated"
+  code?: "write_locked" | "unauthenticated" | "plan_required"
+  feature?: string // plan_required: which feature
 }
 
 /** Every successful mutation says what happened, in the words the Rails flash used. */
@@ -31,7 +32,7 @@ export interface Notice {
 
 // ------------------------------------------------------------------ identity
 
-export type Role = "shop_owner" | "customer"
+export type Role = "shop_owner" | "customer" | "staff" // staff: works in someone else's shop
 export type Locale = "en" | "dz"
 
 export interface User {
@@ -45,6 +46,7 @@ export interface User {
   display_name: string
   initial: string
   photo_url: string | null // their profile photo, if they added one
+  reminders_opt_out: boolean // a customer who turned payment reminders off
 }
 
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "disabled"
@@ -59,7 +61,14 @@ export interface Subscription {
   days_remaining: number
   grace_days_remaining: number
   write_locked: boolean
+  plan: PlanKey
+  plan_name: string
+  features: Feature[] // what the shop can use now: its plan's, or everything during the trial
+  max_staff: number
 }
+
+export type PlanKey = "basic" | "pro" | "business"
+export type Feature = "automatic_reminders" | "bulk_reminders" | "attachments" | "installments" | "suppliers" | "staff"
 
 export interface ShopRef {
   id: number
@@ -71,7 +80,10 @@ export interface ShopRef {
 /** GET /api/me — the shell's one query. 401 when signed out. */
 export interface Me {
   user: User
-  shop: ShopRef | null
+  shop: ShopRef | null // the owner's shop, or the shop a staff member works in
+  shop_role: "" | "owner" | StaffRole // empty for a customer
+  permissions: Permission[] // what this person may do on the shop's side
+
   subscription: Subscription | null
   badges: {
     admin_payments: number // pending subscription payments (platform admins)
@@ -157,6 +169,26 @@ export interface LedgerEntry {
   running_balance_cents: Cents | null // null for crossed-out rows (BR-11)
   line_items: LineItem[]
   screenshot_url: string | null // a payment's photo of the customer's payment screen; /api/attachments/:id
+  confirmation: "pending" | "confirmed" | "disputed" // the customer's word on it; never moves the balance
+  responses: EntryResponse[] // that word's history, oldest first
+  documents: EntryDocument[] // files the shop attached: receipts, delivery notes, photos
+}
+
+/** A file on an entry, opened at its url (/api/attachments/:id) by the shop and the customer only. */
+export interface EntryDocument {
+  id: number
+  url: string
+  filename: string
+  content_type: string // image/png, image/jpeg, image/webp, image/heic or application/pdf
+  byte_size: number
+  added_at: Timestamp
+}
+
+export interface EntryResponse {
+  action: "confirmed" | "disputed" | "shop_replied" | "changed"
+  note: string | null
+  by: string
+  at: Timestamp
 }
 
 export interface AccountSummary {
@@ -276,15 +308,41 @@ export interface TransactionUpdateInput {
   occurred_at?: string
 }
 
-/** GET /api/accounts/:id/statement — active entries only, oldest first. */
+/** GET /api/accounts/:id/statement?from=&to= — active entries only, oldest first. Days are YYYY-MM-DD in Thimphu; `to` is inclusive. */
 export interface Statement {
   account: AccountSummary
   shop: { id: number; name: string }
-  rows: LedgerEntry[]
-  debit_cents: Cents // total taken on credit
-  credit_cents: Cents // total paid
   viewer: "owner" | "customer"
-  printed_on: Timestamp
+  statement: {
+    from: Timestamp | null
+    to: Timestamp | null
+    opening_cents: Cents // owed before `from`
+    rows: LedgerEntry[]
+    credit_cents: Cents // taken on credit in the range
+    payment_cents: Cents // paid in the range
+    closing_cents: Cents // opening + credit − paid
+    generated_at: Timestamp
+    through_to_today: boolean
+  }
+}
+
+/** A payment written up for the customer: GET /api/transactions/:id/receipt (and .pdf). */
+export interface Receipt {
+  number: string // "R12-000345": the shop, then the payment
+  transaction_id: number
+  account_id: number
+  amount_cents: Cents
+  paid_at: Timestamp
+  payment_method: string | null
+  notes: string | null
+  received_by: string
+  balance_after_cents: Cents | null // the running balance right after it; null when void
+  void: boolean // the shop crossed the payment out
+  voided_at: Timestamp | null
+  shop_name: string
+  shop_line: string
+  customer_name: string
+  customer_phone: string | null
 }
 
 /** GET /api/accounts/:id/invite */
@@ -308,11 +366,19 @@ export interface OwnerDashboard {
   kind: "owner"
   shop: ShopRef
   total_outstanding_cents: Cents
+  owing_count: number // customers who owe something
   customers_count: number
   overdue_accounts: AccountSummary[] // up to 5, biggest first
   overdue_count: number
+  overdue_cents: Cents
+  top_accounts: AccountSummary[] // the 5 largest balances
   items_count: number
+  credit_today_cents: Cents
+  payments_today_cents: Cents
   repaid_month_cents: Cents
+  trend: { day: string; credit_cents: Cents; payment_cents: Cents }[] // the last 14 days, today last
+  disputed: (LedgerEntry & { account: { id: number; display_name: string } })[] // entries customers flagged, oldest first
+  late_installments: (InstallmentPlan & { customer_name: string })[] // running plans with an installment overdue
   recent_transactions: (LedgerEntry & { account: { id: number; display_name: string } })[]
 }
 
@@ -429,6 +495,8 @@ export interface SettingsInfo {
 
 export interface SubscriptionPayment {
   id: number
+  plan: PlanKey
+  plan_name: string
   amount_cents: Cents
   months: number
   payment_method: string | null
@@ -455,8 +523,19 @@ export interface Billing {
   subscription: Subscription
   payments: SubscriptionPayment[]
   operator: OperatorBilling
+  plans: PlanOffer[] // the shop's own plan at the price it pays now
 }
-/** POST /api/subscription/payments — multipart: amount, method, reference, screenshot (months defaults to 12: billed annually) */
+/** POST /api/subscription/payments — multipart: amount, plan, method, reference, screenshot (months defaults to 12: billed annually; plan defaults to the shop's) */
+
+export interface PlanOffer {
+  key: PlanKey
+  name: string
+  summary: string
+  features: string[] // what this plan adds, by name
+  max_staff: number
+  monthly_price_cents: Cents
+  annual_price_cents: Cents
+}
 
 // ------------------------------------------------------------------ pricing
 
@@ -465,6 +544,7 @@ export interface PublicPricing {
   monthly_price_cents: Cents // 15000 = Nu. 150 a month
   annual_price_cents: Cents // 180000 = Nu. 1,800, paid once a year
   trial_months: number // 3: a new shop's free trial
+  plans: PlanOffer[]
 }
 
 // -------------------------------------------------------------------- admin
@@ -596,4 +676,126 @@ export interface AdminTestimonialQueue {
     reviewed_by_name: string | null
     reviewed_at: Timestamp | null
   }[]
+}
+
+// ---------------------------------------------------------------- reminders
+
+/** What happened when one account was reminded. */
+export interface ReminderOutcome {
+  account_id: number
+  customer_name: string
+  status: "sent" | "skipped" | "failed" | "duplicate"
+  detail: string
+}
+
+export interface Reminder {
+  kind: "automatic" | "manual"
+  channel: "app" | "whatsapp" | "sms"
+  status: "sent" | "skipped" | "failed"
+  detail: string | null
+  balance_cents: Cents
+  sent_by_name: string | null
+  at: Timestamp
+}
+
+/** GET /api/shop/reminders */
+export interface ReminderSettings {
+  enabled: boolean
+  every_days: number
+  hour: number // Thimphu
+  every_days_options: number[]
+  first_hour: number
+  last_hour: number
+  credit_due_days: number
+  plan_allows: boolean // automatic reminders are on the shop's plan (or its trial)
+}
+
+// ------------------------------------------------------------ installments
+
+export interface Installment {
+  number: number
+  due_on: Timestamp // a day; read the date part only
+  amount_cents: Cents
+  paid_cents: Cents
+  status: "paid" | "partial" | "overdue" | "due_today" | "upcoming"
+}
+
+/** An agreement to pay in parts; its progress is read from the account's payments since it began. */
+export interface InstallmentPlan {
+  id: number
+  account_id: number
+  total_cents: Cents
+  installment_count: number
+  frequency: "weekly" | "fortnightly" | "monthly"
+  first_due_on: Timestamp
+  notes: string | null
+  status: "active" | "completed" | "cancelled"
+  created_at: Timestamp
+  created_by_name: string
+  ended_at: Timestamp | null
+  paid_cents: Cents
+  remaining_cents: Cents
+  overdue_count: number
+  overdue_cents: Cents
+  next: Installment | null
+  installments: Installment[]
+}
+
+// --------------------------------------------------------------- suppliers
+
+/** Someone the shop buys from. balance_cents is what the shop owes them — never mixed with what customers owe. */
+export interface Supplier {
+  id: number
+  name: string
+  phone: string | null
+  notes: string | null
+  balance_cents: Cents
+  last_activity_at: Timestamp | null
+}
+
+/** A supplier's entries reuse the ledger entry's shape: kind is "purchase" (owed more) or "payment". */
+export type SupplierEntry = Omit<LedgerEntry, "kind"> & { kind: "purchase" | "payment" }
+
+export interface SupplierInput {
+  name: string
+  phone?: string
+  notes?: string
+}
+export interface SupplierEntryInput {
+  amount: string
+  description?: string
+  notes?: string
+  payment_method?: string
+  occurred_at?: string
+  idempotency_key: string
+}
+
+// ------------------------------------------------------------------- staff
+
+export type StaffRole = "manager" | "cashier" | "viewer"
+/** view: read the book · record: customers, credits, payments · manage: change entries, plans, items, suppliers · owner: billing, bank details, settings, staff */
+export type Permission = "view" | "record" | "manage" | "owner"
+
+export interface StaffMember {
+  id: number
+  name: string
+  email_address: string
+  role: StaffRole
+  role_name: string
+  since: Timestamp
+}
+export interface StaffInvitation {
+  id: number
+  name: string
+  email_address: string
+  role: StaffRole
+  role_name: string
+  join_path: string // /staff/join/:token
+  expires_at: Timestamp
+}
+export interface StaffList {
+  members: StaffMember[]
+  invitations: StaffInvitation[]
+  max_staff: number
+  plan_allows: boolean
 }

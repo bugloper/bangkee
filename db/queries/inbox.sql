@@ -61,3 +61,21 @@ WHERE a.record_type = $1 AND a.record_id = ANY(sqlc.arg(record_ids)::bigint[]) A
 
 -- name: DeleteBlobs :exec
 DELETE FROM active_storage_blobs WHERE id = ANY(sqlc.arg(ids)::bigint[]);
+
+-- name: AttachedFiles :many
+-- Records' attachments of one name with what a list shows about each file.
+SELECT a.id, a.record_id, b.filename, COALESCE(b.content_type, '')::varchar AS content_type, b.byte_size, a.created_at
+FROM active_storage_attachments a JOIN active_storage_blobs b ON b.id = a.blob_id
+WHERE a.record_type = $1 AND a.record_id = ANY(sqlc.arg(record_ids)::bigint[]) AND a.name = $2
+ORDER BY a.id;
+
+-- name: CountAttachments :one
+SELECT COUNT(*)::bigint FROM active_storage_attachments WHERE record_type = $1 AND record_id = $2 AND name = $3;
+
+-- name: AttachmentOn :one
+-- One attachment of one name on one record, with its blob: the one about to be removed.
+SELECT a.id, a.blob_id, b.key, b.filename FROM active_storage_attachments a JOIN active_storage_blobs b ON b.id = a.blob_id
+WHERE a.id = $1 AND a.record_type = $2 AND a.record_id = $3 AND a.name = $4;
+
+-- name: DeleteAttachment :exec
+DELETE FROM active_storage_attachments WHERE id = $1;

@@ -39,7 +39,7 @@ export function navItems(me: Me): NavItem[] {
       { label: "Settings", icon: SettingsIcon, path: "/settings", key: "settings" },
     ]
   }
-  if (me.user.role === "shop_owner") {
+  if (me.user.role === "shop_owner" || me.user.role === "staff") {
     return [
       { label: "Home", icon: HouseIcon, path: "/dashboard", key: "dashboard" },
       { label: "Customers", icon: UsersIcon, path: "/accounts", key: "accounts" },

@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"github.com/labstack/echo/v5"
 
 	"bangkee/internal/apperr"
+	"bangkee/internal/document"
 	"bangkee/internal/domain"
 	"bangkee/internal/money"
 	"bangkee/internal/store"
@@ -51,73 +54,15 @@ func (s *Server) dashboard(c *echo.Context) error {
 	ctx, q, user := c.Request().Context(), s.Q, cur.User
 	monthStart := util.MonthStart(time.Now())
 
-	if user.Role == domain.RoleShopOwner {
-		shop, err := domain.ShopForOwner(ctx, q, user.ID)
+	if user.Role == domain.RoleShopOwner || user.Role == domain.RoleStaff {
+		shop, _, err := s.shopOf(ctx, user)
 		if err != nil {
 			return err
 		}
 		if shop == nil {
-			return apperr.NewRule("Your shop is missing.")
+			return apperr.NewForbidden("You are not working in a shop on Bangkee now.")
 		}
-		overdue, err := q.OverdueAccounts(ctx, store.OverdueAccountsParams{ShopID: shop.ID, Threshold: time.Now().AddDate(0, 0, -int(shop.CreditDueDays))})
-		if err != nil {
-			return err
-		}
-		counts, err := q.ShopCounts(ctx, shop.ID)
-		if err != nil {
-			return err
-		}
-		repaid, err := q.RepaidSince(ctx, store.RepaidSinceParams{ShopID: shop.ID, Since: monthStart})
-		if err != nil {
-			return err
-		}
-		rows, err := q.RecentShopTransactions(ctx, shop.ID)
-		if err != nil {
-			return err
-		}
-		entries := make([]domain.Entry, len(rows))
-		accountIDs := make([]int64, len(rows))
-		for i, row := range rows {
-			entries[i] = domain.Entry{Transaction: row.Transaction, CreatedByName: row.CreatedByName}
-			accountIDs[i] = row.Transaction.AccountID
-		}
-		names, err := q.AccountNames(ctx, accountIDs)
-		if err != nil {
-			return err
-		}
-		nameOf := map[int64]string{}
-		for _, n := range names {
-			nameOf[n.ID] = n.CustomerName
-		}
-		ledger, err := domain.Entries(ctx, q, entries)
-		if err != nil {
-			return err
-		}
-		recent := make([]M, 0, len(ledger))
-		for i, entry := range ledger {
-			recent = append(recent, withField(entry, "account", M{"id": accountIDs[i], "display_name": nameOf[accountIDs[i]]}))
-		}
-		photos, err := s.customerPhotos(ctx, overdue)
-		if err != nil {
-			return err
-		}
-		overdueViews := make([]domain.AccountSummary, 0, 5)
-		for i, a := range overdue {
-			if i == 5 {
-				break
-			}
-			overdueViews = append(overdueViews, accountView(a, shop.CreditDueDays, photos))
-		}
-		outstanding, err := q.TotalOutstanding(ctx, shop.ID)
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, M{
-			"kind": "owner", "shop": domain.ShopView(*shop), "total_outstanding_cents": outstanding,
-			"customers_count": counts.Customers, "overdue_accounts": overdueViews, "overdue_count": len(overdue),
-			"items_count":        counts.MenuItems,
-			"repaid_month_cents": repaid, "recent_transactions": recent,
-		})
+		return s.ownerDashboard(c, *shop)
 	}
 
 	accounts, err := q.CustomerAccounts(ctx, &user.ID)
@@ -242,11 +187,6 @@ func (s *Server) createAccount(c *echo.Context) error {
 	return notice(c, created.CustomerName+" added.", M{"account_id": created.ID})
 }
 
-// ownerOf: an owner sees their own shop's accounts; a customer only their own.
-func ownerOf(user store.User, shop store.Shop) bool {
-	return user.Role == domain.RoleShopOwner && shop.OwnerID == user.ID
-}
-
 func (s *Server) visibleAccount(c *echo.Context) (store.Account, store.Shop, bool, error) {
 	cur, err := s.currentUser(c)
 	if err != nil {
@@ -261,7 +201,11 @@ func (s *Server) visibleAccount(c *echo.Context) (store.Account, store.Shop, boo
 	if err != nil {
 		return account, shop, false, err
 	}
-	isOwner := ownerOf(cur.User, shop)
+	// The shop's side (its owner and staff) sees every account; a customer only their own.
+	isOwner, err := s.shopSide(ctx, cur.User, shop)
+	if err != nil {
+		return account, shop, false, err
+	}
 	if !isOwner && (account.CustomerID == nil || *account.CustomerID != cur.User.ID) {
 		return account, shop, false, apperr.NewForbidden("That account is not yours to view.")
 	}
@@ -442,24 +386,12 @@ func (s *Server) record(c *echo.Context, kind int32) error {
 func (s *Server) createCredit(c *echo.Context) error  { return s.record(c, domain.Credit) }
 func (s *Server) createPayment(c *echo.Context) error { return s.record(c, domain.Payment) }
 
-// statement is the printable page an owner hands over or a customer prints
-// for their own records. Crossed-out entries are left out.
+// statement is one account's book over a range of days, for the owner to
+// hand over or the customer to keep: as JSON for the screen, or as a PDF.
 func (s *Server) statement(c *echo.Context) error {
-	account, shop, isOwner, err := s.visibleAccount(c)
+	account, shop, isOwner, statement, err := s.cutStatement(c)
 	if err != nil {
 		return err
-	}
-	rows, err := domain.Ledger(c.Request().Context(), s.Q, account.ID, false)
-	if err != nil {
-		return err
-	}
-	var debit, credit int64
-	for _, row := range rows {
-		if row.Kind == "credit" {
-			debit += row.AmountCents
-		} else {
-			credit += row.AmountCents
-		}
 	}
 	viewer := "customer"
 	if isOwner {
@@ -467,8 +399,56 @@ func (s *Server) statement(c *echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, M{
 		"account": domain.AccountView(account, shop.CreditDueDays), "shop": M{"id": shop.ID, "name": shop.Name},
-		"rows": rows, "debit_cents": debit, "credit_cents": credit, "viewer": viewer, "printed_on": time.Now().UTC(),
+		"statement": statement, "viewer": viewer,
 	})
+}
+
+func (s *Server) statementPDF(c *echo.Context) error {
+	account, shop, _, statement, err := s.cutStatement(c)
+	if err != nil {
+		return err
+	}
+	pdf, err := document.Statement(document.StatementInput{
+		ShopName: shop.Name, ShopLine: shopLine(shop), CustomerName: account.CustomerName, Customer: util.Deref(account.CustomerPhone),
+		Statement: statement,
+	})
+	if err != nil {
+		return err
+	}
+	name := fmt.Sprintf("Statement %s %s.pdf", account.CustomerName, statement.GeneratedAt.In(domain.Thimphu).Format("2006-01-02"))
+	return sendPDF(c, name, pdf)
+}
+
+func (s *Server) cutStatement(c *echo.Context) (store.Account, store.Shop, bool, domain.Statement, error) {
+	account, shop, isOwner, err := s.visibleAccount(c)
+	if err != nil {
+		return account, shop, false, domain.Statement{}, err
+	}
+	from, to, err := domain.ParseStatementRange(c.QueryParam("from"), c.QueryParam("to"))
+	if err != nil {
+		return account, shop, false, domain.Statement{}, err
+	}
+	statement, err := domain.AccountStatement(c.Request().Context(), s.Q, account.ID, from, to)
+	return account, shop, isOwner, statement, err
+}
+
+// shopLine is what a document prints under the shop's name.
+func shopLine(shop store.Shop) string {
+	var parts []string
+	for _, part := range []*string{shop.Location, shop.Phone} {
+		if part != nil && strings.TrimSpace(*part) != "" {
+			parts = append(parts, strings.TrimSpace(*part))
+		}
+	}
+	return strings.Join(parts, " · ")
+}
+
+// sendPDF hands a document over as a download, private to whoever asked.
+func sendPDF(c *echo.Context, filename string, pdf []byte) error {
+	header := c.Response().Header()
+	header.Set("Cache-Control", "private, no-store")
+	header.Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filename}))
+	return c.Blob(http.StatusOK, "application/pdf", pdf)
 }
 
 func (s *Server) invite(c *echo.Context) error {

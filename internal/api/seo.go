@@ -66,7 +66,11 @@ func (s *Server) meta(c *echo.Context) pageMeta {
 				M{
 					"@context": "https://schema.org", "@type": "SoftwareApplication", "name": siteName, "url": base + "/",
 					"applicationCategory": "BusinessApplication", "operatingSystem": "Web, Android, iOS", "description": homeDescription,
-					"offers": M{"@type": "Offer", "price": strconv.FormatInt(s.Cfg.Operator.PriceCents/100, 10), "priceCurrency": "BTN"},
+					"offers": M{
+						"@type": "AggregateOffer", "priceCurrency": "BTN", "offerCount": len(domain.Plans),
+						"lowPrice":  strconv.FormatInt(s.Cfg.Operator.PlanPriceCents(domain.PlanBasic)/100, 10),
+						"highPrice": strconv.FormatInt(s.Cfg.Operator.PlanPriceCents(domain.PlanBusiness)/100, 10),
+					},
 				},
 			},
 		}
