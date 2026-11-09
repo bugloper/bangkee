@@ -4,6 +4,7 @@ import { useState } from "react"
 
 import type { Me } from "@/api/types"
 import { FlashBanners, OfflineBanner, SubscriptionBanner } from "@/components/banners"
+import { QueueSummary } from "@/components/queued-writes"
 import { Logo } from "@/components/brand"
 import { Initial } from "@/components/kit"
 import { navItems, navRoot, type NavItem } from "@/components/nav"
@@ -200,6 +201,7 @@ export function Shell({ me, children }: { me: Me; children: React.ReactNode }) {
           <div className={cn(page.narrow && "mx-auto max-w-2xl md:mx-0")}>
             <div className="mb-4 grid gap-2 empty:hidden">
               <OfflineBanner />
+              {me.permissions.includes("record") && <QueueSummary />}
               <SubscriptionBanner me={me} />
               <FlashBanners />
             </div>
