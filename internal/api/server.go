@@ -40,6 +40,8 @@ type Server struct {
 	secret  []byte
 	limiter *rateLimiter
 	jobs    sync.WaitGroup
+	// places turns a map pin into a street and town (places.go).
+	places *geocoder
 }
 
 func NewServer(db *pgxpool.Pool, cfg config.Config, files *storage.Storage) *Server {
@@ -51,7 +53,7 @@ func NewServer(db *pgxpool.Pool, cfg config.Config, files *storage.Storage) *Ser
 	}
 	return &Server{
 		DB: db, Q: store.New(db), Cfg: cfg, Files: files, Notify: notify.New(db, cfg),
-		secret: secret, limiter: newRateLimiter(),
+		secret: secret, limiter: newRateLimiter(), places: newGeocoder(nominatimURL),
 	}
 }
 
@@ -117,6 +119,7 @@ func (s *Server) routes(g *echo.Group) {
 	g.GET("/shops/:id", s.shopPage)
 	g.GET("/shop/profile", s.shopProfile)
 	g.PATCH("/shop/profile", s.updateShopProfile)
+	g.GET("/places/name", s.placeName)
 	g.POST("/shop/photo", s.setShopPhoto)
 	g.DELETE("/shop/photo", s.removeShopPhoto)
 	g.POST("/me/photo", s.setMyPhoto)

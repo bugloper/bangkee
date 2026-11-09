@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { EyeIcon } from "lucide-react"
-import { lazy, Suspense, useState } from "react"
+import { lazy, Suspense, useEffect, useRef, useState } from "react"
 
 import { api } from "@/api/client"
 import type { ShopProfileForm } from "@/api/types"
@@ -43,6 +43,38 @@ function ProfileForm({ data }: { data: ShopProfileForm }) {
   const [phone, setPhone] = useState(shop.phone ?? "")
   const [hours, setHours] = useState(shop.hours ?? "")
   const [pin, setPin] = useState<Pin | null>(shop.latitude != null && shop.longitude != null ? { latitude: shop.latitude, longitude: shop.longitude } : null)
+  // Placing the pin fills Location with the street and town there — unless
+  // the owner has typed something of their own, which is never overwritten.
+  const [filled, setFilled] = useState<string | null>(null)
+  const filledRef = useRef<string | null>(null)
+  const [finding, setFinding] = useState(false)
+  const latest = useRef(0)
+  const typed = useRef(location)
+  useEffect(() => {
+    typed.current = location
+  }, [location])
+
+  async function placePin(next: Pin | null) {
+    setPin(next)
+    if (!next) return
+    const ask = ++latest.current
+    setFinding(true)
+    try {
+      const { name } = await api.placeName(next.latitude, next.longitude)
+      // A later pin, or the owner's own words, win.
+      const current = typed.current.trim()
+      if (ask === latest.current && name && (current === "" || current === filledRef.current)) {
+        typed.current = name
+        filledRef.current = name
+        setLocation(name)
+        setFilled(name)
+      }
+    } catch {
+      // No words for this spot: the field stays the owner's to fill.
+    } finally {
+      if (ask === latest.current) setFinding(false)
+    }
+  }
 
   const save = useMutation({
     mutationFn: () => api.updateShopProfile({ name, kind, about, location, phone, hours, latitude: pin?.latitude ?? null, longitude: pin?.longitude ?? null }),
@@ -76,12 +108,12 @@ function ProfileForm({ data }: { data: ShopProfileForm }) {
           <Field label="About" hint={`${about.trim().length}/300`} htmlFor="shop_about">
             <Textarea id="shop_about" rows={3} maxLength={300} placeholder="What you sell, what you're known for" value={about} onChange={(e) => setAbout(e.target.value)} />
           </Field>
-          <Field label="Location" htmlFor="shop_location">
+          <Field label="Location" hint={finding ? "Finding the street…" : filled && location === filled ? "Filled from the pin — change it if you like" : undefined} htmlFor="shop_location">
             <Input id="shop_location" maxLength={120} placeholder="Norzin Lam, Thimphu" value={location} onChange={(e) => setLocation(e.target.value)} />
           </Field>
           <Field label="On the map" hint="Optional — customers get directions to the pin">
             <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-muted sm:h-72" />}>
-              <PinPicker value={pin} onChange={setPin} />
+              <PinPicker value={pin} onChange={(next) => void placePin(next)} />
             </Suspense>
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">

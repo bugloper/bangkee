@@ -175,6 +175,8 @@ export const api = {
   publicShopPage: (id: number) => get<T.ShopPage>(`/api/public/shops/${id}`),
   shopProfile: () => get<T.ShopProfileForm>("/api/shop/profile"),
   updateShopProfile: (input: T.ShopProfileInput) => patch<T.Notice>("/api/shop/profile", input),
+  /** A map pin in words — "Norzin Lam, Thimphu" — or "" when there is nothing to say. */
+  placeName: (latitude: number, longitude: number) => get<{ name: string }>(`/api/places/name?lat=${latitude}&lon=${longitude}`),
 
   // marketing
   pricing: () => get<T.PublicPricing>("/api/public/pricing"),
