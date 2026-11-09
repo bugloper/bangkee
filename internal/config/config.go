@@ -68,8 +68,8 @@ func (o OperatorBilling) AnnualPriceCents() int64 { return 12 * o.PriceCents }
 
 // The higher plans' monthly prices. Basic is PriceCents.
 const (
-	ProPriceCents      = 30_000 // Nu. 300 a month
-	BusinessPriceCents = 50_000 // Nu. 500 a month
+	ProPriceCents      = 20_000 // Nu. 200 a month
+	BusinessPriceCents = 30_000 // Nu. 300 a month
 )
 
 // PlanPriceCents is a plan's monthly price for a shop choosing it now.
