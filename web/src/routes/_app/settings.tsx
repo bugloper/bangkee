@@ -225,7 +225,7 @@ function Settings() {
                 subtitle={me.unread_notifications > 0 ? `${me.unread_notifications} unread` : "Everything read"}
                 trailing={
                   me.unread_notifications > 0 && (
-                    <span className="tabular flex size-6 items-center justify-center rounded-full bg-owed text-xs font-semibold text-white">{me.unread_notifications}</span>
+                    <span className="tabular flex size-6 items-center justify-center rounded-full bg-owed text-xs font-semibold text-white dark:text-neutral-950">{me.unread_notifications}</span>
                   )
                 }
                 chevron

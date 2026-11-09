@@ -25,7 +25,12 @@ import { cn } from "@/lib/utils"
 function Badge({ count, className }: { count?: number; className?: string }) {
   if (!count || count <= 0) return null
   return (
-    <span className={cn("tabular inline-flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-owed px-1 text-[0.625rem] font-semibold text-white", className)}>
+    <span
+      className={cn(
+        "tabular inline-flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-owed px-1 text-[0.625rem] font-semibold text-white dark:text-neutral-950",
+        className,
+      )}
+    >
       {count > 99 ? "99+" : count}
     </span>
   )

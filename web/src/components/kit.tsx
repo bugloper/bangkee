@@ -108,12 +108,7 @@ export function Row({
 
 // ------------------------------------------------------------------ numbers
 
-const TONE = {
-  owed: "text-owed",
-  paid: "text-paid",
-  settled: "text-muted-foreground",
-  neutral: "",
-} as const
+const TONE = { owed: "text-owed", paid: "text-paid", settled: "text-muted-foreground", neutral: "" } as const
 
 /**
  * An amount in Ngultrum, in tabular figures. `tone="auto"` reads a balance:
@@ -260,7 +255,7 @@ export function Count({ children, tone = "muted" }: { children: React.ReactNode;
         "tabular inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-semibold",
         tone === "muted" && "bg-muted text-muted-foreground",
         tone === "brand" && "bg-primary text-primary-foreground",
-        tone === "owed" && "bg-owed text-white",
+        tone === "owed" && "bg-owed text-white dark:text-neutral-950",
       )}
     >
       {children}

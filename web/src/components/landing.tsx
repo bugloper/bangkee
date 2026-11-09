@@ -383,14 +383,14 @@ function Demo() {
           <button
             type="button"
             onClick={() => tap("credit")}
-            className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-owed text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+            className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-owed text-sm font-semibold text-white dark:text-neutral-950 shadow-sm transition hover:brightness-110 active:scale-95"
           >
             <ArrowUpRightIcon className="size-4" /> Credit
           </button>
           <button
             type="button"
             onClick={() => tap("payment")}
-            className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-paid text-sm font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-95"
+            className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-paid text-sm font-semibold text-white dark:text-neutral-950 shadow-sm transition hover:brightness-110 active:scale-95"
           >
             <ArrowDownLeftIcon className="size-4" /> Payment
           </button>
@@ -581,7 +581,7 @@ function Faq() {
     ],
     [
       "Does it work without internet?",
-      "Yes. Credits and payments you record with no signal are kept safely on the phone and sent automatically when you are back online. Screens you have already opened stay readable.",
+      "Yes. Credits, payments (with their photos) and supplier entries you record with no signal are kept safely on the phone and sent automatically when you are back online. Screens you have already opened stay readable.",
     ],
     [
       "How do customers join?",
