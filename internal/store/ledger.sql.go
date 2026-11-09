@@ -85,6 +85,48 @@ func (q *Queries) CrossOutTransaction(ctx context.Context, arg CrossOutTransacti
 	return result.RowsAffected(), nil
 }
 
+const dailyTotals = `-- name: DailyTotals :many
+SELECT to_char(t.occurred_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 0), 0)::bigint AS credit_cents,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 1), 0)::bigint AS payment_cents
+FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL AND t.occurred_at >= $2::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type DailyTotalsParams struct {
+	ShopID int64
+	Since  time.Time
+}
+
+type DailyTotalsRow struct {
+	Day          string
+	CreditCents  int64
+	PaymentCents int64
+}
+
+// Credit given and payments received per day, days as Bhutan has them
+// (UTC+6), from `since` on — the dashboard's today and its trend.
+func (q *Queries) DailyTotals(ctx context.Context, arg DailyTotalsParams) ([]DailyTotalsRow, error) {
+	rows, err := q.db.Query(ctx, dailyTotals, arg.ShopID, arg.Since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DailyTotalsRow
+	for rows.Next() {
+		var i DailyTotalsRow
+		if err := rows.Scan(&i.Day, &i.CreditCents, &i.PaymentCents); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertLineItem = `-- name: InsertLineItem :exec
 INSERT INTO line_items (transaction_id, name, quantity, unit_price_cents) VALUES ($1, $2, $3, $4)
 `

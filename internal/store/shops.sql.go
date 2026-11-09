@@ -364,17 +364,6 @@ func (q *Queries) SubscriptionForShop(ctx context.Context, shopID int64) (Subscr
 	return i, err
 }
 
-const totalOutstanding = `-- name: TotalOutstanding :one
-SELECT COALESCE(SUM(balance_cents), 0)::bigint FROM accounts WHERE shop_id = $1 AND balance_cents > 0
-`
-
-func (q *Queries) TotalOutstanding(ctx context.Context, shopID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, totalOutstanding, shopID)
-	var column_1 int64
-	err := row.Scan(&column_1)
-	return column_1, err
-}
-
 const updateShopProfile = `-- name: UpdateShopProfile :exec
 UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, hours = $7,
   latitude = $8, longitude = $9, updated_at = now()

@@ -95,3 +95,13 @@ FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN users u ON u.id 
 WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL
   AND t.occurred_at >= sqlc.arg(since)::timestamptz AND t.occurred_at < sqlc.arg(until)::timestamptz
 ORDER BY t.occurred_at DESC, t.id DESC LIMIT 200;
+
+-- name: DailyTotals :many
+-- Credit given and payments received per day, days as Bhutan has them
+-- (UTC+6), from `since` on — the dashboard's today and its trend.
+SELECT to_char(t.occurred_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 0), 0)::bigint AS credit_cents,
+       COALESCE(SUM(t.amount_cents) FILTER (WHERE t.kind = 1), 0)::bigint AS payment_cents
+FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE a.shop_id = $1 AND t.crossed_out_at IS NULL AND t.occurred_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;

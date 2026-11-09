@@ -308,11 +308,17 @@ export interface OwnerDashboard {
   kind: "owner"
   shop: ShopRef
   total_outstanding_cents: Cents
+  owing_count: number // customers who owe something
   customers_count: number
   overdue_accounts: AccountSummary[] // up to 5, biggest first
   overdue_count: number
+  overdue_cents: Cents
+  top_accounts: AccountSummary[] // the 5 largest balances
   items_count: number
+  credit_today_cents: Cents
+  payments_today_cents: Cents
   repaid_month_cents: Cents
+  trend: { day: string; credit_cents: Cents; payment_cents: Cents }[] // the last 14 days, today last
   recent_transactions: (LedgerEntry & { account: { id: number; display_name: string } })[]
 }
 

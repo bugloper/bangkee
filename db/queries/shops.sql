@@ -16,9 +16,6 @@ WHERE shop_id = $1 AND balance_cents > 0
   AND (last_activity_at IS NULL OR last_activity_at < sqlc.arg(threshold)::timestamptz)
 ORDER BY balance_cents DESC, id;
 
--- name: TotalOutstanding :one
-SELECT COALESCE(SUM(balance_cents), 0)::bigint FROM accounts WHERE shop_id = $1 AND balance_cents > 0;
-
 -- name: ShopCounts :one
 SELECT (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = $1)::bigint AS menu_items,
        (SELECT COUNT(*) FROM bank_accounts b WHERE b.shop_id = $1)::bigint AS bank_accounts,

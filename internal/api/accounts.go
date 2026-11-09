@@ -59,65 +59,7 @@ func (s *Server) dashboard(c *echo.Context) error {
 		if shop == nil {
 			return apperr.NewRule("Your shop is missing.")
 		}
-		overdue, err := q.OverdueAccounts(ctx, store.OverdueAccountsParams{ShopID: shop.ID, Threshold: time.Now().AddDate(0, 0, -int(shop.CreditDueDays))})
-		if err != nil {
-			return err
-		}
-		counts, err := q.ShopCounts(ctx, shop.ID)
-		if err != nil {
-			return err
-		}
-		repaid, err := q.RepaidSince(ctx, store.RepaidSinceParams{ShopID: shop.ID, Since: monthStart})
-		if err != nil {
-			return err
-		}
-		rows, err := q.RecentShopTransactions(ctx, shop.ID)
-		if err != nil {
-			return err
-		}
-		entries := make([]domain.Entry, len(rows))
-		accountIDs := make([]int64, len(rows))
-		for i, row := range rows {
-			entries[i] = domain.Entry{Transaction: row.Transaction, CreatedByName: row.CreatedByName}
-			accountIDs[i] = row.Transaction.AccountID
-		}
-		names, err := q.AccountNames(ctx, accountIDs)
-		if err != nil {
-			return err
-		}
-		nameOf := map[int64]string{}
-		for _, n := range names {
-			nameOf[n.ID] = n.CustomerName
-		}
-		ledger, err := domain.Entries(ctx, q, entries)
-		if err != nil {
-			return err
-		}
-		recent := make([]M, 0, len(ledger))
-		for i, entry := range ledger {
-			recent = append(recent, withField(entry, "account", M{"id": accountIDs[i], "display_name": nameOf[accountIDs[i]]}))
-		}
-		photos, err := s.customerPhotos(ctx, overdue)
-		if err != nil {
-			return err
-		}
-		overdueViews := make([]domain.AccountSummary, 0, 5)
-		for i, a := range overdue {
-			if i == 5 {
-				break
-			}
-			overdueViews = append(overdueViews, accountView(a, shop.CreditDueDays, photos))
-		}
-		outstanding, err := q.TotalOutstanding(ctx, shop.ID)
-		if err != nil {
-			return err
-		}
-		return c.JSON(http.StatusOK, M{
-			"kind": "owner", "shop": domain.ShopView(*shop), "total_outstanding_cents": outstanding,
-			"customers_count": counts.Customers, "overdue_accounts": overdueViews, "overdue_count": len(overdue),
-			"items_count":        counts.MenuItems,
-			"repaid_month_cents": repaid, "recent_transactions": recent,
-		})
+		return s.ownerDashboard(c, *shop)
 	}
 
 	accounts, err := q.CustomerAccounts(ctx, &user.ID)

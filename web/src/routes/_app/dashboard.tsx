@@ -16,6 +16,7 @@ import {
 import { api } from "@/api/client"
 import type { CustomerDashboard, LedgerEntry, Me, OwnerDashboard } from "@/api/types"
 import { AppLink } from "@/components/app-link"
+import { DayBars } from "@/components/charts"
 import { Loading } from "@/components/form"
 import { Count, Empty, Initial, Money, Panel, Row, Rows, Stat, StatGrid } from "@/components/kit"
 import { InstallCard } from "@/components/pwa"
@@ -93,14 +94,32 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
       <InstallCard />
 
       <StatGrid>
-        <Stat label="Customers" value={data.customers_count} href="/accounts" />
-        <Stat label="Repaid this month" value={ngultrum(data.repaid_month_cents)} tone="paid" />
-        <Stat label="Overdue accounts" value={data.overdue_count} tone={data.overdue_count > 0 ? "owed" : undefined} />
-        <Stat label="Items" value={data.items_count} href="/menu_items" />
+        <Stat label="Credit given today" value={ngultrum(data.credit_today_cents)} tone="owed" />
+        <Stat label="Collected today" value={ngultrum(data.payments_today_cents)} tone="paid" />
+        <Stat
+          label="Overdue"
+          value={ngultrum(data.overdue_cents)}
+          tone={data.overdue_count > 0 ? "warn" : undefined}
+          href="/accounts?filter=overdue"
+          hint={pluralize(data.overdue_count, "customer")}
+        />
+        <Stat label="Customers owing" value={data.owing_count} href="/accounts?filter=outstanding" hint={`of ${data.customers_count}`} />
       </StatGrid>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <div className="grid gap-6">
+          <Panel
+            title="Collected, last 14 days"
+            description={`${ngultrum(data.trend.reduce((sum, day) => sum + day.payment_cents, 0))} in · ${ngultrum(data.trend.reduce((sum, day) => sum + day.credit_cents, 0))} given on credit · ${ngultrum(data.repaid_month_cents)} this month`}
+            footer={
+              <AppLink href="/insights" className="text-[0.8125rem] font-medium text-primary hover:underline">
+                Month by month in Insights
+              </AppLink>
+            }
+          >
+            <DayBars label="Payments collected each day" bars={data.trend.map((day) => ({ day: day.day, cents: day.payment_cents, aside: `${ngultrum(day.credit_cents)} given on credit` }))} />
+          </Panel>
+
           {data.overdue_accounts.length > 0 && (
             <Panel
               flush
@@ -153,6 +172,25 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
           </Panel>
         </div>
 
+        <div className="grid gap-6">
+        {data.top_accounts.length > 0 && (
+          <Panel flush title="Largest balances">
+            <Rows>
+              {data.top_accounts.map((account) => (
+                <Row
+                  key={account.id}
+                  href={`/accounts/${account.id}`}
+                  leading={<Initial text={account.display_name} src={account.customer_photo_url} />}
+                  title={account.display_name}
+                  subtitle={account.overdue ? <span className="text-warn">{pluralize(account.days_overdue, "day")} overdue</span> : account.last_activity_at ? `Last entry ${timeAgoInWords(account.last_activity_at)} ago` : "No entries yet"}
+                  trailing={<Money cents={account.balance_cents} tone="owed" />}
+                  chevron
+                />
+              ))}
+            </Rows>
+          </Panel>
+        )}
+
         <Panel flush title="Shop">
           <Rows>
             <Row href="/menu_items" leading={<RowIcon icon={PackageIcon} />} title="Items" subtitle="What you sell, to pick from when recording credit" chevron />
@@ -166,6 +204,7 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
             />
           </Rows>
         </Panel>
+        </div>
       </div>
     </div>
   )
