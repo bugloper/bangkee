@@ -169,7 +169,10 @@ export function ShopCard({ shop, href }: { shop: ShopDirectory["shops"][number];
     <AppLink href={href} className="group flex items-center gap-3 rounded-[1.25rem] border bg-card p-4 transition-colors hover:border-foreground/20 hover:bg-muted/40">
       <Initial text={shop.name} size="lg" src={shop.photo_url} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold">{shop.name}</span>
+        <span className="flex items-center gap-2">
+          <span className="truncate font-semibold">{shop.name}</span>
+          {shop.yours && <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[0.6875rem] font-semibold text-primary">Your shop</span>}
+        </span>
         <span className="block truncate text-sm text-muted-foreground">{shop.kind_label}</span>
         <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
           {shop.location && (
@@ -179,7 +182,7 @@ export function ShopCard({ shop, href }: { shop: ShopDirectory["shops"][number];
               <span aria-hidden>·</span>
             </>
           )}
-          <span className="shrink-0">{pluralize(shop.items_count, "item")}</span>
+          <span className="shrink-0">{shop.items_count > 0 ? pluralize(shop.items_count, "item") : "No items listed yet"}</span>
         </span>
       </span>
       <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />

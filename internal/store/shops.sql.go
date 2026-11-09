@@ -165,6 +165,22 @@ func (q *Queries) CreateShop(ctx context.Context, arg CreateShopParams) (int64, 
 	return id, err
 }
 
+const customerOfShop = `-- name: CustomerOfShop :one
+SELECT EXISTS (SELECT 1 FROM accounts WHERE shop_id = $1 AND customer_id = $2)
+`
+
+type CustomerOfShopParams struct {
+	ShopID     int64
+	CustomerID *int64
+}
+
+func (q *Queries) CustomerOfShop(ctx context.Context, arg CustomerOfShopParams) (bool, error) {
+	row := q.db.QueryRow(ctx, customerOfShop, arg.ShopID, arg.CustomerID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const dailyApproved = `-- name: DailyApproved :many
 SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
        COALESCE(SUM(amount_cents), 0)::bigint AS cents
@@ -490,18 +506,21 @@ func (q *Queries) ShopCounts(ctx context.Context, shopID int64) (ShopCountsRow, 
 
 const shopDirectory = `-- name: ShopDirectory :many
 SELECT s.id, s.name, s.kind, s.location, s.latitude, s.longitude,
-       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count
+       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count,
+       EXISTS (SELECT 1 FROM accounts a WHERE a.shop_id = s.id AND a.customer_id = $1) AS yours
 FROM shops s
-WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
-  AND ($1::varchar IS NULL OR s.kind = $1)
-  AND ($2::varchar IS NULL OR s.name ILIKE '%' || $2 || '%')
-ORDER BY s.name, s.id
+WHERE (EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
+       OR EXISTS (SELECT 1 FROM accounts a WHERE a.shop_id = s.id AND a.customer_id = $1))
+  AND ($2::varchar IS NULL OR s.kind = $2)
+  AND ($3::varchar IS NULL OR s.name ILIKE '%' || $3 || '%')
+ORDER BY yours DESC, s.name, s.id
 LIMIT 200
 `
 
 type ShopDirectoryParams struct {
-	Kind   *string
-	Search *string
+	Customer *int64
+	Kind     *string
+	Search   *string
 }
 
 type ShopDirectoryRow struct {
@@ -512,11 +531,14 @@ type ShopDirectoryRow struct {
 	Latitude   *float64
 	Longitude  *float64
 	ItemsCount int64
+	Yours      bool
 }
 
-// Every shop with something to show a customer: at least one item listed.
+// Every shop with something to show a customer — at least one item listed —
+// and, for a signed-in customer (`customer`), the shops whose book they are
+// in, listed or not. Their own shops come first.
 func (q *Queries) ShopDirectory(ctx context.Context, arg ShopDirectoryParams) ([]ShopDirectoryRow, error) {
-	rows, err := q.db.Query(ctx, shopDirectory, arg.Kind, arg.Search)
+	rows, err := q.db.Query(ctx, shopDirectory, arg.Customer, arg.Kind, arg.Search)
 	if err != nil {
 		return nil, err
 	}
@@ -532,6 +554,7 @@ func (q *Queries) ShopDirectory(ctx context.Context, arg ShopDirectoryParams) ([
 			&i.Latitude,
 			&i.Longitude,
 			&i.ItemsCount,
+			&i.Yours,
 		); err != nil {
 			return nil, err
 		}

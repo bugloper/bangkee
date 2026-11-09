@@ -38,3 +38,29 @@ func TestVisitorsBrowseShopsFromTheHomepage(t *testing.T) {
 	equal(t, visitor.get(owner.get("/api/me").str("user.photo_url")).Status, 401, "a person's photo is not public")
 	equal(t, visitor.get("/api/shops").Status, 401, "the app's directory still needs sign-in")
 }
+
+// A customer always finds the shops whose book they are in, even before the
+// shop lists any items; strangers and the public list still see only shops
+// with items.
+func TestACustomerSeesTheirOwnShopsBeforeItsItemsAreListed(t *testing.T) {
+	a := newApp(t)
+	owner := a.browser()
+	owner.openShop("Nima", "nima@shop.bt")
+	account := owner.addCustomer("Pema")
+	pema := a.browser()
+	pema.join(owner.invitePath(account), "Pema", "pema@example.bt")
+	shopID := owner.get("/api/me").num("shop.id")
+
+	list := pema.get("/api/shops")
+	equal(t, list.len("shops"), 1, "the customer's own shop is listed")
+	equal(t, list.str("shops.0.name"), "Nima's Shop", "by name")
+	equal(t, list.get("shops.0.yours"), any(true), "marked as theirs")
+	equal(t, list.num("shops.0.items_count"), int64(0), "with no items yet")
+	equal(t, pema.get(fmt.Sprintf("/api/shops/%d", shopID)).Status, 200, "and its page opens")
+
+	stranger := a.browser()
+	stranger.openShop("Other", "other@shop.bt")
+	equal(t, stranger.get("/api/shops").len("shops"), 0, "not for someone outside its book")
+	equal(t, stranger.get(fmt.Sprintf("/api/shops/%d", shopID)).Status, 404, "nor its page")
+	equal(t, a.browser().get("/api/public/shops").len("shops"), 0, "nor on the public list")
+}

@@ -41,22 +41,24 @@ func (s *Server) menuFor(ctx context.Context, shopID int64) ([]M, error) {
 	return menu, nil
 }
 
-// shopDirectory is every shop with items to show, by type and name.
+// shopDirectory is every shop with items to show, by type and name, and
+// the signed-in customer's own shops whether they list items or not.
 func (s *Server) shopDirectory(c *echo.Context) error {
-	if _, err := s.currentUser(c); err != nil {
+	cur, err := s.currentUser(c)
+	if err != nil {
 		return err
 	}
-	return s.directory(c)
+	return s.directory(c, &cur.User.ID)
 }
 
-// publicShopDirectory is the same list for the homepage, signed in or not:
-// what a shop shows customers is its own advertisement.
-func (s *Server) publicShopDirectory(c *echo.Context) error { return s.directory(c) }
+// publicShopDirectory is the list for the homepage, signed in or not: only
+// shops with items, as what a shop shows is its own advertisement.
+func (s *Server) publicShopDirectory(c *echo.Context) error { return s.directory(c, nil) }
 
-func (s *Server) directory(c *echo.Context) error {
+func (s *Server) directory(c *echo.Context, customer *int64) error {
 	kind := util.Presence(c.QueryParam("kind"))
 	search := util.Presence(c.QueryParam("q"))
-	rows, err := s.Q.ShopDirectory(c.Request().Context(), store.ShopDirectoryParams{Kind: kind, Search: search})
+	rows, err := s.Q.ShopDirectory(c.Request().Context(), store.ShopDirectoryParams{Kind: kind, Search: search, Customer: customer})
 	if err != nil {
 		return err
 	}
@@ -73,7 +75,7 @@ func (s *Server) directory(c *echo.Context) error {
 		shops = append(shops, M{
 			"id": row.ID, "name": row.Name, "kind": row.Kind, "kind_label": domain.ShopKindLabel(row.Kind),
 			"location": row.Location, "items_count": row.ItemsCount, "photo_url": domain.PhotoURL(photos, &row.ID),
-			"latitude": row.Latitude, "longitude": row.Longitude,
+			"latitude": row.Latitude, "longitude": row.Longitude, "yours": row.Yours,
 		})
 	}
 	return c.JSON(http.StatusOK, M{"shops": shops, "kinds": domain.ShopKinds})
@@ -104,8 +106,18 @@ func (s *Server) page(c *echo.Context, viewer *int64) error {
 		return err
 	}
 	mine := viewer != nil && shop.OwnerID == *viewer
+	// A shop with nothing listed has no public page — except to its owner,
+	// and to the customers in its book.
 	if len(menu) == 0 && !mine {
-		return apperr.ErrNotFound
+		customer := false
+		if viewer != nil {
+			if customer, err = s.Q.CustomerOfShop(ctx, store.CustomerOfShopParams{ShopID: shop.ID, CustomerID: viewer}); err != nil {
+				return err
+			}
+		}
+		if !customer {
+			return apperr.ErrNotFound
+		}
 	}
 	view, err := s.shopProfileView(ctx, shop)
 	if err != nil {

@@ -441,7 +441,18 @@ export interface ShopKind {
 
 /** GET /api/shops?kind=&q= — every shop with items to show. */
 export interface ShopDirectory {
-  shops: { id: number; name: string; kind: string | null; kind_label: string; location: string | null; items_count: number; photo_url: string | null; latitude: number | null; longitude: number | null }[]
+  shops: {
+    id: number
+    name: string
+    kind: string | null
+    kind_label: string
+    location: string | null
+    items_count: number
+    photo_url: string | null
+    latitude: number | null
+    longitude: number | null
+    yours?: boolean // signed-in: the customer is in this shop's book (such shops are listed first, items or not)
+  }[]
   kinds: ShopKind[]
 }
 

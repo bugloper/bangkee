@@ -48,15 +48,22 @@ UPDATE shops SET name = $2, kind = $3, about = $4, location = $5, phone = $6, ho
 WHERE id = $1;
 
 -- name: ShopDirectory :many
--- Every shop with something to show a customer: at least one item listed.
+-- Every shop with something to show a customer — at least one item listed —
+-- and, for a signed-in customer (`customer`), the shops whose book they are
+-- in, listed or not. Their own shops come first.
 SELECT s.id, s.name, s.kind, s.location, s.latitude, s.longitude,
-       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count
+       (SELECT COUNT(*) FROM menu_items m WHERE m.shop_id = s.id)::bigint AS items_count,
+       EXISTS (SELECT 1 FROM accounts a WHERE a.shop_id = s.id AND a.customer_id = sqlc.narg(customer)) AS yours
 FROM shops s
-WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
+WHERE (EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
+       OR EXISTS (SELECT 1 FROM accounts a WHERE a.shop_id = s.id AND a.customer_id = sqlc.narg(customer)))
   AND (sqlc.narg(kind)::varchar IS NULL OR s.kind = sqlc.narg(kind))
   AND (sqlc.narg(search)::varchar IS NULL OR s.name ILIKE '%' || sqlc.narg(search) || '%')
-ORDER BY s.name, s.id
+ORDER BY yours DESC, s.name, s.id
 LIMIT 200;
+
+-- name: CustomerOfShop :one
+SELECT EXISTS (SELECT 1 FROM accounts WHERE shop_id = $1 AND customer_id = $2);
 
 -- name: LockShop :one
 -- Holds the shop's row until the transaction ends: what is decided about the
