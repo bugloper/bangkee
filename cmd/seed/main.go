@@ -154,7 +154,7 @@ func seed() error {
 
 	// §17 — one payment waiting on the operator.
 	_, _, _, err = domain.CreateSubscriptionPayment(ctx, q, files, shopID, owner.ID,
-		domain.NewSubscriptionPayment{Amount: "3600", Months: "12", Method: "Bank transfer", Reference: "BT26081400431"}, shot)
+		domain.NewSubscriptionPayment{Amount: "1800", Months: "12", Method: "Bank transfer", Reference: "BT26081400431", Plan: domain.PlanBasic}, shot)
 	must(err)
 
 	// The shop's items, to pick from when recording a credit.

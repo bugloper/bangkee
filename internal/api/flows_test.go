@@ -274,7 +274,7 @@ func TestEachHostServesOnlyItsOwnPeople(t *testing.T) {
 	equal(t, console.get("/api/me").num("badges.admin_payments"), 1, "queue badge")
 }
 
-func TestOnePlanBilledAnnually(t *testing.T) {
+func TestPlansAreBilledAnnually(t *testing.T) {
 	a := newApp(t)
 	pricing := a.browser().get("/api/public/pricing")
 	equal(t, pricing.num("monthly_price_cents"), 30_000, "monthly")
@@ -286,9 +286,10 @@ func TestOnePlanBilledAnnually(t *testing.T) {
 	billing := owner.get("/api/subscription")
 	equal(t, billing.num("subscription.price_cents"), 30_000, "new shops at the current price")
 	equal(t, billing.num("operator.annual_price_cents"), 360_000, "annual on billing")
-	if !strings.HasPrefix(billing.str("operator.instructions"), "Transfer Nu. 3,600 for a year of Bangkee (Nu. 300 a month, billed annually)") {
+	if !strings.HasPrefix(billing.str("operator.instructions"), "Transfer a year of your chosen plan") {
 		t.Errorf("instructions: %q", billing.str("operator.instructions"))
 	}
+	equal(t, billing.num("plans.0.annual_price_cents"), 360_000, "Basic, at the shop's own price")
 
 	// A payment buys a year unless it says otherwise.
 	owner.multipart("/api/subscription/payments", map[string]string{"amount": "3600"}, "screenshot", screenshot(t))

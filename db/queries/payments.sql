@@ -44,8 +44,8 @@ FROM subscription_payments p JOIN shops s ON s.id = p.shop_id
 WHERE p.id = $1 FOR UPDATE OF p;
 
 -- name: CreateSubscriptionPayment :one
-INSERT INTO subscription_payments (shop_id, submitted_by_id, amount_cents, months, method, reference)
-VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;
+INSERT INTO subscription_payments (shop_id, submitted_by_id, amount_cents, months, method, reference, plan)
+VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;
 
 -- name: ApproveSubscriptionPayment :exec
 UPDATE subscription_payments SET status = 1, reviewed_by_id = $2, reviewed_at = now(), updated_at = now() WHERE id = $1;

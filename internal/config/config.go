@@ -49,8 +49,8 @@ type SMTP struct {
 	Password string
 }
 
-// OperatorBilling is where a shop owner sends their subscription: one plan,
-// priced monthly and billed annually. Manual billing, so this is just the
+// OperatorBilling is where a shop owner sends their subscription: three
+// plans, each priced monthly and billed annually. Manual billing, so this is just the
 // operator's own account details.
 //
 // PriceCents applies to shops opened from now on; a shop keeps the price it
@@ -63,13 +63,29 @@ type OperatorBilling struct {
 	PriceCents    int64
 }
 
-// AnnualPriceCents is what one year of cover costs.
+// AnnualPriceCents is what one year of Basic costs.
 func (o OperatorBilling) AnnualPriceCents() int64 { return 12 * o.PriceCents }
 
+// The higher plans' monthly prices. Basic is PriceCents.
+const (
+	ProPriceCents      = 30_000 // Nu. 300 a month
+	BusinessPriceCents = 50_000 // Nu. 500 a month
+)
+
+// PlanPriceCents is a plan's monthly price for a shop choosing it now.
+func (o OperatorBilling) PlanPriceCents(plan string) int64 {
+	switch plan {
+	case "pro":
+		return ProPriceCents
+	case "business":
+		return BusinessPriceCents
+	}
+	return o.PriceCents
+}
+
 func (o OperatorBilling) Instructions() string {
-	return fmt.Sprintf("Transfer Nu. %s for a year of Bangkee (Nu. %s a month, billed annually) to the account below, "+
-		"then upload the transfer screenshot here. Bangkee approves payments within one working day.",
-		thousands(o.AnnualPriceCents()/100), thousands(o.PriceCents/100))
+	return "Transfer a year of your chosen plan to the account below, then upload the transfer screenshot here. " +
+		"Bangkee approves payments within one working day."
 }
 
 func thousands(n int64) string {

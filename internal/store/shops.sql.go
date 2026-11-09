@@ -207,6 +207,21 @@ func (q *Queries) ProvisionSubscription(ctx context.Context, arg ProvisionSubscr
 	return err
 }
 
+const setSubscriptionPlan = `-- name: SetSubscriptionPlan :exec
+UPDATE subscriptions SET plan = $2, price_cents = $3, updated_at = now() WHERE id = $1
+`
+
+type SetSubscriptionPlanParams struct {
+	ID         int64
+	Plan       string
+	PriceCents int64
+}
+
+func (q *Queries) SetSubscriptionPlan(ctx context.Context, arg SetSubscriptionPlanParams) error {
+	_, err := q.db.Exec(ctx, setSubscriptionPlan, arg.ID, arg.Plan, arg.PriceCents)
+	return err
+}
+
 const setSubscriptionStatus = `-- name: SetSubscriptionStatus :exec
 UPDATE subscriptions SET status = $2, disabled_at = $3, updated_at = now() WHERE id = $1
 `

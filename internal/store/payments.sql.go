@@ -128,8 +128,8 @@ func (q *Queries) CreateBankAccount(ctx context.Context, arg CreateBankAccountPa
 }
 
 const createSubscriptionPayment = `-- name: CreateSubscriptionPayment :one
-INSERT INTO subscription_payments (shop_id, submitted_by_id, amount_cents, months, method, reference)
-VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+INSERT INTO subscription_payments (shop_id, submitted_by_id, amount_cents, months, method, reference, plan)
+VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id
 `
 
 type CreateSubscriptionPaymentParams struct {
@@ -139,6 +139,7 @@ type CreateSubscriptionPaymentParams struct {
 	Months        int32
 	Method        *string
 	Reference     *string
+	Plan          string
 }
 
 func (q *Queries) CreateSubscriptionPayment(ctx context.Context, arg CreateSubscriptionPaymentParams) (int64, error) {
@@ -149,6 +150,7 @@ func (q *Queries) CreateSubscriptionPayment(ctx context.Context, arg CreateSubsc
 		arg.Months,
 		arg.Method,
 		arg.Reference,
+		arg.Plan,
 	)
 	var id int64
 	err := row.Scan(&id)

@@ -31,6 +31,9 @@ INSERT INTO subscriptions (shop_id, status, current_period_end, grace_until, pri
 UPDATE subscriptions SET status = 1, current_period_end = $2, grace_until = $3, disabled_at = NULL, updated_at = now()
 WHERE id = $1;
 
+-- name: SetSubscriptionPlan :exec
+UPDATE subscriptions SET plan = $2, price_cents = $3, updated_at = now() WHERE id = $1;
+
 -- name: SetSubscriptionStatus :exec
 UPDATE subscriptions SET status = $2, disabled_at = $3, updated_at = now() WHERE id = $1;
 

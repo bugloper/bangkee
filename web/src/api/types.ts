@@ -492,6 +492,8 @@ export interface SettingsInfo {
 
 export interface SubscriptionPayment {
   id: number
+  plan: PlanKey
+  plan_name: string
   amount_cents: Cents
   months: number
   payment_method: string | null
@@ -518,8 +520,19 @@ export interface Billing {
   subscription: Subscription
   payments: SubscriptionPayment[]
   operator: OperatorBilling
+  plans: PlanOffer[] // the shop's own plan at the price it pays now
 }
-/** POST /api/subscription/payments — multipart: amount, method, reference, screenshot (months defaults to 12: billed annually) */
+/** POST /api/subscription/payments — multipart: amount, plan, method, reference, screenshot (months defaults to 12: billed annually; plan defaults to the shop's) */
+
+export interface PlanOffer {
+  key: PlanKey
+  name: string
+  summary: string
+  features: string[] // what this plan adds, by name
+  max_staff: number
+  monthly_price_cents: Cents
+  annual_price_cents: Cents
+}
 
 // ------------------------------------------------------------------ pricing
 
@@ -528,6 +541,7 @@ export interface PublicPricing {
   monthly_price_cents: Cents // 15000 = Nu. 150 a month
   annual_price_cents: Cents // 180000 = Nu. 1,800, paid once a year
   trial_months: number // 3: a new shop's free trial
+  plans: PlanOffer[]
 }
 
 // -------------------------------------------------------------------- admin

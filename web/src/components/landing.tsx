@@ -155,14 +155,30 @@ function Bento() {
 
         <div id="pricing" className="flex scroll-mt-24 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-6 text-white shadow-lg shadow-primary/25 md:col-span-2">
           <div className="flex items-baseline gap-2">
+            <span className="text-white/75">from</span>
             {pricing ? <span className="tabular text-5xl font-semibold tracking-[-0.04em]">{ngultrum(pricing.monthly_price_cents)}</span> : <Skeleton className="h-12 w-40 bg-white/20" />}
             <span className="text-white/75">a month</span>
           </div>
+          {pricing && (
+            <ul className="mt-5 grid gap-2 text-sm sm:grid-cols-3">
+              {pricing.plans.map((plan) => (
+                <li key={plan.key} className="rounded-2xl bg-white/10 px-3.5 py-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-semibold">{plan.name}</span>
+                    <span className="tabular">{ngultrum(plan.monthly_price_cents)}</span>
+                  </div>
+                  <p className="mt-1 text-[0.8125rem] leading-snug text-white/75">
+                    {plan.key === "basic" ? "The shared book, statements, receipts" : plan.key === "pro" ? "+ automatic reminders, installments, files, suppliers" : `+ up to ${plan.max_staff} staff`}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold tracking-tight">The first {pricing?.trial_months ?? 3} months are free</h3>
               <p className="mt-1 text-sm text-white/75">
-                Then about {pricing ? ngultrum(Math.round(pricing.annual_price_cents / 365 / 100) * 100) : "Nu. 5"} a day, paid yearly. Customers never pay.
+                With every feature on. Then choose a plan, paid yearly. Customers never pay.
               </p>
             </div>
             <Link to="/registration/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90" })}>
@@ -493,7 +509,7 @@ function Shops() {
 
 function Faq() {
   const data = usePricing()
-  const annual = data ? `${ngultrum(data.annual_price_cents)} for one year` : "one year"
+  const annual = data ? `a year of your plan (Basic is ${ngultrum(data.annual_price_cents)})` : "a year of your plan"
   const faqs: [string, React.ReactNode][] = [
     [
       "Who can see my book?",
