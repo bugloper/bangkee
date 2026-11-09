@@ -131,20 +131,6 @@ func (s *Server) signIn(c *echo.Context) error {
 			return apperr.NewRule("Try another email address or password.")
 		}
 	}
-	// Each host signs in the people it is for: the console only staff, the
-	// app everyone else (and staff who also run a shop).
-	if isAdminHost(c) && !user.PlatformAdmin {
-		return apperr.NewRule("That area is for Bangkee staff.")
-	}
-	if !isAdminHost(c) && user.PlatformAdmin {
-		shop, err := domain.ShopForOwner(ctx, s.Q, user.ID)
-		if err != nil {
-			return err
-		}
-		if shop == nil && user.Role == domain.RoleShopOwner {
-			return apperr.NewRule("Bangkee staff sign in at " + adminHostFor(c) + ".")
-		}
-	}
 	if err := s.startSession(c, s.Q, user.ID); err != nil {
 		return err
 	}

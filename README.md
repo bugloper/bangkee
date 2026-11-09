@@ -14,9 +14,9 @@ month, billed annually) is reviewed by the Bangkee operator.
 | `migrations/` | goose migrations, embedded in the binary and run on boot. |
 | `db/queries/` | Every SQL query; `sqlc generate` turns them into `internal/store`. |
 
-One server, two hosts: `bangkee.bt` is the homepage and the app for shops and
-customers; `admin.bangkee.bt` is the operator console. Any host starting
-`admin.` is the console, so in development it is `admin.localhost`.
+One address for everyone: the homepage, the app for shops and customers, and
+the operator console, which an operator (a user with `platform_admin`) gets
+in place of the app when they sign in.
 
 ## Running it
 
@@ -27,8 +27,7 @@ echo 'DATABASE_URL=postgres://localhost/bangkee_development' > .env
 createdb bangkee_development      # unless it already exists
 go run ./cmd/seed                 # demo shop: karma@shop.bt / dawa@example.bt / admin@bangkee.bt, password "password"
 make dev                          # API on :3000 and the web app on :5173; Ctrl-C stops both
-# app:     http://localhost:5173
-# console: http://admin.localhost:5173
+# http://localhost:5173 — sign in as admin@bangkee.bt for the console
 ```
 
 `make dev` installs the web packages when they are missing and runs
@@ -37,15 +36,14 @@ make dev                          # API on :3000 and the web app on :5173; Ctrl-
 
 Run both from the repository root: `.env`, `storage/` and `web/dist` are found
 relative to it. In production the server serves `web/dist` itself; the
-`Dockerfile` builds both and `render.yaml` deploys them as one service. Point
-both `bangkee.bt` and `admin.bangkee.bt` at it.
+`Dockerfile` builds both and `render.yaml` deploys them as one service.
 
 ## Deploying
 
 On a VM, `docker-compose.yml` runs the server and its PostgreSQL. HTTPS comes from the VM's shared
 Caddy at `/opt/proxy` — one proxy for every app on the machine, set up once as described in
 xpensiv's README — which reaches Bangkee over the `edge` Docker network. Bangkee's site on that
-proxy is `deploy/bangkee.caddy`: the app host and `admin.` in front of it for the console.
+proxy is `deploy/bangkee.caddy`.
 
 Once, on the server: add `BANGKEE_DOMAIN` to `/opt/proxy/.env` (an [sslip.io](https://sslip.io)
 name works without DNS, e.g. `bangkee.203.0.113.10.sslip.io`), and give `/opt/bangkee/.env` the
@@ -68,14 +66,10 @@ trying Bangkee out, `docker compose exec bangkee ./seed` loads the demo data.
 
 ## Staging
 
-A second Bangkee runs on the same VM at https://stg.bangkee.app (console: `admin.stg.bangkee.app`)
-from `/opt/bangkee-staging`, with its own database, photos and secrets (`docker-compose.staging.yml`,
+A second Bangkee runs on the same VM at https://stg.bangkee.app from `/opt/bangkee-staging`, with its own database, photos and secrets (`docker-compose.staging.yml`,
 whose app service is `bangkee-staging` so it never shares the name Caddy sends production to).
 Its `.env` sets `COMPOSE_FILE=docker-compose.staging.yml` and `BANGKEE_DOMAIN=stg.bangkee.app`
 plus its own `SECRET_KEY_BASE`, `POSTGRES_PASSWORD` and VAPID pair. It is not backed up.
-
-In Cloudflare, `stg` is Proxied but `admin.stg` must be DNS only — the free edge certificate covers
-one level of subdomain, so Caddy's own certificate serves it instead.
 
 To deploy a commit there, as for production but into the staging directory:
 

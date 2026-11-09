@@ -23,7 +23,7 @@ func TestTestimonialsReachTheHomepageOnlyOnceApproved(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, _ = a.DB.Exec(ctx, "UPDATE users SET platform_admin = true WHERE id = $1", staff.ID)
-	operator := a.console()
+	operator := a.browser()
 	operator.signIn("admin@bangkee.bt")
 	visitor := a.browser()
 
@@ -44,7 +44,7 @@ func TestTestimonialsReachTheHomepageOnlyOnceApproved(t *testing.T) {
 	queue := operator.get("/api/admin/testimonials")
 	equal(t, queue.len("testimonials"), 2, "both waiting")
 	ownerID := owner.get("/api/testimonial").num("testimonial.id")
-	equal(t, owner.post(fmt.Sprintf("/api/admin/testimonials/%d/approve", ownerID), nil).Status, 404, "not for anyone but staff")
+	equal(t, owner.post(fmt.Sprintf("/api/admin/testimonials/%d/approve", ownerID), nil).Status, 403, "not for anyone but staff")
 	equal(t, operator.post(fmt.Sprintf("/api/admin/testimonials/%d/approve", ownerID), nil).str("notice"), "Approved — it is on the homepage.", "approved")
 
 	public := visitor.get("/api/public/testimonials")

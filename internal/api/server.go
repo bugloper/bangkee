@@ -91,7 +91,7 @@ func (s *Server) Handler() http.Handler {
 	e.HTTPErrorHandler = renderError
 	e.Use(middleware.Recover(), middleware.RequestLogger(), middleware.BodyLimit(bodyLimit))
 
-	api := e.Group("/api", requireAppHeader, hostGate)
+	api := e.Group("/api", requireAppHeader)
 	s.routes(api)
 	api.RouteNotFound("/*", func(c *echo.Context) error { return apperr.ErrNotFound })
 

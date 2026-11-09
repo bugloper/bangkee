@@ -24,7 +24,7 @@ import (
 // the browser, so the server writes each address's title, description,
 // canonical address, preview tags and structured data into index.html before
 // it goes out: the homepage, and each shop's public page, are findable on
-// their own. The console and the signed-in screens are kept out of search.
+// their own. Every signed-in screen, the console's included, is kept out of search.
 
 const (
 	siteName           = "Bangkee"
@@ -52,9 +52,6 @@ func (s *Server) baseURL(c *echo.Context) string {
 
 // meta decides what the page at this address says about itself.
 func (s *Server) meta(c *echo.Context) pageMeta {
-	if isAdminHost(c) {
-		return pageMeta{title: "Bangkee console", index: false}
-	}
 	requestPath := c.Request().URL.Path
 	base := s.baseURL(c)
 	switch {
@@ -200,26 +197,17 @@ func (s *Server) writePage(c *echo.Context, files fs.FS) error {
 	}
 	header := c.Response().Header()
 	header.Set("Cache-Control", "no-cache")
-	if isAdminHost(c) {
-		header.Set("X-Robots-Tag", "noindex, nofollow")
-	}
 	return c.HTMLBlob(http.StatusOK, s.renderPage(c, page))
 }
 
-// robots keeps the console and the API out of search, and points at the sitemap.
+// robots keeps the API out of search, and points at the sitemap.
 func (s *Server) robots(c *echo.Context) error {
-	if isAdminHost(c) {
-		return c.String(http.StatusOK, "User-agent: *\nDisallow: /\n")
-	}
 	return c.String(http.StatusOK, "User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: "+s.baseURL(c)+"/sitemap.xml\n")
 }
 
 // sitemap lists what is worth finding: the homepage, starting a shop, and
 // every shop's public page.
 func (s *Server) sitemap(c *echo.Context) error {
-	if isAdminHost(c) {
-		return echo.ErrNotFound
-	}
 	shops, err := s.Q.ShopDirectory(c.Request().Context(), store.ShopDirectoryParams{})
 	if err != nil {
 		return err

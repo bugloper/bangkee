@@ -353,8 +353,8 @@ func (n *Notifier) push(ctx context.Context, notificationID int64) {
 // §16.7 says email SHOULD accompany the in-app notification, so a missing
 // mail server degrades to a log line rather than an error.
 
-// The operator's queues on the console host, and where a person reads the
-// answers to what they sent.
+// The operator's queues in the console, and where a person reads the answers
+// to what they sent.
 const (
 	consoleQueuePath        = "/subscription_payments"
 	consoleFeedbackPath     = "/feedback"
@@ -362,17 +362,12 @@ const (
 	helpPath                = "/help"
 )
 
-// absolute links into the app, or into the console (admin.<host>) for the
-// operator's own notifications.
-func (n *Notifier) absolute(path string, console bool) string {
+// absolute links into the app; the console is part of it.
+func (n *Notifier) absolute(path string) string {
 	if path == "" {
 		path = "/"
 	}
-	host := n.cfg.Host
-	if console {
-		host = "admin." + host
-	}
-	return "https://" + host + path
+	return "https://" + n.cfg.Host + path
 }
 
 func (n *Notifier) send(to, subject, text, htmlBody string) {
@@ -433,7 +428,7 @@ func (n *Notifier) email(ctx context.Context, notificationID int64) {
 		return
 	}
 	path := util.Deref(notification.Path)
-	url := n.absolute(path, path == consoleQueuePath || path == consoleTestimonialsPath || (notification.Kind == "feedback" && path == consoleFeedbackPath))
+	url := n.absolute(path)
 	body := util.Deref(notification.Body)
 
 	text := fmt.Sprintf("%s\n%s\n\n%s\n\nOpen Bangkee: %s\n\nYou are getting this because you use Bangkee, the shared credit book.\n",
@@ -459,7 +454,7 @@ func (n *Notifier) email(ctx context.Context, notificationID int64) {
 
 // PasswordReset mails the reset link; it lives for 15 minutes.
 func (n *Notifier) PasswordReset(to, token string) {
-	url := n.absolute("/passwords/"+token+"/edit", false)
+	url := n.absolute("/passwords/" + token + "/edit")
 	n.pending.Add(1)
 	go func() {
 		defer n.pending.Done()

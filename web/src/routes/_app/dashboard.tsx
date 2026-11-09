@@ -8,7 +8,6 @@ import {
   PlusIcon,
   PackageIcon,
   ScrollTextIcon,
-  ShieldCheckIcon,
   ShoppingBagIcon,
   StoreIcon,
   TruckIcon,
@@ -16,6 +15,7 @@ import {
 
 import { api } from "@/api/client"
 import type { CustomerDashboard, LedgerEntry, Me, OwnerDashboard } from "@/api/types"
+import { AdminOverview } from "@/components/admin-overview"
 import { AppLink } from "@/components/app-link"
 import { DayBars } from "@/components/charts"
 import { Loading } from "@/components/form"
@@ -23,7 +23,6 @@ import { Count, Empty, Initial, Money, Panel, Row, Rows, Stat, StatGrid } from "
 import { InstallCard } from "@/components/pwa"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
-import { adminOrigin } from "@/lib/host"
 import { useT } from "@/lib/i18n"
 import { balanceBadge, balanceWord } from "@/lib/ledger"
 import { useMe } from "@/lib/me"
@@ -38,30 +37,12 @@ function Dashboard() {
   const me = useMe()
   const staff = me?.user.platform_admin ?? false
   const { data } = useQuery({ queryKey: ["dashboard"], queryFn: api.dashboard, enabled: !!me && !staff })
-  if (staff) return <StaffNotice />
+  // The operator's home is the console's overview.
+  if (staff) return <AdminOverview />
   if (!data || !me) return <Loading />
   return data.kind === "owner" ? <Owner data={data} me={me} /> : <Customer data={data} />
 }
 
-// Staff work in the console, at its own address; there is nothing of theirs here.
-function StaffNotice() {
-  usePage("Bangkee")
-  return (
-    <Panel>
-      <Empty
-        icon={ShieldCheckIcon}
-        title="You're signed in as Bangkee staff"
-        action={
-          <a href={adminOrigin()} className={buttonVariants()}>
-            Open the operator console
-          </a>
-        }
-      >
-        Subscription payments and shops are managed in the operator console.
-      </Empty>
-    </Panel>
-  )
-}
 
 /** The small arrow that says which way the money went. */
 function Direction({ kind }: { kind: LedgerEntry["kind"] }) {

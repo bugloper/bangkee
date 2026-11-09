@@ -44,7 +44,7 @@ interface Item {
 
 function groups(me: Me): { label?: string; items: Item[] }[] {
   return [
-    { items: [{ label: "Overview", icon: LayoutGridIcon, path: "/" }] },
+    { items: [{ label: "Overview", icon: LayoutGridIcon, path: "/dashboard" }] },
     {
       label: "Review",
       items: [
@@ -77,7 +77,7 @@ function Count({ count, folded }: { count?: number; folded?: boolean }) {
 }
 
 function isCurrent(pathname: string, path: string) {
-  return path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(path + "/")
+  return pathname === path || pathname.startsWith(path + "/")
 }
 
 function NavLink({ item, pathname, folded, onNavigate }: { item: Item; pathname: string; folded: boolean; onNavigate?: () => void }) {
@@ -115,7 +115,7 @@ function SidebarBody({ me, folded, onNavigate }: { me: Me; folded: boolean; onNa
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   return (
     <div className="flex h-full flex-col">
-      <Link to="/" onClick={onNavigate} className={cn("flex h-14 items-center gap-2.5 px-3", folded && "justify-center px-0")}>
+      <Link to="/dashboard" onClick={onNavigate} className={cn("flex h-14 items-center gap-2.5 px-3", folded && "justify-center px-0")}>
         <LogoMark className="size-7" />
         {!folded && (
           <span className="leading-tight">

@@ -28,7 +28,6 @@ import { InstallCard } from "@/components/pwa"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { flashNotice } from "@/lib/flash"
-import { isAdminHost } from "@/lib/host"
 import { languageName, LOCALES, storeLocale, translate, useLocale, useT } from "@/lib/i18n"
 import { useMe } from "@/lib/me"
 import { pluralize } from "@/lib/money"
@@ -65,11 +64,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // details, language, notifications, installing the app, and signing out. In the
 // console it is only the person: who they are, their language, signing out.
 function Settings() {
-  usePage(isAdminHost() ? "Settings" : "Profile")
   const me = useMe()
+  const console = me?.user.platform_admin ?? false
+  usePage(console ? "Settings" : "Profile")
   const t = useT()
   const current = useLocale()
-  const console = isAdminHost()
   const info = useQuery({ queryKey: ["settings"], queryFn: api.settings, enabled: !console })
   const pushStatus = pushStatusStore.use()
 

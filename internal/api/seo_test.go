@@ -58,15 +58,12 @@ func TestSearchEnginesFindTheHomepageAndShopsButNotTheApp(t *testing.T) {
 	_, _, app := visitor.raw("/dashboard")
 	equal(t, strings.Contains(app, `content="noindex,nofollow"`), true, "the signed-in app is not indexed")
 
-	_, headers, console := a.console().raw("/")
-	equal(t, headers.Get("X-Robots-Tag"), "noindex, nofollow", "the console says so in a header")
-	equal(t, strings.Contains(console, `content="noindex,nofollow"`), true, "and in the page")
+	_, _, console := visitor.raw("/subscription_payments")
+	equal(t, strings.Contains(console, `content="noindex,nofollow"`), true, "nor is the console")
 
 	_, _, robots := visitor.raw("/robots.txt")
 	equal(t, strings.Contains(robots, "Disallow: /api/"), true, "the API is out of search")
 	equal(t, strings.Contains(robots, "Sitemap: http://bangkee.test/sitemap.xml"), true, "robots points at the sitemap")
-	_, _, consoleRobots := a.console().raw("/robots.txt")
-	equal(t, consoleRobots, "User-agent: *\nDisallow: /\n", "the console is out of search entirely")
 
 	_, headers, sitemap := visitor.raw("/sitemap.xml")
 	equal(t, strings.HasPrefix(headers.Get("Content-Type"), "application/xml"), true, "a sitemap")

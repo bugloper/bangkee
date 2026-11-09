@@ -14,7 +14,6 @@ import {
 } from "lucide-react"
 
 import type { Me } from "@/api/types"
-import { isAdminHost } from "@/lib/host"
 import { translate } from "@/lib/i18n"
 
 export interface NavItem {
@@ -29,9 +28,9 @@ export interface NavItem {
 // the two navigations can never drift apart. A shop owner's tab bar also has
 // the round + in its middle (shell.tsx): recording is what they do most.
 export function navItems(me: Me): NavItem[] {
-  if (isAdminHost()) {
+  if (me.user.platform_admin) {
     return [
-      { label: "Overview", icon: LayoutGridIcon, path: "/", key: "admin" },
+      { label: "Overview", icon: LayoutGridIcon, path: "/dashboard", key: "admin" },
       { label: "Payments", icon: ReceiptTextIcon, path: "/subscription_payments", key: "admin_payments", badge: me.badges.admin_payments },
       { label: "Feedback", icon: InboxIcon, path: "/feedback", key: "admin_feedback", badge: me.badges.admin_feedback },
       { label: "Testimonials", icon: MessageSquareQuoteIcon, path: "/testimonials", key: "admin_testimonials", badge: me.badges.admin_testimonials },
@@ -77,8 +76,8 @@ const NAV_ROOTS: Record<string, string> = {
 
 export function navRoot(pathname: string, me: Me): string | undefined {
   const [first = ""] = pathname.split("/").filter(Boolean)
-  if (isAdminHost()) {
-    if (first === "") return "admin"
+  if (me.user.platform_admin) {
+    if (first === "dashboard") return "admin"
     if (first === "subscription_payments") return "admin_payments"
     if (first === "all_shops") return "admin_shops"
     if (first === "feedback") return "admin_feedback"

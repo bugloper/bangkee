@@ -14,7 +14,7 @@ func TestTheConsoleOverviewCountsShopsAndMoney(t *testing.T) {
 	ctx := context.Background()
 	a.browser().openShop("Operator", "admin@bangkee.bt")
 	_, _ = a.DB.Exec(ctx, "UPDATE users SET platform_admin = true WHERE email_address = 'admin@bangkee.bt'")
-	console := a.console()
+	console := a.browser()
 	equal(t, console.signIn("admin@bangkee.bt").Status, 200, "operator")
 
 	owners := []string{"Karma", "Dorji", "Sonam"}
@@ -69,5 +69,5 @@ func TestTheConsoleOverviewCountsShopsAndMoney(t *testing.T) {
 			equal(t, shops.num(fmt.Sprintf("shops.%d.customers", i)), int64(1), "its customers")
 		}
 	}
-	equal(t, a.browser().get("/api/admin/dashboard").Status, 404, "not on the app's host")
+	equal(t, a.browser().get("/api/admin/dashboard").Status, 401, "not for someone signed out")
 }

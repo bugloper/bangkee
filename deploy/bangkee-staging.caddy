@@ -1,9 +1,6 @@
-# Bangkee's staging site on the VM's shared Caddy, beside deploy/bangkee.caddy:
-# the app and its operator console, served by the bangkee-staging container.
-#
-# In Cloudflare, stg is Proxied but admin.stg must be DNS only: the free
-# edge certificate covers *.bangkee.app, one level deep, and admin.stg is two.
-stg.bangkee.app, admin.stg.bangkee.app {
+# Bangkee's staging site on the VM's shared Caddy, beside deploy/bangkee.caddy,
+# served by the bangkee-staging container.
+stg.bangkee.app {
 	encode zstd gzip
 	request_body {
 		max_size 12MB

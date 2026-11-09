@@ -7,7 +7,6 @@ import { Loading } from "@/components/form"
 import { SiteFooter, SiteHeader } from "@/components/landing"
 import { ShopHeader, ShopMenu } from "@/components/shop-view"
 import { buttonVariants } from "@/components/ui/button"
-import { isAdminHost } from "@/lib/host"
 import { meQuery } from "@/lib/me"
 import { usePage } from "@/lib/page"
 
@@ -16,7 +15,6 @@ import { usePage } from "@/lib/page"
 // gets the app's own page.
 export const Route = createFileRoute("/shop/$id")({
   beforeLoad: async ({ context, params }) => {
-    if (isAdminHost()) throw redirect({ to: "/", replace: true })
     const me = await context.queryClient.ensureQueryData(meQuery)
     if (me) throw redirect({ to: "/shops/$id", params, replace: true })
   },

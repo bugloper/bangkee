@@ -561,10 +561,8 @@ export interface PublicPricing {
 
 // -------------------------------------------------------------------- admin
 //
-// The operator's screens live on their own host, admin.<domain>. There the
-// API serves only identity, /api/admin/*, notifications, push and
-// attachments; everything else is 404. On the app host /api/admin/* is 404.
-// Sign-in on the admin host refuses anyone who is not a platform admin.
+// The operator's screens are part of the app, shown to platform admins only;
+// /api/admin/* answers anyone else with 403.
 
 export interface AdminPayment extends SubscriptionPayment {
   shop: { id: number; name: string; paid_through: Timestamp; status_label: string }

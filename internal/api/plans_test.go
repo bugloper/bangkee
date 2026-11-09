@@ -16,7 +16,7 @@ func TestPayingForAPlanMovesTheShopOntoIt(t *testing.T) {
 	owner.openShop("Karma", "karma@shop.bt")
 	a.browser().openShop("Operator", "admin@bangkee.bt")
 	_, _ = a.DB.Exec(ctx, "UPDATE users SET platform_admin = true WHERE email_address = 'admin@bangkee.bt'")
-	console := a.console()
+	console := a.browser()
 	equal(t, console.signIn("admin@bangkee.bt").Status, 200, "operator")
 
 	pricing := owner.get("/api/public/pricing")

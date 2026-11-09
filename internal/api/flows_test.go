@@ -227,7 +227,7 @@ func TestAnExhaustedGracePeriodLocksWritesButNotReads(t *testing.T) {
 	// and the lock lifts.
 	a.browser().openShop("Operator", "admin@bangkee.bt")
 	_, _ = a.DB.Exec(ctx, "UPDATE users SET platform_admin = true WHERE email_address = 'admin@bangkee.bt'")
-	operator := a.console()
+	operator := a.browser()
 	equal(t, operator.signIn("admin@bangkee.bt").Status, 200, "operator signs in on the console")
 	queue := operator.get("/api/admin/subscription_payments")
 	equal(t, queue.num("pending_count"), 1, "queue")
@@ -240,7 +240,9 @@ func TestAnExhaustedGracePeriodLocksWritesButNotReads(t *testing.T) {
 
 }
 
-func TestEachHostServesOnlyItsOwnPeople(t *testing.T) {
+// The operator signs in at the same address as everyone else; the console's
+// API answers only them.
+func TestTheOperatorSignsInAtTheAppAndOnlyTheyReachTheConsole(t *testing.T) {
 	a := newApp(t)
 	owner := a.browser()
 	owner.openShop("Karma", "karma@shop.bt")
@@ -252,26 +254,16 @@ func TestEachHostServesOnlyItsOwnPeople(t *testing.T) {
 	}
 	_, _ = a.DB.Exec(ctx, "UPDATE users SET platform_admin = true WHERE id = $1", staffUser.ID)
 
-	// The app host has no operator API, even for an operator.
-	equal(t, owner.get("/api/admin/dashboard").Status, 404, "no admin API on the app host")
-	staff := a.browser()
-	equal(t, staff.signIn("admin@bangkee.bt").str("error"), "Bangkee staff sign in at admin.bangkee.test.", "staff sent to the console")
-	// In development the app runs on a port; the console's address keeps it.
-	equal(t, a.on("localhost:5173").signIn("admin@bangkee.bt").str("error"), "Bangkee staff sign in at admin.localhost:5173.", "with the port")
-
-	// The console signs in staff only, and serves nothing of the app.
-	console := a.console()
-	equal(t, console.signIn("karma@shop.bt").str("error"), "That area is for Bangkee staff.", "owner refused on the console")
-	equal(t, console.signIn("admin@bangkee.bt").Status, 200, "staff signs in")
-	equal(t, console.get("/api/admin/dashboard").Status, 200, "operator dashboard")
-	equal(t, console.get("/api/accounts").Status, 404, "no shop screens on the console")
-	equal(t, console.post("/api/registration", map[string]any{"name": "x"}).Status, 404, "no sign-up on the console")
+	equal(t, owner.get("/api/admin/dashboard").Status, 403, "a shop owner has no console")
+	operator := a.browser()
+	equal(t, operator.signIn("admin@bangkee.bt").Status, 200, "the operator signs in at the app")
+	equal(t, operator.get("/api/admin/dashboard").Status, 200, "operator dashboard")
 
 	// A payment waiting for review reaches the operator, pointing into the console.
 	owner.multipart("/api/subscription/payments", map[string]string{"amount": "3600"}, "screenshot", screenshot(t))
-	equal(t, console.get("/api/me").num("unread_notifications"), 1, "operator was told")
-	equal(t, console.get("/api/notifications").str("notifications.0.path"), "/subscription_payments", "console path")
-	equal(t, console.get("/api/me").num("badges.admin_payments"), 1, "queue badge")
+	equal(t, operator.get("/api/me").num("unread_notifications"), 1, "operator was told")
+	equal(t, operator.get("/api/notifications").str("notifications.0.path"), "/subscription_payments", "console path")
+	equal(t, operator.get("/api/me").num("badges.admin_payments"), 1, "queue badge")
 }
 
 func TestPlansAreBilledAnnually(t *testing.T) {
@@ -309,7 +301,7 @@ func TestFeedbackReachesTheOperatorWhoAcknowledgesAndReplies(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, _ = a.DB.Exec(ctx, "UPDATE users SET platform_admin = true WHERE id = $1", staffUser.ID)
-	operator := a.console()
+	operator := a.browser()
 	operator.signIn("admin@bangkee.bt")
 
 	// Anyone signed in can write; what they write must be something.
@@ -354,6 +346,6 @@ func TestFeedbackReachesTheOperatorWhoAcknowledgesAndReplies(t *testing.T) {
 	equal(t, operator.get("/api/me").num("badges.admin_feedback"), 0, "nothing new left")
 
 	// Only the operator reviews, and each person sees only their own.
-	equal(t, owner.get("/api/admin/feedback").Status, 404, "not on the app host")
+	equal(t, owner.get("/api/admin/feedback").Status, 403, "not for a shop owner")
 	equal(t, owner.get("/api/feedback").len("messages"), 1, "only their own")
 }

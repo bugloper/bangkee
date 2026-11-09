@@ -14,7 +14,6 @@ import { RecordSheet } from "@/components/record-sheet"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { go } from "@/lib/go"
-import { isAdminHost } from "@/lib/host"
 import { useLive } from "@/lib/live"
 import { pageStore } from "@/lib/page"
 import { signOut } from "@/lib/session"
@@ -30,7 +29,7 @@ function Badge({ count, className }: { count?: number; className?: string }) {
 }
 
 function subtitle(me: Me) {
-  if (isAdminHost()) return "Operator console"
+  if (me.user.platform_admin) return "Operator console"
   return me.shop?.name ?? "My credit"
 }
 
@@ -182,9 +181,9 @@ function Tabbar({ me, active, onRecord }: { me: Me; active?: string; onRecord?: 
   )
 }
 
-/** The frame around every signed-in screen: the console's at its own address, the app's everywhere else. */
+/** The frame around every signed-in screen: the console's for an operator, the app's for everyone else. */
 export function Shell({ me, children }: { me: Me; children: React.ReactNode }) {
-  return isAdminHost() ? <ConsoleShell me={me}>{children}</ConsoleShell> : <AppShell me={me}>{children}</AppShell>
+  return me.user.platform_admin ? <ConsoleShell me={me}>{children}</ConsoleShell> : <AppShell me={me}>{children}</AppShell>
 }
 
 function AppShell({ me, children }: { me: Me; children: React.ReactNode }) {
@@ -192,7 +191,7 @@ function AppShell({ me, children }: { me: Me; children: React.ReactNode }) {
   const page = pageStore.use()
   const active = navRoot(pathname, me)
   const [recording, setRecording] = useState(false)
-  const record = me.permissions.includes("record") && !isAdminHost() ? () => setRecording(true) : undefined
+  const record = me.permissions.includes("record") && !me.user.platform_admin ? () => setRecording(true) : undefined
   useLive(me.user.id)
 
   return (
