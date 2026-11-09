@@ -1,0 +1,107 @@
+apply plugin: 'com.android.application'
+
+// ---------------------------------------------------------------- where the app points
+// The wrapper loads the web app from the server; nothing of the web app is bundled.
+// Override per build with -Pbangkee.appUrl=... / -Pbangkee.devUrl=..., or in
+// ~/.gradle/gradle.properties. See mobile/README.md "Configuring the URL".
+//
+//   release  bangkee.appUrl  the production web app, HTTPS only, no path
+//   debug    bangkee.devUrl  the local dev server (make dev), reached via `adb reverse`
+def appUrl = (findProperty('bangkee.appUrl') ?: 'https://bangkee.app').toString().replaceAll('/+$', '')
+def devUrl = (findProperty('bangkee.devUrl') ?: 'http://localhost:5173').toString().replaceAll('/+$', '')
+
+def parsedAppUrl = new URI(appUrl)
+if (parsedAppUrl.scheme != 'https' || !parsedAppUrl.host || (parsedAppUrl.path ?: '') != '' || parsedAppUrl.query || parsedAppUrl.fragment) {
+    throw new GradleException("bangkee.appUrl must be an https origin with no path, e.g. https://bangkee.app (got '${appUrl}')")
+}
+def parsedDevUrl = new URI(devUrl)
+if (!(parsedDevUrl.scheme in ['http', 'https']) || !parsedDevUrl.host || (parsedDevUrl.path ?: '') != '') {
+    throw new GradleException("bangkee.devUrl must be an http(s) origin with no path, e.g. http://localhost:5173 (got '${devUrl}')")
+}
+
+// ---------------------------------------------------------------- release signing
+// The upload key never lives in the repository. Point these at a keystore kept
+// outside it; when they are unset the release build is produced unsigned.
+def uploadKeystore = System.getenv('BANGKEE_UPLOAD_KEYSTORE')
+
+android {
+    namespace = "app.bangkee"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "app.bangkee"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Bump both for every release uploaded to Google Play; versionCode must
+        // always increase. Ordinary website deploys need no new release at all.
+        versionCode 1
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Deep links from email and chat always name the production host.
+        manifestPlaceholders = [appLinkHost: parsedAppUrl.host]
+        buildConfigField "String", "APP_LINK_HOST", "\"${parsedAppUrl.host}\""
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+    signingConfigs {
+        release {
+            if (uploadKeystore) {
+                storeFile file(uploadKeystore)
+                storePassword System.getenv('BANGKEE_UPLOAD_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('BANGKEE_UPLOAD_KEY_ALIAS')
+                keyPassword System.getenv('BANGKEE_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            buildConfigField "String", "APP_URL", "\"${devUrl}\""
+        }
+        release {
+            buildConfigField "String", "APP_URL", "\"${appUrl}\""
+            if (uploadKeystore) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation "androidx.webkit:webkit:$androidxWebkitVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

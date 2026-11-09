@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Debug builds sit beside the release app (app.bangkee.debug) under their own name. -->
+<resources>
+    <string name="app_name">Bangkee Dev</string>
+    <string name="title_activity_main">Bangkee Dev</string>
+</resources>

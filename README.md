@@ -13,6 +13,7 @@ month, billed annually) is reviewed by the Bangkee operator.
 | `web/` | React 19, TanStack Router + Query, shadcn/ui on Tailwind v4. The homepage, the app, the operator console; an installable PWA with an offline write queue. |
 | `migrations/` | goose migrations, embedded in the binary and run on boot. |
 | `db/queries/` | Every SQL query; `sqlc generate` turns them into `internal/store`. |
+| `mobile/` | The Android app for Google Play: a Capacitor shell that opens the deployed web app. See `mobile/README.md`. |
 
 One server, two hosts: `bangkee.bt` is the homepage and the app for shops and
 customers; `admin.bangkee.bt` is the operator console. Any host starting

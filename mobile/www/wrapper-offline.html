@@ -1,0 +1,85 @@
+<!doctype html>
+<!--
+  The Android app's own page for when the web app cannot be reached on launch:
+  no connection, the server down, or a certificate that failed to verify.
+  Capacitor serves it from the APK at <app origin>/wrapper-offline.html, so it
+  needs nothing from the network. Once the web app has loaded once, its service
+  worker serves the app (and its own /offline page) instead.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Bangkee is offline</title>
+    <style>
+      :root {
+        --bg: #fafbfd;
+        --fg: #111827;
+        --muted: #6b7280;
+        --brand: #2751b8;
+        --warn-bg: rgba(217, 119, 6, 0.1);
+        --warn: #d97706;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1017;
+          --fg: #f3f4f6;
+          --muted: #9ca3af;
+          --brand: #5b7fe0;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      }
+      .icon {
+        width: 56px; height: 56px; border-radius: 16px;
+        background: var(--warn-bg); color: var(--warn);
+        display: flex; align-items: center; justify-content: center;
+      }
+      h1 { margin: 20px 0 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+      p { margin: 8px 0 0; max-width: 20rem; font-size: 14px; line-height: 1.5; color: var(--muted); }
+      button {
+        margin-top: 24px; min-height: 48px; padding: 0 32px;
+        border: 0; border-radius: 12px;
+        background: var(--brand); color: #fff;
+        font: inherit; font-size: 16px; font-weight: 600;
+      }
+      button:disabled { opacity: 0.6; }
+    </style>
+  </head>
+  <body>
+    <div class="icon" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h.01" /><path d="M8.5 16.43a5 5 0 0 1 7 0" /><path d="M5 12.86a10 10 0 0 1 5.17-2.69" />
+        <path d="M19 12.86a10 10 0 0 0-2.01-1.53" /><path d="M2 8.82a15 15 0 0 1 4.17-2.65" />
+        <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76" /><path d="m2 2 20 20" />
+      </svg>
+    </div>
+    <h1>Bangkee can't connect</h1>
+    <p>Check that mobile data or Wi-Fi is on, then try again. Your books are safe on the server.</p>
+    <button id="retry" type="button">Try again</button>
+    <script>
+      // This page is on the web app's origin, so "/" is the web app.
+      var retry = document.getElementById("retry");
+      function again() {
+        retry.disabled = true;
+        retry.textContent = "Connecting…";
+        location.replace("/");
+      }
+      retry.addEventListener("click", again);
+      // Back by itself as soon as the phone is online again.
+      window.addEventListener("online", again);
+    </script>
+  </body>
+</html>
