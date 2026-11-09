@@ -10,7 +10,7 @@ import { CommandPalette } from "@/components/command-palette"
 import { ConsoleShell } from "@/components/console-shell"
 import { InsetSidebar, type SideGroup, type SideItem } from "@/components/inset-sidebar"
 import { Initial } from "@/components/kit"
-import { helpItem, navItems, navRoot, sidebarSections, type NavItem } from "@/components/nav"
+import { helpItem, navItems, navRoot, salesItem, sidebarSections, type NavItem } from "@/components/nav"
 import { IosInstallSheet, PushPrompt } from "@/components/pwa"
 import { RecordSheet } from "@/components/record-sheet"
 import { Button } from "@/components/ui/button"
@@ -128,6 +128,7 @@ function AppShell({ me, children }: { me: Me; children: React.ReactNode }) {
 
   const shopSide = !!me.shop && (me.user.role === "shop_owner" || me.user.role === "staff")
   const main: SideItem[] = navItems(me).filter((item) => item.key !== "settings")
+  if (shopSide) main.splice(2, 0, salesItem)
   const sections = sidebarSections(me)
   const groups: SideGroup[] = [{ items: main }, ...sections]
   const bottom: SideItem[] = [...(shopSide ? [helpItem] : []), { label: "Profile", icon: UserRoundIcon, path: "/settings" }]

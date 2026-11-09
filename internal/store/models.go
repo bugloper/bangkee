@@ -169,6 +169,30 @@ type Reminder struct {
 	NotificationID *int64
 }
 
+type Sale struct {
+	ID             int64
+	ShopID         int64
+	AccountID      *int64
+	CreatedByID    int64
+	AmountCents    int64
+	PaymentMethod  string
+	Description    *string
+	Itemized       bool
+	OccurredAt     time.Time
+	IdempotencyKey *string
+	CrossedOutAt   *time.Time
+	CrossedOutByID *int64
+	CreatedAt      time.Time
+}
+
+type SaleItem struct {
+	ID             int64
+	SaleID         int64
+	Name           string
+	Quantity       decimal.Decimal
+	UnitPriceCents int64
+}
+
 type Session struct {
 	ID        int64
 	UserID    int64

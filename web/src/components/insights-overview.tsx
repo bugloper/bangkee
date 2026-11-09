@@ -250,6 +250,33 @@ export function InsightsOverview({ data, onMonth }: { data: Insights; onMonth: (
         />
       </div>
 
+      <Panel
+        title="Sales paid on the spot"
+        description={`${pluralize(chosen.sales_count, "sale")} in ${name} — not in anyone's credit`}
+        footer={
+          <AppLink href="/sales" className="text-[0.8125rem] font-medium text-primary hover:underline">
+            Day by day in Sales
+          </AppLink>
+        }
+      >
+        <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+          <div>
+            <div className="tabular text-3xl font-medium tracking-tight">{ngultrum(chosen.sales_cents)}</div>
+            <div className="mt-1 text-sm">
+              <Change now={chosen.sales_cents} before={before?.sales_cents ?? null} goodWhenUp />
+            </div>
+          </div>
+          <AreaChart
+            height={150}
+            label="Sales paid on the spot each month, the last six months"
+            labels={data.months.map((m) => m.label)}
+            series={[{ key: "sales", label: "Sales", color: "var(--primary)", values: data.months.map((m) => m.sales_cents) }]}
+            format={(cents) => ngultrum(cents)}
+            axis={(cents) => (cents >= 100_000 ? `${Number((cents / 100_000).toFixed(1))}k` : String(Math.round(cents / 100)))}
+          />
+        </div>
+      </Panel>
+
       <Panel title="Credit and collections" description="The last six months">
         <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
           <span className="flex items-center gap-2">

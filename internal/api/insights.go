@@ -57,6 +57,14 @@ func (s *Server) insights(c *echo.Context) error {
 	for _, row := range joined {
 		joinedBy[row.Month] = row.Customers
 	}
+	sold, err := s.Q.MonthlySales(ctx, store.MonthlySalesParams{ShopID: o.Shop.ID, Since: first})
+	if err != nil {
+		return err
+	}
+	salesBy := map[string]store.MonthlySalesRow{}
+	for _, row := range sold {
+		salesBy[row.Month] = row
+	}
 	counts, err := s.Q.ShopCounts(ctx, o.Shop.ID)
 	if err != nil {
 		return err
@@ -67,6 +75,7 @@ func (s *Server) insights(c *echo.Context) error {
 		months = append(months, M{
 			"month": key, "label": m.Format("Jan"),
 			"credit_cents": byMonth[key].CreditCents, "payment_cents": byMonth[key].PaymentCents, "new_customers": joinedBy[key],
+			"sales_cents": salesBy[key].Cents, "sales_count": salesBy[key].Sales,
 		})
 	}
 

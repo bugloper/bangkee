@@ -168,6 +168,11 @@ func (s *Server) routes(g *echo.Group) {
 	g.PATCH("/shop/reminders", s.updateReminderSettings)
 	g.PATCH("/me/reminders", s.setMyReminders)
 	g.GET("/transactions/:id/receipt.pdf", s.receiptPDF)
+	// sales paid on the spot
+	g.GET("/sales", s.sales)
+	g.POST("/sales", s.recordSale)
+	g.POST("/sales/:id/cross_out", s.crossOutSale)
+
 	// suppliers
 	g.GET("/suppliers", s.suppliers)
 	g.POST("/suppliers", s.createSupplier)

@@ -62,7 +62,12 @@ export function QueuedWrites({ queueKey, caption }: { queueKey: string; caption?
           const money = Number.isNaN(amount) ? entry.amount : majorAmount(amount)
           return (
             <div key={entry.key} className="flex items-center gap-3 px-4 py-3 sm:px-5">
-              <span className={cn("rounded px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase", entry.label.includes("payment") ? "bg-paid/10 text-paid" : "bg-owed/10 text-owed")}>
+              <span
+                className={cn(
+                  "rounded px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase",
+                  entry.label.includes("payment") || entry.label === "sale" ? "bg-paid/10 text-paid" : "bg-owed/10 text-owed",
+                )}
+              >
                 {entry.label}
               </span>
               <div className="min-w-0 flex-1">
@@ -97,7 +102,7 @@ export function QueueSummary() {
   if (entries.length === 0) return null
   const refused = entries.filter((entry) => entry.rejected)
   const waiting = entries.length - refused.length
-  const screens = [...new Set(refused.map((entry) => entry.queueKey))].filter((key) => key.startsWith("account:") || key.startsWith("supplier:"))
+  const screens = [...new Set(refused.map((entry) => entry.queueKey))].filter((key) => key.startsWith("account:") || key.startsWith("supplier:") || key === "sales")
   return (
     <div
       className={cn("flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[1.25rem] border px-4 py-3 text-sm sm:px-5", refused.length > 0 ? "border-owed/40 bg-owed/5" : "border-warn/40 bg-warn/5")}
@@ -110,10 +115,10 @@ export function QueueSummary() {
           <span key={key}>
             {i > 0 && ", "}
             <AppLink
-              href={key.startsWith("supplier:") ? `/suppliers/${key.slice("supplier:".length)}` : `/accounts/${key.slice("account:".length)}`}
+              href={key === "sales" ? "/sales" : key.startsWith("supplier:") ? `/suppliers/${key.slice("supplier:".length)}` : `/accounts/${key.slice("account:".length)}`}
               className="font-medium text-primary hover:underline"
             >
-              {key.startsWith("supplier:") ? "open supplier" : "open customer"}
+              {key === "sales" ? "open sales" : key.startsWith("supplier:") ? "open supplier" : "open customer"}
             </AppLink>
           </span>
         ))}

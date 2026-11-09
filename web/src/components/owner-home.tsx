@@ -1,5 +1,18 @@
 import { useQuery } from "@tanstack/react-query"
-import { AlarmClockIcon, ArrowDownLeftIcon, ArrowRightIcon, ArrowUpRightIcon, BarChart3Icon, CircleAlertIcon, FlagIcon, SearchIcon, UserPlusIcon, WalletIcon, type LucideIcon } from "lucide-react"
+import {
+  AlarmClockIcon,
+  ArrowDownLeftIcon,
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+  BarChart3Icon,
+  CircleAlertIcon,
+  FlagIcon,
+  SearchIcon,
+  ShoppingBagIcon,
+  UserPlusIcon,
+  WalletIcon,
+  type LucideIcon,
+} from "lucide-react"
 import { useState } from "react"
 
 import { api } from "@/api/client"
@@ -7,7 +20,7 @@ import type { LedgerEntry, Me, OwnerDashboard } from "@/api/types"
 import { AppLink } from "@/components/app-link"
 import { AreaChart } from "@/components/area-chart"
 import { Initial, Money } from "@/components/kit"
-import { helpItem, sidebarSections } from "@/components/nav"
+import { helpItem, salesItem, sidebarSections } from "@/components/nav"
 import { InstallCard } from "@/components/pwa"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
@@ -165,7 +178,7 @@ function Owing({ data }: { data: OwnerDashboard }) {
 
 /** On a phone, the pages a desktop keeps in its sidebar, as tiles to tap. */
 function ShopTiles({ me }: { me: Me }) {
-  const items = [...sidebarSections(me).flatMap((section) => section.items), helpItem]
+  const items = [salesItem, ...sidebarSections(me).flatMap((section) => section.items), helpItem]
   return (
     <section className="md:hidden" aria-label="Your shop">
       <h2 className="mb-3 text-[0.9375rem] tracking-tight">Your shop</h2>
@@ -187,6 +200,7 @@ export function OwnerHome({ data, me }: { data: OwnerDashboard; me: Me }) {
   const first = me.user.display_name.split(" ")[0]
   const credits = data.trend.map((d) => d.credit_cents)
   const payments = data.trend.map((d) => d.payment_cents)
+  const sales = data.trend.map((d) => d.sales_cents)
   const attention = [
     data.disputed.length > 0 && {
       icon: FlagIcon,
@@ -233,7 +247,14 @@ export function OwnerHome({ data, me }: { data: OwnerDashboard; me: Me }) {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Figure label="Owed to you" value={ngultrum(data.total_outstanding_cents)} icon={WalletIcon} note={`by ${pluralize(data.owing_count, "customer")}`} href="/accounts?filter=outstanding" />
-        <Figure label="Collected today" value={ngultrum(data.payments_today_cents)} icon={ArrowDownLeftIcon} tone="paid" note={`${ngultrum(data.repaid_month_cents)} this month`} />
+        <Figure
+          label="Takings today"
+          value={ngultrum(data.sales_today_cents + data.payments_today_cents)}
+          icon={ShoppingBagIcon}
+          tone="paid"
+          note={`${ngultrum(data.sales_today_cents)} sales · ${ngultrum(data.payments_today_cents)} collected`}
+          href="/sales"
+        />
         <Figure label="Credit given today" value={ngultrum(data.credit_today_cents)} icon={ArrowUpRightIcon} tone="owed" note="Goods taken on credit" />
         <Figure
           label="Overdue"
@@ -265,15 +286,17 @@ export function OwnerHome({ data, me }: { data: OwnerDashboard; me: Me }) {
         <Card>
           <CardHead icon={BarChart3Icon} title="Money in and out" action={<span className="rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground">Last 14 days</span>} />
           <div className="px-5 pb-5">
-            <div className="mb-3 flex items-center justify-center gap-5">
+            <div className="mb-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
+              <Dot color="var(--primary)" label={`Sales · ${ngultrum(sales.reduce((s, v) => s + v, 0))}`} />
               <Dot color="var(--paid)" label={`Collected · ${ngultrum(payments.reduce((s, v) => s + v, 0))}`} />
               <Dot color="var(--owed)" label={`Credit given · ${ngultrum(credits.reduce((s, v) => s + v, 0))}`} />
             </div>
             <AreaChart
               height={230}
-              label="Money collected and credit given each day, the last 14 days"
+              label="Sales, money collected and credit given each day, the last 14 days"
               labels={data.trend.map((d) => dayLabel(d.day))}
               series={[
+                { key: "sales", label: "Sales", color: "var(--primary)", values: sales },
                 { key: "payments", label: "Collected", color: "var(--paid)", values: payments },
                 { key: "credits", label: "Credit given", color: "var(--owed)", values: credits },
               ]}

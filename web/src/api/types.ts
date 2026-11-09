@@ -376,7 +376,9 @@ export interface OwnerDashboard {
   credit_today_cents: Cents
   payments_today_cents: Cents
   repaid_month_cents: Cents
-  trend: { day: string; credit_cents: Cents; payment_cents: Cents }[] // the last 14 days, today last
+  trend: { day: string; credit_cents: Cents; payment_cents: Cents; sales_cents: Cents }[] // the last 14 days, today last
+  sales_today_cents: Cents // sold and paid on the spot today
+  sales_month_cents: Cents
   disputed: (LedgerEntry & { account: { id: number; display_name: string } })[] // entries customers flagged, oldest first
   late_installments: (InstallmentPlan & { customer_name: string })[] // running plans with an installment overdue
   recent_transactions: (LedgerEntry & { account: { id: number; display_name: string } })[]
@@ -392,7 +394,7 @@ export interface CustomerDashboard {
 
 /** GET /api/insights?month=YYYY-MM — the owner's book over the last six months. */
 export interface Insights {
-  months: { month: string; label: string; credit_cents: Cents; payment_cents: Cents; new_customers: number }[] // oldest first, this month last
+  months: { month: string; label: string; credit_cents: Cents; payment_cents: Cents; new_customers: number; sales_cents: Cents; sales_count: number }[] // oldest first, this month last
   month: string // the month `entries` are from
   entries: (LedgerEntry & { account: { id: number; display_name: string } })[] // newest first, crossed-out left out
   outstanding_cents: Cents
@@ -828,4 +830,39 @@ export interface StaffList {
   invitations: StaffInvitation[]
   max_staff: number
   plan_allows: boolean
+}
+
+// ------------------------------------------------------------------- sales
+
+export type SaleMethod = "Mobile transfer" | "Cash" | "Other"
+
+/** A sale paid on the spot: the shop's own record, never in a balance. */
+export interface Sale {
+  id: number
+  amount_cents: Cents
+  payment_method: SaleMethod
+  description: string | null
+  items: { name: string; quantity: string; unit_price_cents: Cents }[]
+  account_id: number | null
+  customer_name: string | null
+  created_by_name: string
+  occurred_at: Timestamp
+  crossed_out: boolean
+}
+
+/** GET /api/sales?day= — one Thimphu day at the counter. */
+export interface SalesDay {
+  day: {
+    day: string // 2026-11-09
+    previous_day: string
+    next_day: string | null // null for today
+    sales: Sale[]
+    sales_cents: Cents
+    sales_count: number
+    by_method: { method: SaleMethod; cents: Cents; sales: number }[]
+    collected_cents: Cents // payments received on credit that day
+    credit_cents: Cents // given on credit that day
+    takings_cents: Cents // sales and collections
+  }
+  methods: SaleMethod[]
 }

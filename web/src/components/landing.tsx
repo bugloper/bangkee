@@ -212,7 +212,8 @@ function Bento() {
       </div>
 
       <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-relaxed text-muted-foreground">
-        Also built in: picking from your items · a photo of every mBoB or mPay transfer · overdue reminders · Insights · printable statements · a history nothing can erase.
+        Also built in: cash sales and the day's takings · picking from your items · a photo of every mBoB or mPay transfer · overdue reminders · Insights · printable statements · a history nothing can
+        erase.
       </p>
     </section>
   )

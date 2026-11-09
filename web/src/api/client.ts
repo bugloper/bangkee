@@ -137,6 +137,8 @@ export const api = {
   createSupplier: (input: T.SupplierInput) => post<T.Notice & { supplier_id: number }>("/api/suppliers", input),
   updateSupplier: (id: number, input: T.SupplierInput) => patch<T.Notice>(`/api/suppliers/${id}`, input),
   deleteSupplier: (id: number) => del<T.Notice>(`/api/suppliers/${id}`),
+  sales: (day?: string) => get<T.SalesDay>(`/api/sales${day ? `?day=${day}` : ""}`),
+  crossOutSale: (id: number) => post<T.Notice>(`/api/sales/${id}/cross_out`),
   recordSupplierEntry: (id: number, kind: "purchases" | "payments", input: T.SupplierEntryInput) => post<T.Notice & { duplicate: boolean }>(`/api/suppliers/${id}/${kind}`, input),
   crossOutSupplierEntry: (entryId: number) => post<T.Notice & { supplier_id: number }>(`/api/supplier_entries/${entryId}/cross_out`),
   supplierStatement: (id: number, range: StatementRange = {}) => get<{ supplier: T.Supplier; statement: T.Statement["statement"] }>(`/api/suppliers/${id}/statement${qs(range)}`),

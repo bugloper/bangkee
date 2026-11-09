@@ -25,6 +25,7 @@ var staffPermissions = map[string]domain.Permission{
 	"GET /api/accounts/:id/reminders":      domain.PermView,
 	"GET /api/shop/reminders":              domain.PermView,
 	"GET /api/suppliers":                   domain.PermView,
+	"GET /api/sales":                       domain.PermView,
 	"GET /api/suppliers/:id":               domain.PermView,
 	"GET /api/suppliers/:id/statement":     domain.PermView,
 	"GET /api/suppliers/:id/statement.pdf": domain.PermView,
@@ -33,6 +34,7 @@ var staffPermissions = map[string]domain.Permission{
 	"GET /api/accounts/:id/invite":                        domain.PermRecord,
 	"POST /api/accounts/:id/credits":                      domain.PermRecord,
 	"POST /api/accounts/:id/payments":                     domain.PermRecord,
+	"POST /api/sales":                                     domain.PermRecord,
 	"POST /api/transactions/:id/documents":                domain.PermRecord,
 	"POST /api/accounts/:id/remind":                       domain.PermRecord,
 	"POST /api/accounts/:id/reminders/log":                domain.PermRecord,
@@ -57,6 +59,7 @@ var staffPermissions = map[string]domain.Permission{
 	"PATCH /api/suppliers/:id":                            domain.PermManage,
 	"DELETE /api/suppliers/:id":                           domain.PermManage,
 	"POST /api/supplier_entries/:id/cross_out":            domain.PermManage,
+	"POST /api/sales/:id/cross_out":                       domain.PermManage,
 }
 
 func requiredPermission(c *echo.Context) domain.Permission {

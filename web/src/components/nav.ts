@@ -18,6 +18,7 @@ import {
   UsersIcon,
   UsersRoundIcon,
   type LucideIcon,
+  ShoppingBagIcon,
 } from "lucide-react"
 
 import type { Me } from "@/api/types"
@@ -91,6 +92,9 @@ export function sidebarSections(me: Me): { label: string; items: NavItem[] }[] {
 }
 
 /** Help, at the foot of a shop's sidebar. */
+/** Sales paid on the spot: beside Customers in the desktop sidebar; on a phone, behind + and on Home. */
+export const salesItem: NavItem = { label: "Sales", icon: ShoppingBagIcon, path: "/sales", key: "sales" }
+
 export const helpItem: NavItem = { label: "Help & feedback", icon: LifeBuoyIcon, path: "/help", key: "help" }
 
 // Which nav item owns the screen we are on — so a child screen still lights
@@ -113,6 +117,7 @@ const NAV_ROOTS: Record<string, string> = {
   suppliers: "suppliers",
   reminders: "reminders",
   staff: "staff",
+  sales: "sales",
 }
 
 export function navRoot(pathname: string, me: Me): string | undefined {

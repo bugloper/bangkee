@@ -39,7 +39,7 @@ export interface QueuedWrite {
   files?: QueuedFile[]
   /** Which screen shows it while it waits: "account:12", "supplier:3". */
   queueKey: string
-  label: "credit" | "payment" | "purchase" | "supplier payment"
+  label: "credit" | "payment" | "purchase" | "supplier payment" | "sale"
   amount: string
   description: string
   queuedAt: number

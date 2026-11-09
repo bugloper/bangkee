@@ -1,12 +1,13 @@
-import { ArrowDownLeftIcon, ArrowUpRightIcon, ChevronRightIcon, UserPlusIcon, type LucideIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon, ChevronRightIcon, ShoppingBagIcon, UserPlusIcon, type LucideIcon } from "lucide-react"
 
 import { ActionSheet } from "@/components/action-sheet"
 import { go } from "@/lib/go"
 import { cn } from "@/lib/utils"
 
 /**
- * What the round + offers: the three things a shop owner does all day. A
- * credit or a payment asks whose next; a new customer goes straight to the form.
+ * What the round + offers: the things a shop owner does all day. A
+ * credit or a payment asks whose next; a cash sale or a new customer goes
+ * straight to its form.
  */
 export function RecordSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const choose = (path: string) => {
@@ -17,7 +18,8 @@ export function RecordSheet({ open, onOpenChange }: { open: boolean; onOpenChang
     <ActionSheet open={open} onOpenChange={onOpenChange} title="Record" label="Record">
       <div className="grid gap-2">
         <Choice icon={ArrowUpRightIcon} tone="owed" title="Add credit" detail="Goods taken, to pay later" onClick={() => choose("/record?kind=credit")} />
-        <Choice icon={ArrowDownLeftIcon} tone="paid" title="Record payment" detail="Money received, in cash or by transfer" onClick={() => choose("/record?kind=payment")} />
+        <Choice icon={ArrowDownLeftIcon} tone="paid" title="Record payment" detail="Paid back on what they owe" onClick={() => choose("/record?kind=payment")} />
+        <Choice icon={ShoppingBagIcon} tone="paid" title="Cash sale" detail="Paid on the spot — no credit" onClick={() => choose("/sales/new")} />
         <Choice icon={UserPlusIcon} tone="brand" title="Add customer" detail="Start someone's credit book" onClick={() => choose("/accounts/new")} />
       </div>
     </ActionSheet>

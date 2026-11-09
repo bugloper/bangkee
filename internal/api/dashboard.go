@@ -70,10 +70,26 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 	for _, row := range daily {
 		byDay[row.Day] = row
 	}
+	sold, err := q.DailySales(ctx, store.DailySalesParams{ShopID: shop.ID, Since: first})
+	if err != nil {
+		return err
+	}
+	salesByDay := map[string]int64{}
+	for _, row := range sold {
+		salesByDay[row.Day] = row.Cents
+	}
+	salesMonth, err := q.SalesByMethod(ctx, store.SalesByMethodParams{ShopID: shop.ID, FromTime: util.MonthStart(time.Now()), ToTime: today.AddDate(0, 0, 1)})
+	if err != nil {
+		return err
+	}
+	var salesMonthCents int64
+	for _, row := range salesMonth {
+		salesMonthCents += row.Cents
+	}
 	trend := make([]M, 0, trendDays)
 	for d := first; !d.After(today); d = d.AddDate(0, 0, 1) {
 		key := d.Format("2006-01-02")
-		trend = append(trend, M{"day": key, "credit_cents": byDay[key].CreditCents, "payment_cents": byDay[key].PaymentCents})
+		trend = append(trend, M{"day": key, "credit_cents": byDay[key].CreditCents, "payment_cents": byDay[key].PaymentCents, "sales_cents": salesByDay[key]})
 	}
 	todayRow := byDay[today.Format("2006-01-02")]
 
@@ -156,6 +172,7 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 		"top_accounts":    views(totals.top),
 		"customers_count": counts.Customers, "items_count": counts.MenuItems,
 		"credit_today_cents": todayRow.CreditCents, "payments_today_cents": todayRow.PaymentCents,
+		"sales_today_cents": salesByDay[today.Format("2006-01-02")], "sales_month_cents": salesMonthCents,
 		"repaid_month_cents": repaid, "trend": trend, "recent_transactions": recent, "disputed": disputed,
 		"late_installments": late,
 	})
