@@ -163,6 +163,17 @@ func (s *Server) routes(g *echo.Group) {
 	g.PATCH("/shop/reminders", s.updateReminderSettings)
 	g.PATCH("/me/reminders", s.setMyReminders)
 	g.GET("/transactions/:id/receipt.pdf", s.receiptPDF)
+	// suppliers
+	g.GET("/suppliers", s.suppliers)
+	g.POST("/suppliers", s.createSupplier)
+	g.GET("/suppliers/:id", s.supplier)
+	g.PATCH("/suppliers/:id", s.updateSupplier)
+	g.DELETE("/suppliers/:id", s.destroySupplier)
+	g.POST("/suppliers/:id/purchases", s.createSupplierPurchase)
+	g.POST("/suppliers/:id/payments", s.createSupplierPayment)
+	g.GET("/suppliers/:id/statement", s.supplierStatement)
+	g.GET("/suppliers/:id/statement.pdf", s.supplierStatement)
+	g.POST("/supplier_entries/:id/cross_out", s.crossOutSupplierEntry)
 	// bank details
 	g.GET("/bank_accounts", s.bankAccounts)
 	g.POST("/bank_accounts", s.createBankAccount)

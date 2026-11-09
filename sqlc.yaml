@@ -15,6 +15,7 @@ sql:
       - migrations/20261109091402_create_reminders.sql
       - migrations/20261109091636_add_plans.sql
       - migrations/20261109092706_create_installment_plans.sql
+      - migrations/20261109093840_create_suppliers.sql
     queries: db/queries
     gen:
       go:

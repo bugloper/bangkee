@@ -14,6 +14,7 @@ import {
   NotebookTextIcon,
   SmartphoneIcon,
   StoreIcon,
+  TruckIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -137,6 +138,7 @@ function Settings() {
                 />
                 <Row href="/menu_items" leading={<Tile icon={NotebookTextIcon} />} title="Items" subtitle={`${pluralize(info.data?.menu_items_count ?? 0, "item")} you sell`} chevron />
                 <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
+                <Row href="/suppliers" leading={<Tile icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
                 <Row href="/reminders" leading={<Tile icon={BellRingIcon} />} title="Reminders" subtitle="Reminding overdue customers, and when" chevron />
               </Rows>
             </Panel>

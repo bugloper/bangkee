@@ -218,6 +218,35 @@ type SubscriptionPayment struct {
 	Plan            string
 }
 
+type Supplier struct {
+	ID             int64
+	ShopID         int64
+	Name           string
+	Phone          *string
+	Notes          *string
+	BalanceCents   int64
+	LastActivityAt *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type SupplierEntry struct {
+	ID             int64
+	SupplierID     int64
+	CreatedByID    int64
+	CrossedOutByID *int64
+	Kind           int32
+	AmountCents    int64
+	Description    *string
+	Notes          *string
+	PaymentMethod  *string
+	IdempotencyKey *string
+	OccurredAt     time.Time
+	CrossedOutAt   *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type Testimonial struct {
 	ID           int64
 	UserID       int64

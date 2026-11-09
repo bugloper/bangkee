@@ -737,3 +737,32 @@ export interface InstallmentPlan {
   next: Installment | null
   installments: Installment[]
 }
+
+// --------------------------------------------------------------- suppliers
+
+/** Someone the shop buys from. balance_cents is what the shop owes them — never mixed with what customers owe. */
+export interface Supplier {
+  id: number
+  name: string
+  phone: string | null
+  notes: string | null
+  balance_cents: Cents
+  last_activity_at: Timestamp | null
+}
+
+/** A supplier's entries reuse the ledger entry's shape: kind is "purchase" (owed more) or "payment". */
+export type SupplierEntry = Omit<LedgerEntry, "kind"> & { kind: "purchase" | "payment" }
+
+export interface SupplierInput {
+  name: string
+  phone?: string
+  notes?: string
+}
+export interface SupplierEntryInput {
+  amount: string
+  description?: string
+  notes?: string
+  payment_method?: string
+  occurred_at?: string
+  idempotency_key: string
+}

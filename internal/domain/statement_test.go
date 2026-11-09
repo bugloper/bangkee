@@ -27,7 +27,7 @@ func TestAStatementCutsTheLedgerWithoutChangingIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := cutStatement(ledger, from, to, now)
+	s := CutStatement(ledger, from, to, now)
 	check := func(got, want int64, what string) {
 		t.Helper()
 		if got != want {
@@ -44,14 +44,14 @@ func TestAStatementCutsTheLedgerWithoutChangingIt(t *testing.T) {
 		t.Error("October is over: the closing is not today's balance")
 	}
 
-	all := cutStatement(ledger, nil, nil, now)
+	all := CutStatement(ledger, nil, nil, now)
 	check(all.OpeningCents, 0, "from the start: nothing before")
 	check(all.ClosingCents, 110_50, "the whole book")
 	if !all.ThroughToToday {
 		t.Error("no end date: through to today")
 	}
 
-	empty := cutStatement(nil, from, to, now)
+	empty := CutStatement(nil, from, to, now)
 	check(empty.ClosingCents, 0, "no entries, nothing owed")
 
 	if _, _, err := ParseStatementRange("2026-10-31", "2026-10-01"); err == nil {

@@ -37,6 +37,8 @@ import { Route as AppMenu_itemsNewRouteImport } from './routes/_app/menu_items/n
 import { Route as AppReceiptsIdRouteImport } from './routes/_app/receipts/$id'
 import { Route as AppShopsIndexRouteImport } from './routes/_app/shops/index'
 import { Route as AppShopsIdRouteImport } from './routes/_app/shops/$id'
+import { Route as AppSuppliersIndexRouteImport } from './routes/_app/suppliers/index'
+import { Route as AppSuppliersNewRouteImport } from './routes/_app/suppliers/new'
 import { Route as AuthJoinTokenRouteImport } from './routes/_auth/join/$token'
 import { Route as AuthPasswordsNewRouteImport } from './routes/_auth/passwords/new'
 import { Route as AuthRegistrationNewRouteImport } from './routes/_auth/registration/new'
@@ -50,6 +52,8 @@ import { Route as AppAccountsIdRemindersRouteImport } from './routes/_app/accoun
 import { Route as AppAccountsIdStatementRouteImport } from './routes/_app/accounts/$id/statement'
 import { Route as AppBank_accountsIdEditRouteImport } from './routes/_app/bank_accounts/$id/edit'
 import { Route as AppMenu_itemsIdEditRouteImport } from './routes/_app/menu_items/$id/edit'
+import { Route as AppSuppliersIdIndexRouteImport } from './routes/_app/suppliers/$id/index'
+import { Route as AppSuppliersIdStatementRouteImport } from './routes/_app/suppliers/$id/statement'
 import { Route as AppTransactionsIdEditRouteImport } from './routes/_app/transactions/$id/edit'
 import { Route as AuthPasswordsTokenEditRouteImport } from './routes/_auth/passwords/$token/edit'
 import { Route as AppAccountsIdCreditsNewRouteImport } from './routes/_app/accounts/$id/credits/new'
@@ -193,6 +197,16 @@ const AppShopsIdRoute = AppShopsIdRouteImport.update({
   path: '/shops/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSuppliersIndexRoute = AppSuppliersIndexRouteImport.update({
+  id: '/suppliers/',
+  path: '/suppliers/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSuppliersNewRoute = AppSuppliersNewRouteImport.update({
+  id: '/suppliers/new',
+  path: '/suppliers/new',
+  getParentRoute: () => AppRoute,
+} as any)
 const AuthJoinTokenRoute = AuthJoinTokenRouteImport.update({
   id: '/join/$token',
   path: '/join/$token',
@@ -259,6 +273,16 @@ const AppMenu_itemsIdEditRoute = AppMenu_itemsIdEditRouteImport.update({
   path: '/menu_items/$id/edit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSuppliersIdIndexRoute = AppSuppliersIdIndexRouteImport.update({
+  id: '/suppliers/$id/',
+  path: '/suppliers/$id/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSuppliersIdStatementRoute = AppSuppliersIdStatementRouteImport.update({
+  id: '/suppliers/$id/statement',
+  path: '/suppliers/$id/statement',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTransactionsIdEditRoute = AppTransactionsIdEditRouteImport.update({
   id: '/transactions/$id/edit',
   path: '/transactions/$id/edit',
@@ -303,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/menu_items/new': typeof AppMenu_itemsNewRoute
   '/receipts/$id': typeof AppReceiptsIdRoute
   '/shops/$id': typeof AppShopsIdRoute
+  '/suppliers/new': typeof AppSuppliersNewRoute
   '/join/$token': typeof AuthJoinTokenRoute
   '/passwords/new': typeof AuthPasswordsNewRoute
   '/registration/new': typeof AuthRegistrationNewRoute
@@ -311,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/bank_accounts/': typeof AppBank_accountsIndexRoute
   '/menu_items/': typeof AppMenu_itemsIndexRoute
   '/shops/': typeof AppShopsIndexRoute
+  '/suppliers/': typeof AppSuppliersIndexRoute
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/accounts/$id/installments': typeof AppAccountsIdInstallmentsRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
@@ -319,9 +345,11 @@ export interface FileRoutesByFullPath {
   '/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
+  '/suppliers/$id/statement': typeof AppSuppliersIdStatementRoute
   '/transactions/$id/edit': typeof AppTransactionsIdEditRoute
   '/passwords/$token/edit': typeof AuthPasswordsTokenEditRoute
   '/accounts/$id/': typeof AppAccountsIdIndexRoute
+  '/suppliers/$id/': typeof AppSuppliersIdIndexRoute
   '/accounts/$id/credits/new': typeof AppAccountsIdCreditsNewRoute
   '/accounts/$id/payments/new': typeof AppAccountsIdPaymentsNewRoute
 }
@@ -347,6 +375,7 @@ export interface FileRoutesByTo {
   '/menu_items/new': typeof AppMenu_itemsNewRoute
   '/receipts/$id': typeof AppReceiptsIdRoute
   '/shops/$id': typeof AppShopsIdRoute
+  '/suppliers/new': typeof AppSuppliersNewRoute
   '/join/$token': typeof AuthJoinTokenRoute
   '/passwords/new': typeof AuthPasswordsNewRoute
   '/registration/new': typeof AuthRegistrationNewRoute
@@ -354,6 +383,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof AppAccountsIndexRoute
   '/bank_accounts': typeof AppBank_accountsIndexRoute
   '/menu_items': typeof AppMenu_itemsIndexRoute
+  '/suppliers': typeof AppSuppliersIndexRoute
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/accounts/$id/installments': typeof AppAccountsIdInstallmentsRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
@@ -362,9 +392,11 @@ export interface FileRoutesByTo {
   '/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
+  '/suppliers/$id/statement': typeof AppSuppliersIdStatementRoute
   '/transactions/$id/edit': typeof AppTransactionsIdEditRoute
   '/passwords/$token/edit': typeof AuthPasswordsTokenEditRoute
   '/accounts/$id': typeof AppAccountsIdIndexRoute
+  '/suppliers/$id': typeof AppSuppliersIdIndexRoute
   '/accounts/$id/credits/new': typeof AppAccountsIdCreditsNewRoute
   '/accounts/$id/payments/new': typeof AppAccountsIdPaymentsNewRoute
 }
@@ -394,6 +426,7 @@ export interface FileRoutesById {
   '/_app/menu_items/new': typeof AppMenu_itemsNewRoute
   '/_app/receipts/$id': typeof AppReceiptsIdRoute
   '/_app/shops/$id': typeof AppShopsIdRoute
+  '/_app/suppliers/new': typeof AppSuppliersNewRoute
   '/_auth/join/$token': typeof AuthJoinTokenRoute
   '/_auth/passwords/new': typeof AuthPasswordsNewRoute
   '/_auth/registration/new': typeof AuthRegistrationNewRoute
@@ -402,6 +435,7 @@ export interface FileRoutesById {
   '/_app/bank_accounts/': typeof AppBank_accountsIndexRoute
   '/_app/menu_items/': typeof AppMenu_itemsIndexRoute
   '/_app/shops/': typeof AppShopsIndexRoute
+  '/_app/suppliers/': typeof AppSuppliersIndexRoute
   '/_app/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/_app/accounts/$id/installments': typeof AppAccountsIdInstallmentsRoute
   '/_app/accounts/$id/invite': typeof AppAccountsIdInviteRoute
@@ -410,9 +444,11 @@ export interface FileRoutesById {
   '/_app/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/_app/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/_app/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
+  '/_app/suppliers/$id/statement': typeof AppSuppliersIdStatementRoute
   '/_app/transactions/$id/edit': typeof AppTransactionsIdEditRoute
   '/_auth/passwords/$token/edit': typeof AuthPasswordsTokenEditRoute
   '/_app/accounts/$id/': typeof AppAccountsIdIndexRoute
+  '/_app/suppliers/$id/': typeof AppSuppliersIdIndexRoute
   '/_app/accounts/$id/credits/new': typeof AppAccountsIdCreditsNewRoute
   '/_app/accounts/$id/payments/new': typeof AppAccountsIdPaymentsNewRoute
 }
@@ -440,6 +476,7 @@ export interface FileRouteTypes {
     | '/menu_items/new'
     | '/receipts/$id'
     | '/shops/$id'
+    | '/suppliers/new'
     | '/join/$token'
     | '/passwords/new'
     | '/registration/new'
@@ -448,6 +485,7 @@ export interface FileRouteTypes {
     | '/bank_accounts/'
     | '/menu_items/'
     | '/shops/'
+    | '/suppliers/'
     | '/accounts/$id/edit'
     | '/accounts/$id/installments'
     | '/accounts/$id/invite'
@@ -456,9 +494,11 @@ export interface FileRouteTypes {
     | '/accounts/$id/statement'
     | '/bank_accounts/$id/edit'
     | '/menu_items/$id/edit'
+    | '/suppliers/$id/statement'
     | '/transactions/$id/edit'
     | '/passwords/$token/edit'
     | '/accounts/$id/'
+    | '/suppliers/$id/'
     | '/accounts/$id/credits/new'
     | '/accounts/$id/payments/new'
   fileRoutesByTo: FileRoutesByTo
@@ -484,6 +524,7 @@ export interface FileRouteTypes {
     | '/menu_items/new'
     | '/receipts/$id'
     | '/shops/$id'
+    | '/suppliers/new'
     | '/join/$token'
     | '/passwords/new'
     | '/registration/new'
@@ -491,6 +532,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/bank_accounts'
     | '/menu_items'
+    | '/suppliers'
     | '/accounts/$id/edit'
     | '/accounts/$id/installments'
     | '/accounts/$id/invite'
@@ -499,9 +541,11 @@ export interface FileRouteTypes {
     | '/accounts/$id/statement'
     | '/bank_accounts/$id/edit'
     | '/menu_items/$id/edit'
+    | '/suppliers/$id/statement'
     | '/transactions/$id/edit'
     | '/passwords/$token/edit'
     | '/accounts/$id'
+    | '/suppliers/$id'
     | '/accounts/$id/credits/new'
     | '/accounts/$id/payments/new'
   id:
@@ -530,6 +574,7 @@ export interface FileRouteTypes {
     | '/_app/menu_items/new'
     | '/_app/receipts/$id'
     | '/_app/shops/$id'
+    | '/_app/suppliers/new'
     | '/_auth/join/$token'
     | '/_auth/passwords/new'
     | '/_auth/registration/new'
@@ -538,6 +583,7 @@ export interface FileRouteTypes {
     | '/_app/bank_accounts/'
     | '/_app/menu_items/'
     | '/_app/shops/'
+    | '/_app/suppliers/'
     | '/_app/accounts/$id/edit'
     | '/_app/accounts/$id/installments'
     | '/_app/accounts/$id/invite'
@@ -546,9 +592,11 @@ export interface FileRouteTypes {
     | '/_app/accounts/$id/statement'
     | '/_app/bank_accounts/$id/edit'
     | '/_app/menu_items/$id/edit'
+    | '/_app/suppliers/$id/statement'
     | '/_app/transactions/$id/edit'
     | '/_auth/passwords/$token/edit'
     | '/_app/accounts/$id/'
+    | '/_app/suppliers/$id/'
     | '/_app/accounts/$id/credits/new'
     | '/_app/accounts/$id/payments/new'
   fileRoutesById: FileRoutesById
@@ -760,6 +808,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShopsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/suppliers/': {
+      id: '/_app/suppliers/'
+      path: '/suppliers'
+      fullPath: '/suppliers/'
+      preLoaderRoute: typeof AppSuppliersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/suppliers/new': {
+      id: '/_app/suppliers/new'
+      path: '/suppliers/new'
+      fullPath: '/suppliers/new'
+      preLoaderRoute: typeof AppSuppliersNewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_auth/join/$token': {
       id: '/_auth/join/$token'
       path: '/join/$token'
@@ -851,6 +913,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMenu_itemsIdEditRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/suppliers/$id/': {
+      id: '/_app/suppliers/$id/'
+      path: '/suppliers/$id'
+      fullPath: '/suppliers/$id/'
+      preLoaderRoute: typeof AppSuppliersIdIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/suppliers/$id/statement': {
+      id: '/_app/suppliers/$id/statement'
+      path: '/suppliers/$id/statement'
+      fullPath: '/suppliers/$id/statement'
+      preLoaderRoute: typeof AppSuppliersIdStatementRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/transactions/$id/edit': {
       id: '/_app/transactions/$id/edit'
       path: '/transactions/$id/edit'
@@ -913,10 +989,12 @@ interface AppRouteChildren {
   AppMenu_itemsNewRoute: typeof AppMenu_itemsNewRoute
   AppReceiptsIdRoute: typeof AppReceiptsIdRoute
   AppShopsIdRoute: typeof AppShopsIdRoute
+  AppSuppliersNewRoute: typeof AppSuppliersNewRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
   AppBank_accountsIndexRoute: typeof AppBank_accountsIndexRoute
   AppMenu_itemsIndexRoute: typeof AppMenu_itemsIndexRoute
   AppShopsIndexRoute: typeof AppShopsIndexRoute
+  AppSuppliersIndexRoute: typeof AppSuppliersIndexRoute
   AppAccountsIdEditRoute: typeof AppAccountsIdEditRoute
   AppAccountsIdInstallmentsRoute: typeof AppAccountsIdInstallmentsRoute
   AppAccountsIdInviteRoute: typeof AppAccountsIdInviteRoute
@@ -925,8 +1003,10 @@ interface AppRouteChildren {
   AppAccountsIdStatementRoute: typeof AppAccountsIdStatementRoute
   AppBank_accountsIdEditRoute: typeof AppBank_accountsIdEditRoute
   AppMenu_itemsIdEditRoute: typeof AppMenu_itemsIdEditRoute
+  AppSuppliersIdStatementRoute: typeof AppSuppliersIdStatementRoute
   AppTransactionsIdEditRoute: typeof AppTransactionsIdEditRoute
   AppAccountsIdIndexRoute: typeof AppAccountsIdIndexRoute
+  AppSuppliersIdIndexRoute: typeof AppSuppliersIdIndexRoute
   AppAccountsIdCreditsNewRoute: typeof AppAccountsIdCreditsNewRoute
   AppAccountsIdPaymentsNewRoute: typeof AppAccountsIdPaymentsNewRoute
 }
@@ -946,10 +1026,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppMenu_itemsNewRoute: AppMenu_itemsNewRoute,
   AppReceiptsIdRoute: AppReceiptsIdRoute,
   AppShopsIdRoute: AppShopsIdRoute,
+  AppSuppliersNewRoute: AppSuppliersNewRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
   AppBank_accountsIndexRoute: AppBank_accountsIndexRoute,
   AppMenu_itemsIndexRoute: AppMenu_itemsIndexRoute,
   AppShopsIndexRoute: AppShopsIndexRoute,
+  AppSuppliersIndexRoute: AppSuppliersIndexRoute,
   AppAccountsIdEditRoute: AppAccountsIdEditRoute,
   AppAccountsIdInstallmentsRoute: AppAccountsIdInstallmentsRoute,
   AppAccountsIdInviteRoute: AppAccountsIdInviteRoute,
@@ -958,8 +1040,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccountsIdStatementRoute: AppAccountsIdStatementRoute,
   AppBank_accountsIdEditRoute: AppBank_accountsIdEditRoute,
   AppMenu_itemsIdEditRoute: AppMenu_itemsIdEditRoute,
+  AppSuppliersIdStatementRoute: AppSuppliersIdStatementRoute,
   AppTransactionsIdEditRoute: AppTransactionsIdEditRoute,
   AppAccountsIdIndexRoute: AppAccountsIdIndexRoute,
+  AppSuppliersIdIndexRoute: AppSuppliersIdIndexRoute,
   AppAccountsIdCreditsNewRoute: AppAccountsIdCreditsNewRoute,
   AppAccountsIdPaymentsNewRoute: AppAccountsIdPaymentsNewRoute,
 }

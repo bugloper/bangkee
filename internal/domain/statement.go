@@ -22,7 +22,7 @@ type Statement struct {
 	To             *time.Time    `json:"to"`   // nil: up to now
 	OpeningCents   int64         `json:"opening_cents"`
 	Rows           []LedgerEntry `json:"rows"`
-	CreditCents    int64         `json:"credit_cents"`  // taken on credit in the range
+	CreditCents    int64         `json:"credit_cents"`  // taken on credit (bought, for a supplier) in the range
 	PaymentCents   int64         `json:"payment_cents"` // paid in the range
 	ClosingCents   int64         `json:"closing_cents"`
 	GeneratedAt    time.Time     `json:"generated_at"`
@@ -59,10 +59,11 @@ func AccountStatement(ctx context.Context, q *store.Queries, accountID int64, fr
 	if err != nil {
 		return Statement{}, err
 	}
-	return cutStatement(ledger, from, to, time.Now()), nil
+	return CutStatement(ledger, from, to, time.Now()), nil
 }
 
-func cutStatement(ledger []LedgerEntry, from, to *time.Time, now time.Time) Statement {
+// CutStatement is any ledger — a customer's or a supplier's — over [from, to].
+func CutStatement(ledger []LedgerEntry, from, to *time.Time, now time.Time) Statement {
 	s := Statement{From: from, To: to, Rows: []LedgerEntry{}, GeneratedAt: now.UTC()}
 	var endExclusive *time.Time
 	if to != nil {
@@ -80,7 +81,9 @@ func cutStatement(ledger []LedgerEntry, from, to *time.Time, now time.Time) Stat
 			continue
 		}
 		s.Rows = append(s.Rows, entry)
-		if entry.Kind == "credit" {
+		// What adds to the balance (a credit; a supplier's purchase) and what
+		// takes from it (a payment), whichever book this is.
+		if entry.SignedAmountCents > 0 {
 			s.CreditCents += entry.AmountCents
 		} else {
 			s.PaymentCents += entry.AmountCents

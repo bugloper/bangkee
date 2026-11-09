@@ -12,6 +12,9 @@ type StatementInput struct {
 	ShopName, ShopLine     string // the line under the name: where it is, its phone
 	CustomerName, Customer string // Customer: their phone, or ""
 	Statement              domain.Statement
+	// Supplier: the shop's book with someone it buys from — the shop owes,
+	// and the words say so.
+	Supplier bool
 }
 
 func day(t time.Time) string { return t.In(domain.Thimphu).Format("2 Jan 2006") }
@@ -33,11 +36,15 @@ func period(s domain.Statement) string {
 // Statement is the account statement as a PDF.
 func Statement(in StatementInput) ([]byte, error) {
 	s := in.Statement
+	title, party, taken, takenColumn := "Account statement", "Customer", "Taken on credit", "Credit"
+	if in.Supplier {
+		title, party, taken, takenColumn = "Supplier statement", "Supplier", "Bought on credit", "Bought"
+	}
 	p := newPage("Statement — " + in.CustomerName)
-	p.header(in.ShopName, in.ShopLine, "Account statement", period(s)+"\nIssued "+day(s.GeneratedAt))
+	p.header(in.ShopName, in.ShopLine, title, period(s)+"\nIssued "+day(s.GeneratedAt))
 
 	p.font("", 8.5, muted)
-	p.CellFormat(inner, 4.5, "Customer", "", 2, "L", false, 0, "")
+	p.CellFormat(inner, 4.5, party, "", 2, "L", false, 0, "")
 	p.font("B", 11, ink)
 	who := in.CustomerName
 	if in.Customer != "" {
@@ -50,7 +57,7 @@ func Statement(in StatementInput) ([]byte, error) {
 	y := p.GetY()
 	w := inner / 4
 	p.figure(margin, y, w, "Opening balance", money.Ngultrum(s.OpeningCents, false), ink)
-	p.figure(margin+w, y, w, "Taken on credit", money.Ngultrum(s.CreditCents, false), owed)
+	p.figure(margin+w, y, w, taken, money.Ngultrum(s.CreditCents, false), owed)
 	p.figure(margin+2*w, y, w, "Paid", money.Ngultrum(s.PaymentCents, false), paid)
 	closing := "Closing balance"
 	if s.ClosingCents < 0 {
@@ -62,7 +69,7 @@ func Statement(in StatementInput) ([]byte, error) {
 
 	// The table.
 	cols := []float64{24, 66, 28, 28, 32}
-	heads := []string{"Date", "Description", "Credit", "Paid", "Balance"}
+	heads := []string{"Date", "Description", takenColumn, "Paid", "Balance"}
 	aligns := []string{"L", "L", "R", "R", "R"}
 	head := func() {
 		p.font("B", 8.5, muted)
@@ -98,6 +105,9 @@ func Statement(in StatementInput) ([]byte, error) {
 	row("", opening, "", "", money.Ngultrum(s.OpeningCents, false), false)
 	for _, r := range s.Rows {
 		what := "Goods on credit"
+		if in.Supplier {
+			what = "Bought on credit"
+		}
 		if r.Description != nil && *r.Description != "" {
 			what = *r.Description
 		} else if r.Kind == "payment" {
@@ -107,7 +117,7 @@ func Statement(in StatementInput) ([]byte, error) {
 			what += " · " + *r.PaymentMethod
 		}
 		credit, payment := "", ""
-		if r.Kind == "credit" {
+		if r.SignedAmountCents > 0 {
 			credit = money.Ngultrum(r.AmountCents, false)
 		} else {
 			payment = money.Ngultrum(r.AmountCents, false)
@@ -127,8 +137,12 @@ func Statement(in StatementInput) ([]byte, error) {
 
 	p.Ln(6)
 	p.font("", 8, muted)
-	p.MultiCell(inner, 4, p.text("Amounts in Ngultrum. Entries the shop crossed out are left out, as they are from the balance. "+
-		"Questions about this statement go to "+in.ShopName+"."), "", "L", false)
+	footnote := "Amounts in Ngultrum. Entries the shop crossed out are left out, as they are from the balance. " +
+		"Questions about this statement go to " + in.ShopName + "."
+	if in.Supplier {
+		footnote = "Amounts in Ngultrum, from " + in.ShopName + "'s own record of what it bought from and paid " + in.CustomerName + ". Crossed-out entries are left out."
+	}
+	p.MultiCell(inner, 4, p.text(footnote), "", "L", false)
 	return p.bytes()
 }
 

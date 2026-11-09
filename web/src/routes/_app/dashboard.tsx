@@ -11,6 +11,7 @@ import {
   ShieldCheckIcon,
   ShoppingBagIcon,
   StoreIcon,
+  TruckIcon,
 } from "lucide-react"
 
 import { api } from "@/api/client"
@@ -246,6 +247,7 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
           <Rows>
             <Row href="/menu_items" leading={<RowIcon icon={PackageIcon} />} title="Items" subtitle="What you sell, to pick from when recording credit" chevron />
             <Row href="/bank_accounts" leading={<RowIcon icon={LandmarkIcon} />} title="Bank details" subtitle="What customers see when they pay you" chevron />
+            <Row href="/suppliers" leading={<RowIcon icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
             <Row
               href="/subscription"
               leading={<RowIcon icon={CreditCardIcon} />}
