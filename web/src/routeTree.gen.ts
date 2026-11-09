@@ -43,6 +43,7 @@ import { Route as AuthRegistrationNewRouteImport } from './routes/_auth/registra
 import { Route as AuthSessionNewRouteImport } from './routes/_auth/session/new'
 import { Route as AppAccountsIdIndexRouteImport } from './routes/_app/accounts/$id/index'
 import { Route as AppAccountsIdEditRouteImport } from './routes/_app/accounts/$id/edit'
+import { Route as AppAccountsIdInstallmentsRouteImport } from './routes/_app/accounts/$id/installments'
 import { Route as AppAccountsIdInviteRouteImport } from './routes/_app/accounts/$id/invite'
 import { Route as AppAccountsIdReceiptsRouteImport } from './routes/_app/accounts/$id/receipts'
 import { Route as AppAccountsIdRemindersRouteImport } from './routes/_app/accounts/$id/reminders'
@@ -222,6 +223,12 @@ const AppAccountsIdEditRoute = AppAccountsIdEditRouteImport.update({
   path: '/accounts/$id/edit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountsIdInstallmentsRoute =
+  AppAccountsIdInstallmentsRouteImport.update({
+    id: '/accounts/$id/installments',
+    path: '/accounts/$id/installments',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAccountsIdInviteRoute = AppAccountsIdInviteRouteImport.update({
   id: '/accounts/$id/invite',
   path: '/accounts/$id/invite',
@@ -305,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/menu_items/': typeof AppMenu_itemsIndexRoute
   '/shops/': typeof AppShopsIndexRoute
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
+  '/accounts/$id/installments': typeof AppAccountsIdInstallmentsRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
   '/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
   '/accounts/$id/reminders': typeof AppAccountsIdRemindersRoute
@@ -347,6 +355,7 @@ export interface FileRoutesByTo {
   '/bank_accounts': typeof AppBank_accountsIndexRoute
   '/menu_items': typeof AppMenu_itemsIndexRoute
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
+  '/accounts/$id/installments': typeof AppAccountsIdInstallmentsRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
   '/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
   '/accounts/$id/reminders': typeof AppAccountsIdRemindersRoute
@@ -394,6 +403,7 @@ export interface FileRoutesById {
   '/_app/menu_items/': typeof AppMenu_itemsIndexRoute
   '/_app/shops/': typeof AppShopsIndexRoute
   '/_app/accounts/$id/edit': typeof AppAccountsIdEditRoute
+  '/_app/accounts/$id/installments': typeof AppAccountsIdInstallmentsRoute
   '/_app/accounts/$id/invite': typeof AppAccountsIdInviteRoute
   '/_app/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
   '/_app/accounts/$id/reminders': typeof AppAccountsIdRemindersRoute
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/menu_items/'
     | '/shops/'
     | '/accounts/$id/edit'
+    | '/accounts/$id/installments'
     | '/accounts/$id/invite'
     | '/accounts/$id/receipts'
     | '/accounts/$id/reminders'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/bank_accounts'
     | '/menu_items'
     | '/accounts/$id/edit'
+    | '/accounts/$id/installments'
     | '/accounts/$id/invite'
     | '/accounts/$id/receipts'
     | '/accounts/$id/reminders'
@@ -527,6 +539,7 @@ export interface FileRouteTypes {
     | '/_app/menu_items/'
     | '/_app/shops/'
     | '/_app/accounts/$id/edit'
+    | '/_app/accounts/$id/installments'
     | '/_app/accounts/$id/invite'
     | '/_app/accounts/$id/receipts'
     | '/_app/accounts/$id/reminders'
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsIdEditRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounts/$id/installments': {
+      id: '/_app/accounts/$id/installments'
+      path: '/accounts/$id/installments'
+      fullPath: '/accounts/$id/installments'
+      preLoaderRoute: typeof AppAccountsIdInstallmentsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/accounts/$id/invite': {
       id: '/_app/accounts/$id/invite'
       path: '/accounts/$id/invite'
@@ -898,6 +918,7 @@ interface AppRouteChildren {
   AppMenu_itemsIndexRoute: typeof AppMenu_itemsIndexRoute
   AppShopsIndexRoute: typeof AppShopsIndexRoute
   AppAccountsIdEditRoute: typeof AppAccountsIdEditRoute
+  AppAccountsIdInstallmentsRoute: typeof AppAccountsIdInstallmentsRoute
   AppAccountsIdInviteRoute: typeof AppAccountsIdInviteRoute
   AppAccountsIdReceiptsRoute: typeof AppAccountsIdReceiptsRoute
   AppAccountsIdRemindersRoute: typeof AppAccountsIdRemindersRoute
@@ -930,6 +951,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMenu_itemsIndexRoute: AppMenu_itemsIndexRoute,
   AppShopsIndexRoute: AppShopsIndexRoute,
   AppAccountsIdEditRoute: AppAccountsIdEditRoute,
+  AppAccountsIdInstallmentsRoute: AppAccountsIdInstallmentsRoute,
   AppAccountsIdInviteRoute: AppAccountsIdInviteRoute,
   AppAccountsIdReceiptsRoute: AppAccountsIdReceiptsRoute,
   AppAccountsIdRemindersRoute: AppAccountsIdRemindersRoute,

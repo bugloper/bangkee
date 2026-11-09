@@ -14,6 +14,7 @@ sql:
       - migrations/20261109090838_add_confirmation_to_transactions.sql
       - migrations/20261109091402_create_reminders.sql
       - migrations/20261109091636_add_plans.sql
+      - migrations/20261109092706_create_installment_plans.sql
     queries: db/queries
     gen:
       go:

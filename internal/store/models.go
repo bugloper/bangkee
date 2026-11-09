@@ -84,6 +84,22 @@ type Feedback struct {
 	UpdatedAt      time.Time
 }
 
+type InstallmentPlan struct {
+	ID               int64
+	AccountID        int64
+	CreatedByID      int64
+	TotalCents       int64
+	InstallmentCount int32
+	Frequency        string
+	FirstDueOn       time.Time
+	StartsAt         time.Time
+	Notes            *string
+	Status           string
+	EndedAt          *time.Time
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
 type LineItem struct {
 	ID             int64
 	TransactionID  int64

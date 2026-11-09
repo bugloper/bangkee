@@ -146,6 +146,31 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
             </Panel>
           )}
 
+          {data.late_installments.length > 0 && (
+            <Panel
+              flush
+              title={
+                <span className="flex items-center gap-2">
+                  Late installments <Count tone="owed">{data.late_installments.length}</Count>
+                </span>
+              }
+            >
+              <Rows>
+                {data.late_installments.map((plan) => (
+                  <Row
+                    key={plan.id}
+                    href={`/accounts/${plan.account_id}/installments`}
+                    leading={<Initial text={plan.customer_name} tone="owed" />}
+                    title={plan.customer_name}
+                    subtitle={<span className="text-warn">{plan.overdue_count === 1 ? "1 installment late" : `${plan.overdue_count} installments late`}</span>}
+                    trailing={<Money cents={plan.overdue_cents} tone="owed" />}
+                    chevron
+                  />
+                ))}
+              </Rows>
+            </Panel>
+          )}
+
           {data.overdue_accounts.length > 0 && (
             <Panel
               flush

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowDownLeftIcon, ArrowUpRightIcon, BellRingIcon, CheckCheckIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon, BellRingIcon, CalendarClockIcon, CheckCheckIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
 import { useEffect } from "react"
 
 import { api } from "@/api/client"
@@ -19,7 +19,7 @@ import { ngultrum, pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { offerNotifications } from "@/lib/pwa"
 import { refreshAll } from "@/lib/query"
-import { dateTime } from "@/lib/time"
+import { dateTime, longDate } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
 // ?entry= is where a notification opens the account: that entry is highlighted.
@@ -176,6 +176,33 @@ function OwnerView({ data }: { data: OwnerData }) {
           )}
         </Panel>
 
+        <Panel flush title="Getting paid">
+          <Rows>
+            <Row
+              href={`/accounts/${account.id}/installments`}
+              leading={
+                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+                  <CalendarClockIcon className="size-4" />
+                </span>
+              }
+              title="Installment plan"
+              subtitle="Agree how they pay back what they owe, in parts"
+              chevron
+            />
+            <Row
+              href={`/accounts/${account.id}/reminders`}
+              leading={
+                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+                  <BellRingIcon className="size-4" />
+                </span>
+              }
+              title="Reminders"
+              subtitle="Remind them what they owe, and see past reminders"
+              chevron
+            />
+          </Rows>
+        </Panel>
+
         <Panel flush title={`Invite ${account.customer_name}`}>
           <Rows>
             <Row
@@ -220,6 +247,8 @@ function CustomerView({ data }: { data: CustomerData }) {
   const { account, shop } = data
   const { entry: highlighted } = Route.useSearch()
   usePage(shop.name, "/dashboard")
+  const plans = useQuery({ queryKey: ["installments", account.id], queryFn: () => api.installmentPlans(account.id) })
+  const plan = plans.data?.plans.find((p) => p.status === "active")
   const pending = data.ledger.filter((entry) => !entry.crossed_out && entry.confirmation === "pending").length
   const confirmAll = useMutation({
     mutationFn: () => api.confirmAll(account.id),
@@ -257,6 +286,25 @@ function CustomerView({ data }: { data: CustomerData }) {
         </div>
 
       </Panel>
+
+      {plan && (
+        <Panel flush>
+          <Rows>
+            <Row
+              href={`/accounts/${account.id}/installments`}
+              leading={
+                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+                  <CalendarClockIcon className="size-4" />
+                </span>
+              }
+              title="Your installment plan"
+              subtitle={plan.next ? `Next: ${ngultrum(plan.next.amount_cents - plan.next.paid_cents)} by ${longDate(plan.next.due_on.slice(0, 10) + "T00:00")}` : "Paid off"}
+              trailing={plan.overdue_count > 0 ? <Badge variant="owed">Late</Badge> : undefined}
+              chevron
+            />
+          </Rows>
+        </Panel>
+      )}
 
       {data.bank_accounts.length > 0 && (
         <Panel title={t("account.how_to_pay", { shop: shop.name })}>

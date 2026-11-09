@@ -375,6 +375,7 @@ export interface OwnerDashboard {
   repaid_month_cents: Cents
   trend: { day: string; credit_cents: Cents; payment_cents: Cents }[] // the last 14 days, today last
   disputed: (LedgerEntry & { account: { id: number; display_name: string } })[] // entries customers flagged, oldest first
+  late_installments: (InstallmentPlan & { customer_name: string })[] // running plans with an installment overdue
   recent_transactions: (LedgerEntry & { account: { id: number; display_name: string } })[]
 }
 
@@ -690,4 +691,35 @@ export interface ReminderSettings {
   last_hour: number
   credit_due_days: number
   plan_allows: boolean // automatic reminders are on the shop's plan (or its trial)
+}
+
+// ------------------------------------------------------------ installments
+
+export interface Installment {
+  number: number
+  due_on: Timestamp // a day; read the date part only
+  amount_cents: Cents
+  paid_cents: Cents
+  status: "paid" | "partial" | "overdue" | "due_today" | "upcoming"
+}
+
+/** An agreement to pay in parts; its progress is read from the account's payments since it began. */
+export interface InstallmentPlan {
+  id: number
+  account_id: number
+  total_cents: Cents
+  installment_count: number
+  frequency: "weekly" | "fortnightly" | "monthly"
+  first_due_on: Timestamp
+  notes: string | null
+  status: "active" | "completed" | "cancelled"
+  created_at: Timestamp
+  created_by_name: string
+  ended_at: Timestamp | null
+  paid_cents: Cents
+  remaining_cents: Cents
+  overdue_count: number
+  overdue_cents: Cents
+  next: Installment | null
+  installments: Installment[]
 }

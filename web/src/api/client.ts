@@ -115,6 +115,10 @@ export const api = {
   disputeEntry: (id: number, reason: string) => post<T.Notice>(`/api/transactions/${id}/dispute`, { reason }),
   replyToDispute: (id: number, note: string) => post<T.Notice>(`/api/transactions/${id}/dispute_reply`, { note }),
   confirmAll: (accountId: number) => post<T.Notice & { confirmed: number }>(`/api/accounts/${accountId}/confirm_all`),
+  installmentPlans: (accountId: number) => get<{ plans: T.InstallmentPlan[]; balance_cents: T.Cents }>(`/api/accounts/${accountId}/installments`),
+  createInstallmentPlan: (accountId: number, input: { total: string; count: number; frequency: string; first_due_on: string; notes?: string }) =>
+    post<T.Notice & { plan_id: number }>(`/api/accounts/${accountId}/installments`, input),
+  cancelInstallmentPlan: (planId: number) => post<T.Notice>(`/api/installment_plans/${planId}/cancel`),
   remind: (accountId: number) => post<T.Notice & { outcome: T.ReminderOutcome }>(`/api/accounts/${accountId}/remind`),
   logReminder: (accountId: number, channel: "whatsapp" | "sms") => post<T.Notice>(`/api/accounts/${accountId}/reminders/log`, { channel }),
   accountReminders: (accountId: number) => get<{ paused: boolean; reminders: T.Reminder[] }>(`/api/accounts/${accountId}/reminders`),

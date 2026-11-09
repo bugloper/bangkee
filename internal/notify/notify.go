@@ -157,6 +157,15 @@ func (n *Notifier) TransactionCrossedOut(ctx context.Context, accountID, entryID
 	})
 }
 
+// InstallmentPlanAgreed tells the customer the plan their shop set up.
+func (n *Notifier) InstallmentPlanAgreed(ctx context.Context, accountID, totalCents int64, count int32, frequency string, firstDue time.Time) {
+	n.toCustomer(ctx, accountID, func(c *accountContext) note {
+		return note{kind: "credit", title: "Installment plan at " + c.shopName,
+			body: fmt.Sprintf("%s in %d %s installments, the first due %s", money.Ngultrum(totalCents, false), count, frequency, util.LongDate(firstDue)),
+			path: accountPath(accountID) + "/installments"}
+	})
+}
+
 // EntryDisputed tells the shop a customer has flagged an entry.
 func (n *Notifier) EntryDisputed(ctx context.Context, accountID, entryID int64, kind string, amountCents int64, reason string) {
 	if c, ok := n.context(ctx, accountID); ok {

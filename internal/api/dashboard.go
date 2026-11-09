@@ -131,6 +131,11 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 		disputed = append(disputed, withField(view, "account", M{"id": disputedRows[i].Transaction.AccountID, "display_name": disputedRows[i].AccountName}))
 	}
 
+	late, err := domain.LateInstallmentPlans(ctx, q, shop.ID, time.Now())
+	if err != nil {
+		return err
+	}
+
 	// One photo lookup for both lists.
 	photos, err := s.customerPhotos(ctx, append(append([]store.Account{}, totals.overdue...), totals.top...))
 	if err != nil {
@@ -152,5 +157,6 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 		"customers_count": counts.Customers, "items_count": counts.MenuItems,
 		"credit_today_cents": todayRow.CreditCents, "payments_today_cents": todayRow.PaymentCents,
 		"repaid_month_cents": repaid, "trend": trend, "recent_transactions": recent, "disputed": disputed,
+		"late_installments": late,
 	})
 }
