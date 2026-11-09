@@ -33,6 +33,7 @@ import { Route as AppAccountsNewRouteImport } from './routes/_app/accounts/new'
 import { Route as AppBank_accountsIndexRouteImport } from './routes/_app/bank_accounts/index'
 import { Route as AppMenu_itemsIndexRouteImport } from './routes/_app/menu_items/index'
 import { Route as AppMenu_itemsNewRouteImport } from './routes/_app/menu_items/new'
+import { Route as AppReceiptsIdRouteImport } from './routes/_app/receipts/$id'
 import { Route as AppShopsIndexRouteImport } from './routes/_app/shops/index'
 import { Route as AppShopsIdRouteImport } from './routes/_app/shops/$id'
 import { Route as AuthJoinTokenRouteImport } from './routes/_auth/join/$token'
@@ -42,6 +43,7 @@ import { Route as AuthSessionNewRouteImport } from './routes/_auth/session/new'
 import { Route as AppAccountsIdIndexRouteImport } from './routes/_app/accounts/$id/index'
 import { Route as AppAccountsIdEditRouteImport } from './routes/_app/accounts/$id/edit'
 import { Route as AppAccountsIdInviteRouteImport } from './routes/_app/accounts/$id/invite'
+import { Route as AppAccountsIdReceiptsRouteImport } from './routes/_app/accounts/$id/receipts'
 import { Route as AppAccountsIdStatementRouteImport } from './routes/_app/accounts/$id/statement'
 import { Route as AppBank_accountsIdEditRouteImport } from './routes/_app/bank_accounts/$id/edit'
 import { Route as AppMenu_itemsIdEditRouteImport } from './routes/_app/menu_items/$id/edit'
@@ -168,6 +170,11 @@ const AppMenu_itemsNewRoute = AppMenu_itemsNewRouteImport.update({
   path: '/menu_items/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReceiptsIdRoute = AppReceiptsIdRouteImport.update({
+  id: '/receipts/$id',
+  path: '/receipts/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppShopsIndexRoute = AppShopsIndexRouteImport.update({
   id: '/shops/',
   path: '/shops/',
@@ -211,6 +218,11 @@ const AppAccountsIdEditRoute = AppAccountsIdEditRouteImport.update({
 const AppAccountsIdInviteRoute = AppAccountsIdInviteRouteImport.update({
   id: '/accounts/$id/invite',
   path: '/accounts/$id/invite',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccountsIdReceiptsRoute = AppAccountsIdReceiptsRouteImport.update({
+  id: '/accounts/$id/receipts',
+  path: '/accounts/$id/receipts',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAccountsIdStatementRoute = AppAccountsIdStatementRouteImport.update({
@@ -269,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/shop/$id': typeof ShopIdRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/menu_items/new': typeof AppMenu_itemsNewRoute
+  '/receipts/$id': typeof AppReceiptsIdRoute
   '/shops/$id': typeof AppShopsIdRoute
   '/join/$token': typeof AuthJoinTokenRoute
   '/passwords/new': typeof AuthPasswordsNewRoute
@@ -280,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/shops/': typeof AppShopsIndexRoute
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
+  '/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
   '/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
@@ -308,6 +322,7 @@ export interface FileRoutesByTo {
   '/shop/$id': typeof ShopIdRoute
   '/accounts/new': typeof AppAccountsNewRoute
   '/menu_items/new': typeof AppMenu_itemsNewRoute
+  '/receipts/$id': typeof AppReceiptsIdRoute
   '/shops/$id': typeof AppShopsIdRoute
   '/join/$token': typeof AuthJoinTokenRoute
   '/passwords/new': typeof AuthPasswordsNewRoute
@@ -318,6 +333,7 @@ export interface FileRoutesByTo {
   '/menu_items': typeof AppMenu_itemsIndexRoute
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
+  '/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
   '/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
@@ -350,6 +366,7 @@ export interface FileRoutesById {
   '/shop/$id': typeof ShopIdRoute
   '/_app/accounts/new': typeof AppAccountsNewRoute
   '/_app/menu_items/new': typeof AppMenu_itemsNewRoute
+  '/_app/receipts/$id': typeof AppReceiptsIdRoute
   '/_app/shops/$id': typeof AppShopsIdRoute
   '/_auth/join/$token': typeof AuthJoinTokenRoute
   '/_auth/passwords/new': typeof AuthPasswordsNewRoute
@@ -361,6 +378,7 @@ export interface FileRoutesById {
   '/_app/shops/': typeof AppShopsIndexRoute
   '/_app/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/_app/accounts/$id/invite': typeof AppAccountsIdInviteRoute
+  '/_app/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
   '/_app/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/_app/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/_app/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
@@ -391,6 +409,7 @@ export interface FileRouteTypes {
     | '/shop/$id'
     | '/accounts/new'
     | '/menu_items/new'
+    | '/receipts/$id'
     | '/shops/$id'
     | '/join/$token'
     | '/passwords/new'
@@ -402,6 +421,7 @@ export interface FileRouteTypes {
     | '/shops/'
     | '/accounts/$id/edit'
     | '/accounts/$id/invite'
+    | '/accounts/$id/receipts'
     | '/accounts/$id/statement'
     | '/bank_accounts/$id/edit'
     | '/menu_items/$id/edit'
@@ -430,6 +450,7 @@ export interface FileRouteTypes {
     | '/shop/$id'
     | '/accounts/new'
     | '/menu_items/new'
+    | '/receipts/$id'
     | '/shops/$id'
     | '/join/$token'
     | '/passwords/new'
@@ -440,6 +461,7 @@ export interface FileRouteTypes {
     | '/menu_items'
     | '/accounts/$id/edit'
     | '/accounts/$id/invite'
+    | '/accounts/$id/receipts'
     | '/accounts/$id/statement'
     | '/bank_accounts/$id/edit'
     | '/menu_items/$id/edit'
@@ -471,6 +493,7 @@ export interface FileRouteTypes {
     | '/shop/$id'
     | '/_app/accounts/new'
     | '/_app/menu_items/new'
+    | '/_app/receipts/$id'
     | '/_app/shops/$id'
     | '/_auth/join/$token'
     | '/_auth/passwords/new'
@@ -482,6 +505,7 @@ export interface FileRouteTypes {
     | '/_app/shops/'
     | '/_app/accounts/$id/edit'
     | '/_app/accounts/$id/invite'
+    | '/_app/accounts/$id/receipts'
     | '/_app/accounts/$id/statement'
     | '/_app/bank_accounts/$id/edit'
     | '/_app/menu_items/$id/edit'
@@ -671,6 +695,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMenu_itemsNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/receipts/$id': {
+      id: '/_app/receipts/$id'
+      path: '/receipts/$id'
+      fullPath: '/receipts/$id'
+      preLoaderRoute: typeof AppReceiptsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/shops/': {
       id: '/_app/shops/'
       path: '/shops'
@@ -732,6 +763,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts/$id/invite'
       fullPath: '/accounts/$id/invite'
       preLoaderRoute: typeof AppAccountsIdInviteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/accounts/$id/receipts': {
+      id: '/_app/accounts/$id/receipts'
+      path: '/accounts/$id/receipts'
+      fullPath: '/accounts/$id/receipts'
+      preLoaderRoute: typeof AppAccountsIdReceiptsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/accounts/$id/statement': {
@@ -814,6 +852,7 @@ interface AppRouteChildren {
   AppTestimonialRoute: typeof AppTestimonialRoute
   AppAccountsNewRoute: typeof AppAccountsNewRoute
   AppMenu_itemsNewRoute: typeof AppMenu_itemsNewRoute
+  AppReceiptsIdRoute: typeof AppReceiptsIdRoute
   AppShopsIdRoute: typeof AppShopsIdRoute
   AppAccountsIndexRoute: typeof AppAccountsIndexRoute
   AppBank_accountsIndexRoute: typeof AppBank_accountsIndexRoute
@@ -821,6 +860,7 @@ interface AppRouteChildren {
   AppShopsIndexRoute: typeof AppShopsIndexRoute
   AppAccountsIdEditRoute: typeof AppAccountsIdEditRoute
   AppAccountsIdInviteRoute: typeof AppAccountsIdInviteRoute
+  AppAccountsIdReceiptsRoute: typeof AppAccountsIdReceiptsRoute
   AppAccountsIdStatementRoute: typeof AppAccountsIdStatementRoute
   AppBank_accountsIdEditRoute: typeof AppBank_accountsIdEditRoute
   AppMenu_itemsIdEditRoute: typeof AppMenu_itemsIdEditRoute
@@ -842,6 +882,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTestimonialRoute: AppTestimonialRoute,
   AppAccountsNewRoute: AppAccountsNewRoute,
   AppMenu_itemsNewRoute: AppMenu_itemsNewRoute,
+  AppReceiptsIdRoute: AppReceiptsIdRoute,
   AppShopsIdRoute: AppShopsIdRoute,
   AppAccountsIndexRoute: AppAccountsIndexRoute,
   AppBank_accountsIndexRoute: AppBank_accountsIndexRoute,
@@ -849,6 +890,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppShopsIndexRoute: AppShopsIndexRoute,
   AppAccountsIdEditRoute: AppAccountsIdEditRoute,
   AppAccountsIdInviteRoute: AppAccountsIdInviteRoute,
+  AppAccountsIdReceiptsRoute: AppAccountsIdReceiptsRoute,
   AppAccountsIdStatementRoute: AppAccountsIdStatementRoute,
   AppBank_accountsIdEditRoute: AppBank_accountsIdEditRoute,
   AppMenu_itemsIdEditRoute: AppMenu_itemsIdEditRoute,

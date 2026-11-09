@@ -77,7 +77,8 @@ function NewPayment() {
         await refreshAll()
         if (!result.duplicate) offerNotifications()
       }
-      go(`/accounts/${id}`, { replace: true })
+      // Recorded now: open the account at the payment, where its receipt is.
+      go(result ? `/accounts/${id}?entry=${result.transaction_id}` : `/accounts/${id}`, { replace: true })
     },
   })
 

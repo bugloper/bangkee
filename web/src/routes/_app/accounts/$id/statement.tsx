@@ -1,18 +1,17 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { DownloadIcon, PrinterIcon, ScrollTextIcon, Share2Icon } from "lucide-react"
+import { PrinterIcon, ScrollTextIcon } from "lucide-react"
 import { useState } from "react"
 
 import { api, type StatementRange } from "@/api/client"
 import type { LedgerEntry } from "@/api/types"
+import { DocumentActions } from "@/components/document-actions"
 import { Field, Loading, Segmented } from "@/components/form"
 import { Empty, Money, Panel, Stat } from "@/components/kit"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { flashAlert } from "@/lib/flash"
 import { ngultrum } from "@/lib/money"
 import { usePage } from "@/lib/page"
-import { downloadDocument, shareDocument } from "@/lib/share"
 import { longDate } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -73,7 +72,6 @@ function StatementScreen() {
   const navigate = useNavigate({ from: Route.fullPath })
   usePage("Statement", `/accounts/${id}`)
   const [picking, setPicking] = useState(false)
-  const [busy, setBusy] = useState<"download" | "share" | null>(null)
   const { data, isFetching } = useQuery({ queryKey: ["statement", id, range.from ?? "", range.to ?? ""], queryFn: () => api.statement(id, range), placeholderData: keepPreviousData })
   if (!data) return <Loading />
   const { account, shop, statement } = data
@@ -82,18 +80,6 @@ function StatementScreen() {
   const filename = `Statement ${account.display_name} ${range.from ?? "start"} to ${range.to ?? "today"}.pdf`
   const pdfUrl = api.statementPdfUrl(id, range)
   const shareText = `${shop.name} — statement for ${account.display_name} (${rangeLabel(range)}). Balance: ${ngultrum(statement.closing_cents)}.`
-
-  async function run(kind: "download" | "share") {
-    setBusy(kind)
-    try {
-      if (kind === "download") await downloadDocument(pdfUrl, filename)
-      else await shareDocument(pdfUrl, filename, shareText)
-    } catch (error) {
-      flashAlert(error instanceof Error ? error.message : "That statement could not be made.")
-    } finally {
-      setBusy(null)
-    }
-  }
 
   return (
     <div className="grid gap-6">
@@ -112,12 +98,7 @@ function StatementScreen() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => run("share")} disabled={busy !== null}>
-            <Share2Icon /> {busy === "share" ? "Preparing…" : "Share PDF"}
-          </Button>
-          <Button variant="outline" onClick={() => run("download")} disabled={busy !== null}>
-            <DownloadIcon /> {busy === "download" ? "Preparing…" : "Download"}
-          </Button>
+          <DocumentActions url={pdfUrl} filename={filename} text={shareText} whatsappTo={data.viewer === "owner" ? account.customer_phone : null} />
           <Button variant="outline" onClick={() => window.print()} className="max-sm:hidden">
             <PrinterIcon /> Print
           </Button>

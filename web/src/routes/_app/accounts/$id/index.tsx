@@ -54,6 +54,7 @@ function Balance({ label, cents, overdue }: { label: string; cents: number; over
 /** The owner's view of one customer: balance, the actions, the ledger, the audit trail. */
 function OwnerView({ data }: { data: OwnerData }) {
   const { account } = data
+  const { entry: highlighted } = Route.useSearch()
   usePage(account.display_name, "/accounts")
   const locked = data.write_locked
   const rail = useQuery({ queryKey: ["accounts", "", ""], queryFn: () => api.accounts({}) })
@@ -146,11 +147,19 @@ function OwnerView({ data }: { data: OwnerData }) {
 
         <QueuedWrites queueKey={`account:${account.id}`} />
 
-        <Panel flush title="Transaction history">
+        <Panel
+          flush
+          title="Transaction history"
+          action={
+            <AppLink href={`/accounts/${account.id}/receipts`} className="text-[0.8125rem] font-medium text-primary hover:underline">
+              Receipts
+            </AppLink>
+          }
+        >
           {data.ledger.length > 0 ? (
             <div className="divide-y">
               {data.ledger.map((entry) => (
-                <LedgerRow key={entry.id} entry={entry} owner locked={locked} />
+                <LedgerRow key={entry.id} entry={entry} owner locked={locked} highlight={entry.id === highlighted} />
               ))}
             </div>
           ) : (
@@ -241,7 +250,15 @@ function CustomerView({ data }: { data: CustomerData }) {
       )}
       </div>
 
-      <Panel flush title={t("account.transaction_history")}>
+      <Panel
+        flush
+        title={t("account.transaction_history")}
+        action={
+          <AppLink href={`/accounts/${account.id}/receipts`} className="text-[0.8125rem] font-medium text-primary hover:underline">
+            Receipts
+          </AppLink>
+        }
+      >
         {data.ledger.length > 0 ? (
           <div className="divide-y">
             {data.ledger.map((entry) => (

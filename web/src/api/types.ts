@@ -294,6 +294,25 @@ export interface Statement {
   }
 }
 
+/** A payment written up for the customer: GET /api/transactions/:id/receipt (and .pdf). */
+export interface Receipt {
+  number: string // "R12-000345": the shop, then the payment
+  transaction_id: number
+  account_id: number
+  amount_cents: Cents
+  paid_at: Timestamp
+  payment_method: string | null
+  notes: string | null
+  received_by: string
+  balance_after_cents: Cents | null // the running balance right after it; null when void
+  void: boolean // the shop crossed the payment out
+  voided_at: Timestamp | null
+  shop_name: string
+  shop_line: string
+  customer_name: string
+  customer_phone: string | null
+}
+
 /** GET /api/accounts/:id/invite */
 export interface Invite {
   account: AccountSummary

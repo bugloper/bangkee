@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query"
-import { ArrowDownLeftIcon, ArrowUpRightIcon, ChevronDownIcon, PencilIcon, StrikethroughIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon, ChevronDownIcon, PencilIcon, ReceiptTextIcon, StrikethroughIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 import { api } from "@/api/client"
@@ -119,8 +119,21 @@ export function LedgerRow({ entry, owner, locked, highlight = false }: { entry: 
             </div>
           )}
 
+          {entry.kind === "payment" && (owner ? entry.crossed_out || locked : true) && (
+            <div className="mt-2.5 flex gap-1.5">
+              <AppLink href={`/receipts/${entry.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                <ReceiptTextIcon /> Receipt
+              </AppLink>
+            </div>
+          )}
+
           {owner && !entry.crossed_out && !locked && (
             <div className="mt-2.5 flex gap-1.5">
+              {entry.kind === "payment" && (
+                <AppLink href={`/receipts/${entry.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  <ReceiptTextIcon /> Receipt
+                </AppLink>
+              )}
               <AppLink href={`/transactions/${entry.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <PencilIcon /> Edit
               </AppLink>

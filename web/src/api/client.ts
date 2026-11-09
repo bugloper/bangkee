@@ -104,6 +104,9 @@ export const api = {
 
   transaction: (id: number) => get<T.TransactionDetail>(`/api/transactions/${id}`),
   updateTransaction: (id: number, input: T.TransactionUpdateInput) => patch<T.Notice & { account_id: number }>(`/api/transactions/${id}`, input),
+  receipt: (transactionId: number) => get<{ receipt: T.Receipt }>(`/api/transactions/${transactionId}/receipt`),
+  receiptPdfUrl: (transactionId: number) => `/api/transactions/${transactionId}/receipt.pdf`,
+  receipts: (accountId: number) => get<{ account: T.AccountSummary; receipts: T.Receipt[] }>(`/api/accounts/${accountId}/receipts`),
   crossOutTransaction: (id: number) => post<T.Notice & { account_id: number }>(`/api/transactions/${id}/cross_out`),
 
   bankAccounts: () => get<{ bank_accounts: T.BankAccount[] }>("/api/bank_accounts"),
