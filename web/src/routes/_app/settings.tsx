@@ -148,9 +148,9 @@ function Settings() {
                 {owns && (
                   <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
                 )}
-                <Row href="/suppliers" leading={<Tile icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
-                {owns && <Row href="/reminders" leading={<Tile icon={BellRingIcon} />} title="Reminders" subtitle="Reminding overdue customers, and when" chevron />}
-                {owns && <Row href="/staff" leading={<Tile icon={UsersIcon} />} title="Staff" subtitle="The people who record entries with you" chevron />}
+                <Row href="/suppliers" className="md:hidden" leading={<Tile icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
+                {owns && <Row href="/reminders" className="md:hidden" leading={<Tile icon={BellRingIcon} />} title="Reminders" subtitle="Reminding overdue customers, and when" chevron />}
+                {owns && <Row href="/staff" className="md:hidden" leading={<Tile icon={UsersIcon} />} title="Staff" subtitle="The people who record entries with you" chevron />}
               </Rows>
             </Panel>
           </Section>

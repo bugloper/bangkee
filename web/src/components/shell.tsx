@@ -8,7 +8,7 @@ import { QueueSummary } from "@/components/queued-writes"
 import { Logo } from "@/components/brand"
 import { ConsoleShell } from "@/components/console-shell"
 import { Initial } from "@/components/kit"
-import { navItems, navRoot, type NavItem } from "@/components/nav"
+import { businessItems, navItems, navRoot, type NavItem } from "@/components/nav"
 import { IosInstallSheet, PushPrompt } from "@/components/pwa"
 import { RecordSheet } from "@/components/record-sheet"
 import { Button } from "@/components/ui/button"
@@ -33,6 +33,23 @@ function subtitle(me: Me) {
   return me.shop?.name ?? "My credit"
 }
 
+function SidebarLink({ item, current }: { item: NavItem; current: boolean }) {
+  const Icon = item.icon
+  return (
+    <Link
+      to={item.path as never}
+      className={cn(
+        "group flex h-10 items-center gap-3 rounded-full px-3.5 text-sm font-medium transition-colors",
+        current ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+      )}
+    >
+      <Icon className={cn("size-[1.0625rem]", current ? "text-background" : "text-muted-foreground group-hover:text-foreground")} />
+      <span className="flex-1">{item.label}</span>
+      <Badge count={item.badge} />
+    </Link>
+  )
+}
+
 function Sidebar({ me, active, onRecord }: { me: Me; active?: string; onRecord?: () => void }) {
   return (
     <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r bg-sidebar md:flex">
@@ -47,24 +64,17 @@ function Sidebar({ me, active, onRecord }: { me: Me; active?: string; onRecord?:
         </div>
       )}
       <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
-        {navItems(me).map((item) => {
-          const Icon = item.icon
-          const current = active === item.key
-          return (
-            <Link
-              key={item.key}
-              to={item.path as never}
-              className={cn(
-                "group flex h-10 items-center gap-3 rounded-full px-3.5 text-sm font-medium transition-colors",
-                current ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <Icon className={cn("size-[1.0625rem]", current ? "text-background" : "text-muted-foreground group-hover:text-foreground")} />
-              <span className="flex-1">{item.label}</span>
-              <Badge count={item.badge} />
-            </Link>
-          )
-        })}
+        {navItems(me).map((item) => (
+          <SidebarLink key={item.key} item={item} current={active === item.key} />
+        ))}
+        {businessItems(me).length > 0 && (
+          <>
+            <div className="px-3.5 pt-5 pb-1.5 text-xs font-medium text-muted-foreground/80">Business</div>
+            {businessItems(me).map((item) => (
+              <SidebarLink key={item.key} item={item} current={active === item.key} />
+            ))}
+          </>
+        )}
       </nav>
       <div className="border-t p-3">
         <DropdownMenu>

@@ -1,6 +1,7 @@
 import {
   BarChart3Icon,
   BellIcon,
+  BellRingIcon,
   HouseIcon,
   InboxIcon,
   LayoutGridIcon,
@@ -8,8 +9,10 @@ import {
   ReceiptTextIcon,
   SettingsIcon,
   StoreIcon,
+  TruckIcon,
   UserRoundIcon,
   UsersIcon,
+  UsersRoundIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -55,6 +58,22 @@ export function navItems(me: Me): NavItem[] {
   ]
 }
 
+/**
+ * The shop's business tools, for the desktop sidebar under their own heading:
+ * the bottom tab bar on a phone has no room for them, so on a phone they stay
+ * in Profile. Each shows only to whoever may use it.
+ */
+export function businessItems(me: Me): NavItem[] {
+  if (!me.shop || (me.user.role !== "shop_owner" && me.user.role !== "staff")) return []
+  const items: NavItem[] = []
+  if (me.permissions.includes("view")) items.push({ label: "Suppliers", icon: TruckIcon, path: "/suppliers", key: "suppliers" })
+  if (me.permissions.includes("owner")) {
+    items.push({ label: "Reminders", icon: BellRingIcon, path: "/reminders", key: "reminders" })
+    items.push({ label: "Staff", icon: UsersRoundIcon, path: "/staff", key: "staff" })
+  }
+  return items
+}
+
 // Which nav item owns the screen we are on — so a child screen still lights
 // up its parent tab.
 const NAV_ROOTS: Record<string, string> = {
@@ -72,6 +91,9 @@ const NAV_ROOTS: Record<string, string> = {
   shops: "shops",
   help: "settings",
   testimonial: "settings",
+  suppliers: "suppliers",
+  reminders: "reminders",
+  staff: "staff",
 }
 
 export function navRoot(pathname: string, me: Me): string | undefined {
