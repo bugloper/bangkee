@@ -296,6 +296,36 @@ func (q *Queries) ShopMembers(ctx context.Context, shopID int64) ([]ShopMembersR
 	return items, nil
 }
 
+const shopTeam = `-- name: ShopTeam :many
+SELECT user_id, role FROM shop_members WHERE shop_id = $1 AND revoked_at IS NULL ORDER BY id
+`
+
+type ShopTeamRow struct {
+	UserID int64
+	Role   string
+}
+
+// The shop's staff who have not been removed, for notifying them.
+func (q *Queries) ShopTeam(ctx context.Context, shopID int64) ([]ShopTeamRow, error) {
+	rows, err := q.db.Query(ctx, shopTeam, shopID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ShopTeamRow
+	for rows.Next() {
+		var i ShopTeamRow
+		if err := rows.Scan(&i.UserID, &i.Role); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const staffInvitationByToken = `-- name: StaffInvitationByToken :one
 SELECT i.id, i.shop_id, i.name, i.email_address, i.role, i.token, i.invited_by_id, i.expires_at, i.accepted_at, i.revoked_at, i.created_at, s.name AS shop_name FROM staff_invitations i JOIN shops s ON s.id = i.shop_id WHERE i.token = $1
 `

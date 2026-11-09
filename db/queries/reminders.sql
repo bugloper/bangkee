@@ -1,13 +1,23 @@
 -- name: InsertReminder :one
 -- A Bangkee reminder already sent to this account today makes this a no-op
--- (the partial unique index): `inserted` is false.
+-- (the partial unique index): the id is 0.
 WITH row AS (
   INSERT INTO reminders (account_id, kind, channel, status, detail, balance_cents, sent_by_id, reminded_on)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-  ON CONFLICT (account_id, reminded_on) WHERE channel = 'app' AND status = 'sent' DO NOTHING
+  ON CONFLICT (account_id, reminded_on) WHERE channel IN ('app', 'bangkee_whatsapp') AND status = 'sent' DO NOTHING
   RETURNING id
 )
 SELECT COALESCE((SELECT id FROM row), 0)::bigint AS id;
+
+-- name: SetReminderNotification :exec
+UPDATE reminders SET notification_id = $2 WHERE id = $1;
+
+-- name: SetReminderDetail :exec
+UPDATE reminders SET detail = $2 WHERE id = $1;
+
+-- name: ReminderDeliveries :many
+-- How the given notifications went out by push and email.
+SELECT * FROM notification_deliveries WHERE notification_id = ANY(sqlc.arg(notification_ids)::bigint[]) ORDER BY id;
 
 -- name: MarkReminderFailed :exec
 UPDATE reminders SET status = 'failed', detail = $2 WHERE id = $1;

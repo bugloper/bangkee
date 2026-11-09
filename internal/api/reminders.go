@@ -76,33 +76,57 @@ func (s *Server) remindShop(ctx context.Context, shop store.Shop, now time.Time)
 		if !due {
 			continue
 		}
-		outcome, err := domain.Remind(ctx, s.Q, account, domain.ReminderAutomatic, nil, now)
+		outcome, err := domain.Remind(ctx, s.Q, account, domain.ReminderAutomatic, nil, now, s.WhatsApp != nil)
 		if err != nil {
 			return err
 		}
-		switch s.deliverReminder(ctx, &outcome, shop.CreditDueDays) {
+		switch s.deliverReminder(ctx, &outcome, shop) {
 		case "sent":
 			sent++
 		case "skipped", "failed":
 			skipped++
 		}
 	}
-	s.Notify.RemindersDigest(ctx, shop.OwnerID, sent, skipped)
+	s.Notify.RemindersDigest(ctx, shop.ID, shop.OwnerID, sent, skipped)
 	return nil
 }
 
-// deliverReminder sends a reminder that was recorded as sent, and marks it
-// failed if it could not go out. Returns the final status.
-func (s *Server) deliverReminder(ctx context.Context, outcome *domain.ReminderOutcome, creditDueDays int32) string {
+// deliverReminder sends a reminder that was recorded as sent — Bangkee's
+// notification, or WhatsApp — and marks it failed if it could not go out.
+// Returns the final status.
+func (s *Server) deliverReminder(ctx context.Context, outcome *domain.ReminderOutcome, shop store.Shop) string {
 	if outcome.Status != "sent" {
 		return outcome.Status
 	}
-	if err := s.Notify.PaymentReminder(ctx, outcome.AccountID, creditDueDays); err != nil {
-		slog.Error("reminder not delivered", "account", outcome.AccountID, "error", err)
-		outcome.Status, outcome.Detail = "failed", "Could not be delivered — try again later"
-		if err := s.Q.MarkReminderFailed(ctx, store.MarkReminderFailedParams{ID: outcome.ReminderID, Detail: util.Ptr(outcome.Detail)}); err != nil {
+	fail := func(detail string, err error) string {
+		slog.Error("reminder not delivered", "account", outcome.AccountID, "channel", outcome.Channel, "error", err)
+		outcome.Status, outcome.Detail = "failed", detail
+		if err := s.Q.MarkReminderFailed(ctx, store.MarkReminderFailedParams{ID: outcome.ReminderID, Detail: util.Ptr(detail)}); err != nil {
 			slog.Error("could not mark the reminder failed", "error", err)
 		}
+		return outcome.Status
+	}
+	if outcome.Channel == domain.ChannelBangkeeWhatsApp {
+		account, err := s.Q.AccountByID(ctx, outcome.AccountID)
+		if err != nil || account.CustomerPhone == nil {
+			return fail("Could not be sent — try again later", err)
+		}
+		to := "975" + domain.NormalizePhone(*account.CustomerPhone)
+		if err := s.WhatsApp.Reminder(ctx, to, account.CustomerName, shop.Name, money.Ngultrum(account.BalanceCents, false)); err != nil {
+			return fail(err.Error(), err)
+		}
+		outcome.Detail = "Accepted by WhatsApp"
+		if err := s.Q.SetReminderDetail(ctx, store.SetReminderDetailParams{ID: outcome.ReminderID, Detail: util.Ptr(outcome.Detail)}); err != nil {
+			slog.Error("could not note the WhatsApp reminder", "error", err)
+		}
+		return outcome.Status
+	}
+	notificationID, err := s.Notify.PaymentReminder(ctx, outcome.AccountID, shop.CreditDueDays)
+	if err != nil {
+		return fail("Could not be delivered — try again later", err)
+	}
+	if err := s.Q.SetReminderNotification(ctx, store.SetReminderNotificationParams{ID: outcome.ReminderID, NotificationID: &notificationID}); err != nil {
+		slog.Error("could not link the reminder to its notification", "error", err)
 	}
 	return outcome.Status
 }
@@ -133,6 +157,9 @@ func (s *Server) TrialEndingReminders(ctx context.Context) error {
 func outcomeMessage(o domain.ReminderOutcome) string {
 	switch o.Status {
 	case "sent":
+		if o.Channel == domain.ChannelBangkeeWhatsApp {
+			return "Reminder sent to " + o.CustomerName + " on WhatsApp."
+		}
 		return "Reminder sent to " + o.CustomerName + "."
 	case "duplicate":
 		return o.CustomerName + " was already reminded today."
@@ -156,13 +183,13 @@ func (s *Server) remind(c *echo.Context) error {
 		if err != nil {
 			return err
 		}
-		outcome, err = domain.Remind(ctx, q, account, domain.ReminderManual, &o.User.ID, time.Now())
+		outcome, err = domain.Remind(ctx, q, account, domain.ReminderManual, &o.User.ID, time.Now(), s.WhatsApp != nil)
 		return err
 	})
 	if err != nil {
 		return err
 	}
-	s.deliverReminder(ctx, &outcome, o.Shop.CreditDueDays)
+	s.deliverReminder(ctx, &outcome, o.Shop)
 	return notice(c, outcomeMessage(outcome), M{"outcome": outcome})
 }
 
@@ -198,11 +225,11 @@ func (s *Server) remindAll(c *echo.Context) error {
 		if len(picked) > 0 && !picked[account.ID] {
 			continue
 		}
-		outcome, err := domain.Remind(ctx, s.Q, account, domain.ReminderManual, &o.User.ID, now)
+		outcome, err := domain.Remind(ctx, s.Q, account, domain.ReminderManual, &o.User.ID, now, s.WhatsApp != nil)
 		if err != nil {
 			return err
 		}
-		if s.deliverReminder(ctx, &outcome, o.Shop.CreditDueDays) == "sent" {
+		if s.deliverReminder(ctx, &outcome, o.Shop) == "sent" {
 			sent++
 		}
 		outcomes = append(outcomes, outcome)

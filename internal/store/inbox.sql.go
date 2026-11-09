@@ -345,6 +345,27 @@ func (q *Queries) DetachAll(ctx context.Context, arg DetachAllParams) error {
 	return err
 }
 
+const insertNotificationDelivery = `-- name: InsertNotificationDelivery :exec
+INSERT INTO notification_deliveries (notification_id, channel, status, detail) VALUES ($1, $2, $3, $4)
+`
+
+type InsertNotificationDeliveryParams struct {
+	NotificationID int64
+	Channel        string
+	Status         string
+	Detail         *string
+}
+
+func (q *Queries) InsertNotificationDelivery(ctx context.Context, arg InsertNotificationDeliveryParams) error {
+	_, err := q.db.Exec(ctx, insertNotificationDelivery,
+		arg.NotificationID,
+		arg.Channel,
+		arg.Status,
+		arg.Detail,
+	)
+	return err
+}
+
 const notificationByID = `-- name: NotificationByID :one
 SELECT id, user_id, kind, title, body, path, read_at, created_at, updated_at FROM notifications WHERE id = $1
 `

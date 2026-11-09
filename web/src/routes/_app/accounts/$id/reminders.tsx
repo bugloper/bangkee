@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { BellRingIcon, MessageCircleIcon, MessageSquareTextIcon } from "lucide-react"
+import { BellRingIcon, CheckIcon, MessageCircleIcon, MessageSquareTextIcon, XIcon } from "lucide-react"
 
 import { api } from "@/api/client"
 import type { Reminder } from "@/api/types"
@@ -16,10 +16,31 @@ import { usePage } from "@/lib/page"
 import { smsLink, whatsappLink } from "@/lib/phone"
 import { refreshAll } from "@/lib/query"
 import { dateTime } from "@/lib/time"
+import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_app/accounts/$id/reminders")({ component: RemindersScreen })
 
-const CHANNEL: Record<Reminder["channel"], string> = { app: "Bangkee notification", whatsapp: "Your WhatsApp", sms: "Your SMS" }
+const CHANNEL: Record<Reminder["channel"], string> = { app: "Bangkee notification", whatsapp: "Your WhatsApp", sms: "Your SMS", bangkee_whatsapp: "WhatsApp from Bangkee" }
+
+/** How a Bangkee notification reached them: always in the app, then push and email as they went. */
+function Delivery({ reminder }: { reminder: Reminder }) {
+  if (reminder.channel !== "app" || reminder.status !== "sent") return null
+  const parts = [
+    { key: "app", label: "In the app", ok: true, detail: null as string | null },
+    ...reminder.deliveries.map((d) => ({ key: d.channel, label: d.channel === "push" ? "Phone notification" : "Email", ok: d.status === "sent", detail: d.status === "failed" ? d.detail : null })),
+  ]
+  return (
+    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+      {parts.map((p) => (
+        <span key={p.key} className={cn("inline-flex items-center gap-1", p.ok ? "text-paid" : "text-owed")} title={p.detail ?? undefined}>
+          {p.ok ? <CheckIcon className="size-3.5" /> : <XIcon className="size-3.5" />}
+          {p.label}
+          {p.detail && <span className="text-muted-foreground">— {p.detail}</span>}
+        </span>
+      ))}
+    </div>
+  )
+}
 
 // Reminding one customer what they owe: through Bangkee (their phone gets a
 // notification), or from the owner's own WhatsApp or SMS — which Bangkee
@@ -99,6 +120,7 @@ function RemindersScreen() {
                     {dateTime(r.at)} · owed {ngultrum(r.balance_cents)}
                     {r.detail && ` · ${r.detail}`}
                   </div>
+                  <Delivery reminder={r} />
                 </div>
                 <Badge variant={r.status === "sent" ? "paid" : r.status === "failed" ? "owed" : "muted"}>{r.status === "sent" ? "Sent" : r.status === "failed" ? "Failed" : "Skipped"}</Badge>
               </div>

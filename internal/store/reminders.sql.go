@@ -11,22 +11,23 @@ import (
 )
 
 const accountReminders = `-- name: AccountReminders :many
-SELECT r.id, r.account_id, r.kind, r.channel, r.status, r.detail, r.balance_cents, r.sent_by_id, r.reminded_on, r.created_at, u.name AS sent_by_name FROM reminders r LEFT JOIN users u ON u.id = r.sent_by_id
+SELECT r.id, r.account_id, r.kind, r.channel, r.status, r.detail, r.balance_cents, r.sent_by_id, r.reminded_on, r.created_at, r.notification_id, u.name AS sent_by_name FROM reminders r LEFT JOIN users u ON u.id = r.sent_by_id
 WHERE r.account_id = $1 ORDER BY r.created_at DESC, r.id DESC LIMIT 50
 `
 
 type AccountRemindersRow struct {
-	ID           int64
-	AccountID    int64
-	Kind         string
-	Channel      string
-	Status       string
-	Detail       *string
-	BalanceCents int64
-	SentByID     *int64
-	RemindedOn   time.Time
-	CreatedAt    time.Time
-	SentByName   *string
+	ID             int64
+	AccountID      int64
+	Kind           string
+	Channel        string
+	Status         string
+	Detail         *string
+	BalanceCents   int64
+	SentByID       *int64
+	RemindedOn     time.Time
+	CreatedAt      time.Time
+	NotificationID *int64
+	SentByName     *string
 }
 
 func (q *Queries) AccountReminders(ctx context.Context, accountID int64) ([]AccountRemindersRow, error) {
@@ -49,6 +50,7 @@ func (q *Queries) AccountReminders(ctx context.Context, accountID int64) ([]Acco
 			&i.SentByID,
 			&i.RemindedOn,
 			&i.CreatedAt,
+			&i.NotificationID,
 			&i.SentByName,
 		); err != nil {
 			return nil, err
@@ -74,7 +76,7 @@ const insertReminder = `-- name: InsertReminder :one
 WITH row AS (
   INSERT INTO reminders (account_id, kind, channel, status, detail, balance_cents, sent_by_id, reminded_on)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-  ON CONFLICT (account_id, reminded_on) WHERE channel = 'app' AND status = 'sent' DO NOTHING
+  ON CONFLICT (account_id, reminded_on) WHERE channel IN ('app', 'bangkee_whatsapp') AND status = 'sent' DO NOTHING
   RETURNING id
 )
 SELECT COALESCE((SELECT id FROM row), 0)::bigint AS id
@@ -92,7 +94,7 @@ type InsertReminderParams struct {
 }
 
 // A Bangkee reminder already sent to this account today makes this a no-op
-// (the partial unique index): `inserted` is false.
+// (the partial unique index): the id is 0.
 func (q *Queries) InsertReminder(ctx context.Context, arg InsertReminderParams) (int64, error) {
 	row := q.db.QueryRow(ctx, insertReminder,
 		arg.AccountID,
@@ -146,6 +148,66 @@ func (q *Queries) OpenDisputeCount(ctx context.Context, accountID int64) (int64,
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const reminderDeliveries = `-- name: ReminderDeliveries :many
+SELECT id, notification_id, channel, status, detail, created_at FROM notification_deliveries WHERE notification_id = ANY($1::bigint[]) ORDER BY id
+`
+
+// How the given notifications went out by push and email.
+func (q *Queries) ReminderDeliveries(ctx context.Context, notificationIds []int64) ([]NotificationDelivery, error) {
+	rows, err := q.db.Query(ctx, reminderDeliveries, notificationIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []NotificationDelivery
+	for rows.Next() {
+		var i NotificationDelivery
+		if err := rows.Scan(
+			&i.ID,
+			&i.NotificationID,
+			&i.Channel,
+			&i.Status,
+			&i.Detail,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setReminderDetail = `-- name: SetReminderDetail :exec
+UPDATE reminders SET detail = $2 WHERE id = $1
+`
+
+type SetReminderDetailParams struct {
+	ID     int64
+	Detail *string
+}
+
+func (q *Queries) SetReminderDetail(ctx context.Context, arg SetReminderDetailParams) error {
+	_, err := q.db.Exec(ctx, setReminderDetail, arg.ID, arg.Detail)
+	return err
+}
+
+const setReminderNotification = `-- name: SetReminderNotification :exec
+UPDATE reminders SET notification_id = $2 WHERE id = $1
+`
+
+type SetReminderNotificationParams struct {
+	ID             int64
+	NotificationID *int64
+}
+
+func (q *Queries) SetReminderNotification(ctx context.Context, arg SetReminderNotificationParams) error {
+	_, err := q.db.Exec(ctx, setReminderNotification, arg.ID, arg.NotificationID)
+	return err
 }
 
 const setRemindersOptOut = `-- name: SetRemindersOptOut :exec

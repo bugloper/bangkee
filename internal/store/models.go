@@ -134,6 +134,15 @@ type Notification struct {
 	UpdatedAt time.Time
 }
 
+type NotificationDelivery struct {
+	ID             int64
+	NotificationID int64
+	Channel        string
+	Status         string
+	Detail         *string
+	CreatedAt      time.Time
+}
+
 type PushSubscription struct {
 	ID         int64
 	UserID     int64
@@ -147,16 +156,17 @@ type PushSubscription struct {
 }
 
 type Reminder struct {
-	ID           int64
-	AccountID    int64
-	Kind         string
-	Channel      string
-	Status       string
-	Detail       *string
-	BalanceCents int64
-	SentByID     *int64
-	RemindedOn   time.Time
-	CreatedAt    time.Time
+	ID             int64
+	AccountID      int64
+	Kind           string
+	Channel        string
+	Status         string
+	Detail         *string
+	BalanceCents   int64
+	SentByID       *int64
+	RemindedOn     time.Time
+	CreatedAt      time.Time
+	NotificationID *int64
 }
 
 type Session struct {

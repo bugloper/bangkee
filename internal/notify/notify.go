@@ -56,21 +56,22 @@ type note struct {
 
 func (n *Notifier) deliver(ctx context.Context, notes ...note) {
 	for _, nt := range notes {
-		if err := n.deliverOne(ctx, nt); err != nil {
+		if _, err := n.deliverOne(ctx, nt); err != nil {
 			slog.Error("could not write a notification", "error", err)
 		}
 	}
 }
 
-// deliverOne writes the notification and starts pushing and mailing it. An
-// error means nothing reached the person; push and email failures after that
-// are logged, as the in-app notification is already there.
-func (n *Notifier) deliverOne(ctx context.Context, nt note) error {
+// deliverOne writes the notification and starts pushing and mailing it, and
+// returns its id. An error means nothing reached the person; how push and
+// email went after that is logged and written to notification_deliveries,
+// as the in-app notification is already there.
+func (n *Notifier) deliverOne(ctx context.Context, nt note) (int64, error) {
 	id, err := n.q.CreateNotification(ctx, store.CreateNotificationParams{
 		UserID: nt.userID, Kind: nt.kind, Title: nt.title, Body: util.Presence(nt.body), Path: util.Presence(nt.path),
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
 	n.Live.publish(nt.userID, message(id, nt.kind, nt.title, util.Presence(nt.body), util.Presence(nt.path)))
 	n.pending.Add(1)
@@ -81,7 +82,16 @@ func (n *Notifier) deliverOne(ctx context.Context, nt note) error {
 		n.push(background, id)
 		n.email(background, id)
 	}()
-	return nil
+	return id, nil
+}
+
+// recordDelivery notes how a notification went out by push or email.
+func (n *Notifier) recordDelivery(ctx context.Context, notificationID int64, channel, status, detail string) {
+	if err := n.q.InsertNotificationDelivery(ctx, store.InsertNotificationDeliveryParams{
+		NotificationID: notificationID, Channel: channel, Status: status, Detail: util.Presence(detail),
+	}); err != nil {
+		slog.Error("could not record a delivery", "notification", notificationID, "error", err)
+	}
 }
 
 func accountPath(id int64) string { return fmt.Sprintf("/accounts/%d", id) }
@@ -103,6 +113,25 @@ type accountContext struct {
 	account  store.Account
 	shopName string
 	ownerID  int64
+}
+
+// toTeam notifies the shop's owner and every member of its staff whose role
+// may do `need` — a manager can settle a flagged entry, so a manager hears of
+// one; read-only staff hear of nothing.
+func (n *Notifier) toTeam(ctx context.Context, shopID, ownerID int64, need domain.Permission, nt note) {
+	nt.userID = ownerID
+	notes := []note{nt}
+	team, err := n.q.ShopTeam(ctx, shopID)
+	if err != nil {
+		slog.Error("could not load the shop's staff", "shop", shopID, "error", err)
+	}
+	for _, member := range team {
+		if domain.Can(member.Role, need) {
+			nt.userID = member.UserID
+			notes = append(notes, nt)
+		}
+	}
+	n.deliver(ctx, notes...)
 }
 
 func (n *Notifier) context(ctx context.Context, accountID int64) (*accountContext, bool) {
@@ -166,10 +195,11 @@ func (n *Notifier) InstallmentPlanAgreed(ctx context.Context, accountID, totalCe
 	})
 }
 
-// EntryDisputed tells the shop a customer has flagged an entry.
+// EntryDisputed tells the shop a customer has flagged an entry: the owner,
+// and staff who can edit or cross it out.
 func (n *Notifier) EntryDisputed(ctx context.Context, accountID, entryID int64, kind string, amountCents int64, reason string) {
 	if c, ok := n.context(ctx, accountID); ok {
-		n.deliver(ctx, note{userID: c.ownerID, kind: "dispute", title: c.account.CustomerName + " flagged a " + kind + " of " + money.Ngultrum(amountCents, false),
+		n.toTeam(ctx, c.account.ShopID, c.ownerID, domain.PermManage, note{kind: "dispute", title: c.account.CustomerName + " flagged a " + kind + " of " + money.Ngultrum(amountCents, false),
 			body: snippet(reason), path: entryPath(accountID, entryID)})
 	}
 }
@@ -181,19 +211,20 @@ func (n *Notifier) DisputeReplied(ctx context.Context, accountID, entryID int64,
 	})
 }
 
+// AccountJoined tells the owner, and the staff who invite customers, that one joined.
 func (n *Notifier) AccountJoined(ctx context.Context, accountID int64) {
 	if c, ok := n.context(ctx, accountID); ok {
-		n.deliver(ctx, note{userID: c.ownerID, kind: "credit", title: c.account.CustomerName + " joined",
+		n.toTeam(ctx, c.account.ShopID, c.ownerID, domain.PermRecord, note{kind: "credit", title: c.account.CustomerName + " joined",
 			body: "They can now see their balance at " + c.shopName, path: accountPath(accountID)})
 	}
 }
 
-// PaymentReminder reminds the account's customer what they owe. The error
-// says the reminder did not go out at all.
-func (n *Notifier) PaymentReminder(ctx context.Context, accountID int64, creditDueDays int32) error {
+// PaymentReminder reminds the account's customer what they owe, and returns
+// the notification's id. The error says the reminder did not go out at all.
+func (n *Notifier) PaymentReminder(ctx context.Context, accountID int64, creditDueDays int32) (int64, error) {
 	c, ok := n.context(ctx, accountID)
 	if !ok || c.account.CustomerID == nil {
-		return fmt.Errorf("account %d has no customer to remind", accountID)
+		return 0, fmt.Errorf("account %d has no customer to remind", accountID)
 	}
 	body := money.Ngultrum(c.account.BalanceCents, false) + " is outstanding"
 	if days := domain.DaysOverdue(c.account, creditDueDays); days > 0 {
@@ -203,9 +234,10 @@ func (n *Notifier) PaymentReminder(ctx context.Context, accountID int64, creditD
 		body: body + ". Open Bangkee to see the entries and how to pay.", path: accountPath(accountID)})
 }
 
-// RemindersDigest is the owner's one note after their shop's reminders went
-// out: how many were reminded, and how many they need to reach themselves.
-func (n *Notifier) RemindersDigest(ctx context.Context, ownerID int64, sent, skipped int) {
+// RemindersDigest is the one note after a shop's reminders went out — to the
+// owner and its managers: how many were reminded, and how many they need to
+// reach themselves.
+func (n *Notifier) RemindersDigest(ctx context.Context, shopID, ownerID int64, sent, skipped int) {
 	if sent == 0 && skipped == 0 {
 		return
 	}
@@ -214,7 +246,7 @@ func (n *Notifier) RemindersDigest(ctx context.Context, ownerID int64, sent, ski
 	if skipped > 0 {
 		body = money.Pluralize(int64(skipped), "customer") + " could not be reminded through Bangkee — see who, and remind them yourself."
 	}
-	n.deliver(ctx, note{userID: ownerID, kind: "overdue", title: title, body: body, path: "/accounts?filter=overdue"})
+	n.toTeam(ctx, shopID, ownerID, domain.PermManage, note{kind: "overdue", title: title, body: body, path: "/accounts?filter=overdue"})
 }
 
 // SubscriptionPaymentSubmitted is §17: every platform admin hears about it.
@@ -318,9 +350,18 @@ func (n *Notifier) push(ctx context.Context, notificationID int64) {
 	// What the service worker reads in its push handler.
 	payload := message(notification.ID, notification.Kind, notification.Title, notification.Body, notification.Path)
 	subscriptions, err := n.q.PushSubscriptionsFor(ctx, notification.UserID)
-	if err != nil {
-		return
+	if err != nil || len(subscriptions) == 0 {
+		return // nothing subscribed: no push to record
 	}
+	delivered, problem := 0, ""
+	defer func() {
+		switch {
+		case delivered > 0:
+			n.recordDelivery(ctx, notificationID, "push", "sent", money.Pluralize(int64(delivered), "device"))
+		case problem != "":
+			n.recordDelivery(ctx, notificationID, "push", "failed", problem)
+		}
+	}()
 	for _, sub := range subscriptions {
 		response, err := webpush.SendNotificationWithContext(ctx, payload,
 			&webpush.Subscription{Endpoint: sub.Endpoint, Keys: webpush.Keys{P256dh: sub.P256dhKey, Auth: sub.AuthKey}},
@@ -334,6 +375,7 @@ func (n *Notifier) push(ctx context.Context, notificationID int64) {
 			})
 		if err != nil {
 			slog.Warn("push failed", "endpoint", sub.Endpoint, "error", err)
+			problem = "The push service could not be reached"
 			continue
 		}
 		response.Body.Close()
@@ -342,8 +384,12 @@ func (n *Notifier) push(ctx context.Context, notificationID int64) {
 		// uninstalled): the push service answers 404 or 410.
 		case response.StatusCode == 404 || response.StatusCode == 410:
 			_ = n.q.DeletePushSubscriptionByID(ctx, sub.ID)
+			problem = "Their phone no longer accepts notifications from Bangkee"
 		case response.StatusCode >= 300:
 			slog.Warn("push refused", "endpoint", sub.Endpoint, "status", response.StatusCode)
+			problem = fmt.Sprintf("The push service refused it (%d)", response.StatusCode)
+		default:
+			delivered++
 		}
 	}
 }
@@ -370,15 +416,18 @@ func (n *Notifier) absolute(path string) string {
 	return "https://" + n.cfg.Host + path
 }
 
-func (n *Notifier) send(to, subject, text, htmlBody string) {
+// errNoMail: no mail server is configured, so nothing was sent and nothing failed.
+var errNoMail = fmt.Errorf("no SMTP configured")
+
+func (n *Notifier) send(to, subject, text, htmlBody string) error {
 	if n.cfg.SMTP == nil {
 		slog.Info("email (no SMTP configured)", "to", to, "subject", subject, "text", text)
-		return
+		return errNoMail
 	}
 	from, err := mail.ParseAddress(n.cfg.MailFrom)
 	if err != nil {
 		slog.Error("BANGKEE_MAIL_FROM is not an address", "error", err)
-		return
+		return err
 	}
 	boundary := "bangkee-" + util.SecureToken()
 	message := strings.Join([]string{
@@ -409,7 +458,9 @@ func (n *Notifier) send(to, subject, text, htmlBody string) {
 	addr := fmt.Sprintf("%s:%d", smtpCfg.Address, smtpCfg.Port)
 	if err := smtp.SendMail(addr, auth, from.Address, []string{to}, []byte(message)); err != nil {
 		slog.Warn("email delivery failed", "to", to, "error", err)
+		return err
 	}
+	return nil
 }
 
 func mimeHeader(value string) string {
@@ -449,7 +500,12 @@ func (n *Notifier) email(ctx context.Context, notificationID int64) {
     <p style="margin:24px 0 0;color:#737685;font-size:13px">You are getting this because you use Bangkee, the shared credit book.</p>
   </div>
 </div>`
-	n.send(*to, notification.Title, text, htmlBody)
+	switch err := n.send(*to, notification.Title, text, htmlBody); {
+	case err == nil:
+		n.recordDelivery(ctx, notificationID, "email", "sent", "")
+	case err != errNoMail:
+		n.recordDelivery(ctx, notificationID, "email", "failed", "The mail server did not accept it")
+	}
 }
 
 // PasswordReset mails the reset link; it lives for 15 minutes.
@@ -458,7 +514,7 @@ func (n *Notifier) PasswordReset(to, token string) {
 	n.pending.Add(1)
 	go func() {
 		defer n.pending.Done()
-		n.send(to, "Reset your password",
+		_ = n.send(to, "Reset your password",
 			"You can reset your password on\n"+url+"\n\nThis link will expire in 15 minutes.\n",
 			`<p>You can reset your password on <a href="`+html.EscapeString(url)+`">this password reset page</a>. This link will expire in 15 minutes.</p>`)
 	}()

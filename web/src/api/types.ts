@@ -606,17 +606,7 @@ export interface AdminPaymentQueue {
 
 /** GET /api/admin/shops */
 export interface AdminShops {
-  shops: {
-    id: number
-    name: string
-    kind: string | null
-    kind_label: string
-    created_at: Timestamp
-    owner_name: string
-    owner_email: string
-    customers: number
-    subscription: Subscription | null
-  }[]
+  shops: { id: number; name: string; kind: string | null; kind_label: string; created_at: Timestamp; owner_name: string; owner_email: string; customers: number; subscription: Subscription | null }[]
 }
 
 // ------------------------------------------------------------ notifications
@@ -676,10 +666,7 @@ export interface MyFeedback {
 export interface AdminFeedbackQueue {
   status: string
   new_count: number
-  messages: (FeedbackMessage & {
-    from: { name: string; email: string | null; phone: string | null; role: "shop_owner" | "customer"; shop: string | null }
-    reviewed_by_name: string | null
-  })[]
+  messages: (FeedbackMessage & { from: { name: string; email: string | null; phone: string | null; role: "shop_owner" | "customer"; shop: string | null }; reviewed_by_name: string | null })[]
 }
 
 // ------------------------------------------------------------ testimonials
@@ -719,11 +706,21 @@ export interface ReminderOutcome {
   customer_name: string
   status: "sent" | "skipped" | "failed" | "duplicate"
   detail: string
+  channel: "app" | "bangkee_whatsapp"
+}
+
+/** How a reminder's notification went out by push or email. */
+export interface ReminderDelivery {
+  channel: "push" | "email"
+  status: "sent" | "failed"
+  detail: string | null
 }
 
 export interface Reminder {
   kind: "automatic" | "manual"
-  channel: "app" | "whatsapp" | "sms"
+  /** whatsapp and sms: sent by the owner from their own phone; bangkee_whatsapp: by Bangkee's WhatsApp number. */
+  channel: "app" | "whatsapp" | "sms" | "bangkee_whatsapp"
+  deliveries: ReminderDelivery[]
   status: "sent" | "skipped" | "failed"
   detail: string | null
   balance_cents: Cents

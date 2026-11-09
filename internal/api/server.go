@@ -36,6 +36,8 @@ type Server struct {
 	Cfg    config.Config
 	Files  *storage.Storage
 	Notify *notify.Notifier
+	// WhatsApp is nil unless the WhatsApp Business API is configured.
+	WhatsApp *notify.WhatsApp
 	// Signs the short-lived cookies and password reset links.
 	secret  []byte
 	limiter *rateLimiter
@@ -52,7 +54,7 @@ func NewServer(db *pgxpool.Pool, cfg config.Config, files *storage.Storage) *Ser
 		_, _ = rand.Read(secret)
 	}
 	return &Server{
-		DB: db, Q: store.New(db), Cfg: cfg, Files: files, Notify: notify.New(db, cfg),
+		DB: db, Q: store.New(db), Cfg: cfg, Files: files, Notify: notify.New(db, cfg), WhatsApp: notify.NewWhatsApp(cfg.WhatsApp),
 		secret: secret, limiter: newRateLimiter(), places: newGeocoder(nominatimURL),
 	}
 }

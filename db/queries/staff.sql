@@ -41,3 +41,7 @@ UPDATE staff_invitations SET revoked_at = now() WHERE id = $1 AND shop_id = $2 A
 -- Members, and invitations still open: both hold a place on the plan.
 SELECT ((SELECT COUNT(*) FROM shop_members m WHERE m.shop_id = $1 AND m.revoked_at IS NULL) +
         (SELECT COUNT(*) FROM staff_invitations i WHERE i.shop_id = $1 AND i.accepted_at IS NULL AND i.revoked_at IS NULL AND i.expires_at > now()))::bigint;
+
+-- name: ShopTeam :many
+-- The shop's staff who have not been removed, for notifying them.
+SELECT user_id, role FROM shop_members WHERE shop_id = $1 AND revoked_at IS NULL ORDER BY id;

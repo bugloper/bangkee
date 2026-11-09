@@ -79,3 +79,6 @@ WHERE a.id = $1 AND a.record_type = $2 AND a.record_id = $3 AND a.name = $4;
 
 -- name: DeleteAttachment :exec
 DELETE FROM active_storage_attachments WHERE id = $1;
+
+-- name: InsertNotificationDelivery :exec
+INSERT INTO notification_deliveries (notification_id, channel, status, detail) VALUES ($1, $2, $3, $4);

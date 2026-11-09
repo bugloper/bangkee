@@ -19,10 +19,12 @@ type Config struct {
 	// rotating it signs nobody out.
 	SecretKeyBase string
 	// Used to build absolute links in email.
-	Host     string
-	Storage  Storage
-	Vapid    *Vapid
-	SMTP     *SMTP
+	Host    string
+	Storage Storage
+	Vapid   *Vapid
+	SMTP    *SMTP
+	// WhatsApp is nil unless the WhatsApp Business (Cloud) API is set up.
+	WhatsApp *WhatsApp
 	MailFrom string
 	Operator OperatorBilling
 }
@@ -40,6 +42,15 @@ type Vapid struct {
 	PublicKey  string
 	PrivateKey string
 	Subject    string
+}
+
+// WhatsApp: the WhatsApp Business Platform, from Meta's Business Manager —
+// a permanent access token, the sending number's id, and the name of the
+// approved reminder template (notify/whatsapp.go says what it must contain).
+type WhatsApp struct {
+	AccessToken      string
+	PhoneNumberID    string
+	ReminderTemplate string
 }
 
 type SMTP struct {
@@ -157,6 +168,14 @@ func FromEnv() (Config, error) {
 			port = 587
 		}
 		cfg.SMTP = &SMTP{Address: address, Port: port, UserName: present("SMTP_USER_NAME"), Password: present("SMTP_PASSWORD")}
+	}
+
+	token, number, template := present("WHATSAPP_ACCESS_TOKEN"), present("WHATSAPP_PHONE_NUMBER_ID"), present("WHATSAPP_REMINDER_TEMPLATE")
+	switch {
+	case token != "" && number != "" && template != "":
+		cfg.WhatsApp = &WhatsApp{AccessToken: token, PhoneNumberID: number, ReminderTemplate: template}
+	case token != "" || number != "" || template != "":
+		return cfg, fmt.Errorf("WhatsApp needs all of WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_REMINDER_TEMPLATE")
 	}
 	return cfg, nil
 }
