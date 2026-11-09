@@ -1,7 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query"
 
 import { api, ApiError } from "@/api/client"
-import type { Me } from "@/api/types"
+import type { Feature, Me } from "@/api/types"
 
 /** Who is signed in — null for a visitor. The shell's one query. */
 export const meQuery = queryOptions({
@@ -19,4 +19,9 @@ export const meQuery = queryOptions({
 
 export function useMe() {
   return useQuery(meQuery).data ?? null
+}
+
+/** Whether the signed-in shop's plan (or its trial) includes a feature. The server checks again on every use. */
+export function useFeature(feature: Feature): boolean {
+  return useMe()?.subscription?.features.includes(feature) ?? false
 }

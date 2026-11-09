@@ -106,3 +106,21 @@ func MaxStaffFor(sub *store.Subscription, now time.Time) int {
 	plan, _ := PlanByKey(sub.Plan)
 	return plan.MaxStaff
 }
+
+func planName(key string) string {
+	if plan, ok := PlanByKey(key); ok {
+		return plan.Name
+	}
+	return key
+}
+
+// availableFeatures is every feature the shop may use now.
+func availableFeatures(sub *store.Subscription) []Feature {
+	out := []Feature{}
+	for _, f := range Plans[len(Plans)-1].Features {
+		if PlanAllows(sub, f, time.Now()) {
+			out = append(out, f)
+		}
+	}
+	return out
+}

@@ -145,6 +145,8 @@ func (s *Server) routes(g *echo.Group) {
 	g.PATCH("/transactions/:id", s.updateTransaction)
 	g.POST("/transactions/:id/cross_out", s.crossOutTransaction)
 	g.GET("/transactions/:id/receipt", s.receipt)
+	g.POST("/transactions/:id/documents", s.addDocument)
+	g.DELETE("/transactions/:id/documents/:document_id", s.removeDocument)
 	g.POST("/transactions/:id/confirm", s.confirmEntry)
 	g.POST("/transactions/:id/dispute", s.disputeEntry)
 	g.POST("/transactions/:id/dispute_reply", s.replyToDispute)

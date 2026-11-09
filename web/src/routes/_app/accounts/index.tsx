@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { flashNotice } from "@/lib/flash"
 import { useT } from "@/lib/i18n"
 import { balanceBadge, balanceWord } from "@/lib/ledger"
+import { useFeature } from "@/lib/me"
 import { usePage } from "@/lib/page"
 import { refreshAll } from "@/lib/query"
 import { timeAgoInWords } from "@/lib/time"
@@ -39,6 +40,7 @@ function Accounts() {
   const navigate = useNavigate({ from: Route.fullPath })
   const { data } = useQuery({ queryKey: ["accounts", q ?? "", filter ?? ""], queryFn: () => api.accounts({ q, filter }), placeholderData: (previous) => previous })
   const accounts = data?.accounts ?? []
+  const bulk = useFeature("bulk_reminders")
 
   return (
     <div className="grid gap-4">
@@ -76,7 +78,7 @@ function Accounts() {
         ))}
       </nav>
 
-      {filter === "overdue" && accounts.length > 0 && <RemindAll count={accounts.length} />}
+      {filter === "overdue" && accounts.length > 0 && bulk && <RemindAll count={accounts.length} />}
 
       <Panel flush>
         {accounts.length > 0 ? (

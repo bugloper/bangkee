@@ -61,7 +61,14 @@ export interface Subscription {
   days_remaining: number
   grace_days_remaining: number
   write_locked: boolean
+  plan: PlanKey
+  plan_name: string
+  features: Feature[] // what the shop can use now: its plan's, or everything during the trial
+  max_staff: number
 }
+
+export type PlanKey = "basic" | "pro" | "business"
+export type Feature = "automatic_reminders" | "bulk_reminders" | "attachments" | "installments" | "suppliers" | "staff"
 
 export interface ShopRef {
   id: number
@@ -161,6 +168,17 @@ export interface LedgerEntry {
   screenshot_url: string | null // a payment's photo of the customer's payment screen; /api/attachments/:id
   confirmation: "pending" | "confirmed" | "disputed" // the customer's word on it; never moves the balance
   responses: EntryResponse[] // that word's history, oldest first
+  documents: EntryDocument[] // files the shop attached: receipts, delivery notes, photos
+}
+
+/** A file on an entry, opened at its url (/api/attachments/:id) by the shop and the customer only. */
+export interface EntryDocument {
+  id: number
+  url: string
+  filename: string
+  content_type: string // image/png, image/jpeg, image/webp, image/heic or application/pdf
+  byte_size: number
+  added_at: Timestamp
 }
 
 export interface EntryResponse {

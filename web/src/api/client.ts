@@ -123,6 +123,9 @@ export const api = {
   reminderSettings: () => get<T.ReminderSettings>("/api/shop/reminders"),
   updateReminderSettings: (input: { enabled: boolean; every_days: number; hour: number }) => patch<T.Notice>("/api/shop/reminders", input),
   setMyReminders: (optOut: boolean) => patch<T.Notice>("/api/me/reminders", { opt_out: optOut }),
+  /** The file goes up as form data, field "file". */
+  addDocument: (transactionId: number, form: FormData) => post<T.Notice>(`/api/transactions/${transactionId}/documents`, form),
+  removeDocument: (transactionId: number, documentId: number) => del<T.Notice>(`/api/transactions/${transactionId}/documents/${documentId}`),
   crossOutTransaction: (id: number) => post<T.Notice & { account_id: number }>(`/api/transactions/${id}/cross_out`),
 
   bankAccounts: () => get<{ bank_accounts: T.BankAccount[] }>("/api/bank_accounts"),

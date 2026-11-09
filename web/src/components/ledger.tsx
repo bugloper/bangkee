@@ -6,6 +6,7 @@ import { api } from "@/api/client"
 import type { LedgerEntry } from "@/api/types"
 import { AppLink } from "@/components/app-link"
 import { ConfirmationBadge, ConfirmationPanel } from "@/components/confirmation"
+import { AttachButton, EntryDocuments } from "@/components/entry-documents"
 import { buttonVariants } from "@/components/ui/button"
 import { Thumb } from "@/components/viewer"
 import { confirm } from "@/lib/confirm"
@@ -125,10 +126,12 @@ export function LedgerRow({ entry, owner, locked, highlight = false, joined = tr
             </div>
           )}
 
+          <EntryDocuments entry={entry} editable={owner && !locked} />
+
           <ConfirmationPanel entry={entry} owner={owner} joined={joined} />
 
           {entry.kind === "payment" && (owner ? entry.crossed_out || locked : true) && (
-            <div className="mt-2.5 flex gap-1.5">
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
               <AppLink href={`/receipts/${entry.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <ReceiptTextIcon /> Receipt
               </AppLink>
@@ -136,12 +139,13 @@ export function LedgerRow({ entry, owner, locked, highlight = false, joined = tr
           )}
 
           {owner && !entry.crossed_out && !locked && (
-            <div className="mt-2.5 flex gap-1.5">
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
               {entry.kind === "payment" && (
                 <AppLink href={`/receipts/${entry.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                   <ReceiptTextIcon /> Receipt
                 </AppLink>
               )}
+              <AttachButton entry={entry} />
               <AppLink href={`/transactions/${entry.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <PencilIcon /> Edit
               </AppLink>

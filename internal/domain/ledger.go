@@ -79,6 +79,7 @@ type LedgerEntry struct {
 	ScreenshotURL       *string       `json:"screenshot_url"` // a payment's photographed payment screen
 	Confirmation        string        `json:"confirmation"`   // pending | confirmed | disputed: the customer's word on it
 	Responses           []ResponseDTO `json:"responses"`      // that word's history, oldest first
+	Documents           []DocumentDTO `json:"documents"`      // receipts, delivery notes, photos the shop attached
 }
 
 func lineItemsFor(ctx context.Context, q *store.Queries, ids []int64) (map[int64][]LineItemDTO, error) {
@@ -96,7 +97,10 @@ func lineItemsFor(ctx context.Context, q *store.Queries, ids []int64) (map[int64
 	return out, nil
 }
 
-func entryView(e Entry, running *int64, lines []LineItemDTO, screenshot *string, responses []ResponseDTO) LedgerEntry {
+func entryView(e Entry, running *int64, lines []LineItemDTO, screenshot *string, responses []ResponseDTO, documents []DocumentDTO) LedgerEntry {
+	if documents == nil {
+		documents = []DocumentDTO{}
+	}
 	if lines == nil {
 		lines = []LineItemDTO{}
 	}
@@ -108,7 +112,7 @@ func entryView(e Entry, running *int64, lines []LineItemDTO, screenshot *string,
 		Description: e.Description, Notes: e.Notes, PaymentMethod: e.PaymentMethod, OccurredAt: e.OccurredAt,
 		Itemized: e.Itemized, CrossedOut: e.CrossedOutAt != nil, CrossedOutAt: e.CrossedOutAt, CreatedByName: e.CreatedByName,
 		RunningBalanceCents: running, LineItems: lines, ScreenshotURL: screenshot,
-		Confirmation: ConfirmationKey(e.Confirmation), Responses: responses,
+		Confirmation: ConfirmationKey(e.Confirmation), Responses: responses, Documents: documents,
 	}
 }
 
@@ -130,9 +134,13 @@ func Entries(ctx context.Context, q *store.Queries, entries []Entry) ([]LedgerEn
 	if err != nil {
 		return nil, err
 	}
+	documents, err := documentsFor(ctx, q, ids)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]LedgerEntry, 0, len(entries))
 	for _, e := range entries {
-		out = append(out, entryView(e, nil, lines[e.ID], optionalURL(shots, e.ID), responses[e.ID]))
+		out = append(out, entryView(e, nil, lines[e.ID], optionalURL(shots, e.ID), responses[e.ID], documents[e.ID]))
 	}
 	return out, nil
 }
@@ -162,6 +170,10 @@ func Ledger(ctx context.Context, q *store.Queries, accountID int64, includeCross
 	if err != nil {
 		return nil, err
 	}
+	documents, err := documentsFor(ctx, q, ids)
+	if err != nil {
+		return nil, err
+	}
 	var running int64
 	out := make([]LedgerEntry, 0, len(rows))
 	for _, row := range rows {
@@ -170,7 +182,7 @@ func Ledger(ctx context.Context, q *store.Queries, accountID int64, includeCross
 			running += SignedAmount(row.Transaction)
 			balance = util.Ptr(running)
 		}
-		out = append(out, entryView(Entry{row.Transaction, row.CreatedByName}, balance, lines[row.Transaction.ID], optionalURL(shots, row.Transaction.ID), responses[row.Transaction.ID]))
+		out = append(out, entryView(Entry{row.Transaction, row.CreatedByName}, balance, lines[row.Transaction.ID], optionalURL(shots, row.Transaction.ID), responses[row.Transaction.ID], documents[row.Transaction.ID]))
 	}
 	return out, nil
 }

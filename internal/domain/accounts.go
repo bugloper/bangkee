@@ -149,8 +149,15 @@ func DestroyAccount(ctx context.Context, q *store.Queries, accountID int64) ([]s
 	}
 	var keys []string
 	steps := []func() error{
+		// Documents first: detaching the screenshots removes every attachment
+		// row on these entries, which would leave the documents' files behind.
 		func() error {
-			keys, err = DetachScreenshots(ctx, q, transactionIDs)
+			keys, err = detachDocuments(ctx, q, transactionIDs)
+			return err
+		},
+		func() error {
+			shots, err := DetachScreenshots(ctx, q, transactionIDs)
+			keys = append(keys, shots...)
 			return err
 		},
 		func() error {

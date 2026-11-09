@@ -470,6 +470,10 @@ func (s *Server) attachment(c *echo.Context) error {
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	c.Response().Header().Set("Cache-Control", "private, max-age=86400")
+	header := c.Response().Header()
+	header.Set("Cache-Control", "private, max-age=86400")
+	// Shown in the page, never sniffed into something it is not.
+	header.Set("X-Content-Type-Options", "nosniff")
+	header.Set("Content-Disposition", "inline")
 	return c.Blob(http.StatusOK, contentType, data)
 }
