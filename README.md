@@ -71,7 +71,10 @@ trying Bangkee out, `docker compose exec bangkee ./seed` loads the demo data.
 Every night at 02:30 Thimphu time, `deploy/backup.sh` (installed on the VM as
 `/usr/local/bin/bangkee-backup`, run from root's crontab, logging to
 `/var/log/bangkee-backup.log`) writes the database and the uploaded photos to
-`/opt/backups/nightly` and keeps 14 days of them:
+`/opt/backups/nightly`, keeps 14 days of them there, and copies each night's
+pair to the Cloudflare R2 bucket `bangkee` under `nightly/`, where 30 days are
+kept. The bucket's key is in `/opt/backups/r2.env` on the VM (root only).
+Each night is two files:
 
 - `db-<stamp>.dump` — `pg_dump --format=custom`
 - `files-<stamp>.tar.gz` — the `bangkee_bangkee-storage` volume
@@ -89,8 +92,9 @@ tar -xzf /opt/backups/nightly/files-<stamp>.tar.gz -C "$(docker volume inspect b
 docker compose start bangkee
 ```
 
-These copies live on the same VM as the database, so they cover mistakes
-and a broken database, not the loss of the VM.
+If the VM itself is gone, take the two files from R2 instead — the Cloudflare
+dashboard (R2 → `bangkee` → `nightly/`) downloads them — and restore them the
+same way on the new machine.
 
 ## Tests
 
