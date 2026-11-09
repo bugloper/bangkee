@@ -186,7 +186,7 @@ export const api = {
   submitSubscriptionPayment: (form: FormData) => post<T.Notice>("/api/subscription/payments", form),
 
   // operator
-  adminDashboard: () => get<T.AdminDashboard>("/api/admin/dashboard"),
+  adminDashboard: (days = 30) => get<T.AdminDashboard>(`/api/admin/dashboard?days=${days}`),
   adminPayments: (status: string) => get<T.AdminPaymentQueue>(`/api/admin/subscription_payments${qs({ status })}`),
   approvePayment: (id: number) => post<T.Notice>(`/api/admin/subscription_payments/${id}/approve`),
   rejectPayment: (id: number, rejection_reason: string) => post<T.Notice>(`/api/admin/subscription_payments/${id}/reject`, { rejection_reason }),

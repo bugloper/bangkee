@@ -67,14 +67,39 @@ SELECT id FROM shops WHERE id = $1 FOR UPDATE;
 -- Every shop's subscription, for the console's lists and counts in one read.
 SELECT * FROM subscriptions;
 
--- name: MonthlyApproved :many
--- Subscription money approved per month, months as Bhutan has them, from `since` on.
-SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month,
+
+
+-- name: DailyApproved :many
+-- Subscription money approved per day, days as Bhutan has them, from `since` on.
+SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
        COALESCE(SUM(amount_cents), 0)::bigint AS cents
 FROM subscription_payments WHERE status = 1 AND reviewed_at >= sqlc.arg(since)::timestamptz
 GROUP BY 1 ORDER BY 1;
 
--- name: MonthlyNewShops :many
-SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month, COUNT(*)::bigint AS shops
+-- name: DailyNewShops :many
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day, COUNT(*)::bigint AS shops
 FROM shops WHERE created_at >= sqlc.arg(since)::timestamptz
 GROUP BY 1 ORDER BY 1;
+
+-- name: DailyPlatformActivity :many
+-- Across every shop: entries recorded per day, and how many shops recorded any.
+SELECT to_char(t.created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COUNT(*) FILTER (WHERE t.kind = 0)::bigint AS credits,
+       COUNT(*) FILTER (WHERE t.kind = 1)::bigint AS payments,
+       COUNT(DISTINCT a.shop_id)::bigint AS shops
+FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE t.created_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;
+
+-- name: ActiveShopsBetween :one
+-- Shops that recorded at least one entry in [since, until).
+SELECT COUNT(DISTINCT a.shop_id)::bigint FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE t.created_at >= sqlc.arg(since)::timestamptz AND t.created_at < sqlc.arg(until)::timestamptz;
+
+-- name: MostActiveShops :many
+-- The shops that recorded the most entries since `since`: counts only, never amounts.
+SELECT s.id, s.name, s.kind, COUNT(t.id)::bigint AS entries, COUNT(DISTINCT t.account_id)::bigint AS customers,
+       MAX(t.created_at)::timestamptz AS last_entry_at
+FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN shops s ON s.id = a.shop_id
+WHERE t.created_at >= sqlc.arg(since)::timestamptz
+GROUP BY s.id, s.name, s.kind ORDER BY entries DESC, s.id LIMIT 6;

@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/labstack/echo/v5"
@@ -15,59 +16,124 @@ import (
 // is read once and counted in Go, so neither screen asks the database once
 // per shop.
 
-// consoleMonths is how far back the console's chart reaches, this month included.
-const consoleMonths = 12
+// The periods the overview can show, in days.
+var consolePeriods = map[string]int{"7": 7, "30": 30, "90": 90}
 
+// series fills a day-by-day series from rows keyed "YYYY-MM-DD", with a zero
+// for every day nothing happened.
+func series(from time.Time, days int, value func(day string) int64) []M {
+	out := make([]M, 0, days)
+	for i := 0; i < days; i++ {
+		day := from.AddDate(0, 0, i).Format("2006-01-02")
+		out = append(out, M{"day": day, "value": value(day)})
+	}
+	return out
+}
+
+func sumBetween(by map[string]int64, from time.Time, days int) int64 {
+	var total int64
+	for i := 0; i < days; i++ {
+		total += by[from.AddDate(0, 0, i).Format("2006-01-02")]
+	}
+	return total
+}
+
+// adminDashboard is the console's overview for the last 7, 30 or 90 days,
+// each figure beside the same figure for the period before.
 func (s *Server) adminDashboard(c *echo.Context) error {
 	if _, err := s.admin(c); err != nil {
 		return err
 	}
+	days, ok := consolePeriods[c.QueryParam("days")]
+	if !ok {
+		days = 30
+	}
 	ctx := c.Request().Context()
 	now := time.Now()
 	local := now.In(domain.Thimphu)
-	thisMonth := time.Date(local.Year(), local.Month(), 1, 0, 0, 0, 0, domain.Thimphu)
-	first := thisMonth.AddDate(0, -(consoleMonths - 1), 0)
+	today := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, domain.Thimphu)
+	from := today.AddDate(0, 0, -(days - 1)) // this period, today included
+	before := from.AddDate(0, 0, -days)      // the period before it
 
-	revenue, err := s.Q.MonthlyApproved(ctx, first)
+	approvedRows, err := s.Q.DailyApproved(ctx, before)
 	if err != nil {
 		return err
 	}
-	newShops, err := s.Q.MonthlyNewShops(ctx, first)
+	shopRows, err := s.Q.DailyNewShops(ctx, before)
 	if err != nil {
 		return err
 	}
-	revenueBy, shopsBy := map[string]int64{}, map[string]int64{}
-	for _, r := range revenue {
-		revenueBy[r.Month] = r.Cents
+	activityRows, err := s.Q.DailyPlatformActivity(ctx, before)
+	if err != nil {
+		return err
 	}
-	for _, r := range newShops {
-		shopsBy[r.Month] = r.Shops
+	approved, newShops, credits, payments, activeByDay := map[string]int64{}, map[string]int64{}, map[string]int64{}, map[string]int64{}, map[string]int64{}
+	for _, r := range approvedRows {
+		approved[r.Day] = r.Cents
 	}
-	months := make([]M, 0, consoleMonths)
-	for m := first; !m.After(thisMonth); m = m.AddDate(0, 1, 0) {
-		key := m.Format("2006-01")
-		months = append(months, M{"month": key, "label": m.Format("Jan"), "approved_cents": revenueBy[key], "new_shops": shopsBy[key]})
+	for _, r := range shopRows {
+		newShops[r.Day] = r.Shops
 	}
-	thisKey, lastKey := thisMonth.Format("2006-01"), thisMonth.AddDate(0, -1, 0).Format("2006-01")
+	for _, r := range activityRows {
+		credits[r.Day], payments[r.Day], activeByDay[r.Day] = r.Credits, r.Payments, r.Shops
+	}
+	activeNow, err := s.Q.ActiveShopsBetween(ctx, store.ActiveShopsBetweenParams{Since: from, Until: now.Add(time.Minute)})
+	if err != nil {
+		return err
+	}
+	activeBefore, err := s.Q.ActiveShopsBetween(ctx, store.ActiveShopsBetweenParams{Since: before, Until: from})
+	if err != nil {
+		return err
+	}
 
+	// Subscriptions: where every shop stands, and what the paying ones bring in a month.
 	subs, err := s.Q.AllSubscriptions(ctx)
 	if err != nil {
 		return err
 	}
-	mix := M{"trialing": 0, "basic": 0, "pro": 0, "business": 0, "past_due": 0, "disabled": 0}
-	paying := 0
+	names, err := s.Q.AdminShops(ctx)
+	if err != nil {
+		return err
+	}
+	nameOf := map[int64]string{}
+	for _, shop := range names {
+		nameOf[shop.ID] = shop.Name
+	}
+	mix := map[string]int64{"trialing": 0, "basic": 0, "pro": 0, "business": 0, "past_due": 0, "disabled": 0}
+	mrrByPlan := map[string]int64{"basic": 0, "pro": 0, "business": 0}
+	var mrr int64
+	trialsEnding, paymentDue := []M{}, []M{}
+	soon := now.AddDate(0, 0, 14)
 	for _, sub := range subs {
-		switch status := domain.EffectiveStatus(sub, now); status {
+		switch domain.EffectiveStatus(sub, now) {
 		case domain.Trialing:
-			mix["trialing"] = mix["trialing"].(int) + 1
+			mix["trialing"]++
+			if sub.CurrentPeriodEnd.Before(soon) {
+				trialsEnding = append(trialsEnding, M{"shop_id": sub.ShopID, "name": nameOf[sub.ShopID], "ends_at": sub.CurrentPeriodEnd, "days_left": domain.DaysRemaining(sub)})
+			}
 		case domain.Active:
-			mix[sub.Plan] = mix[sub.Plan].(int) + 1
-			paying++
+			mix[sub.Plan]++
+			mrr += sub.PriceCents
+			mrrByPlan[sub.Plan] += sub.PriceCents
 		case domain.PastDue:
-			mix["past_due"] = mix["past_due"].(int) + 1
+			mix["past_due"]++
+			paymentDue = append(paymentDue, M{"shop_id": sub.ShopID, "name": nameOf[sub.ShopID], "grace_until": sub.GraceUntil, "days_left": domain.GraceDaysRemaining(sub)})
 		default:
-			mix["disabled"] = mix["disabled"].(int) + 1
+			mix["disabled"]++
 		}
+	}
+
+	sort.Slice(trialsEnding, func(i, j int) bool {
+		return trialsEnding[i]["ends_at"].(time.Time).Before(trialsEnding[j]["ends_at"].(time.Time))
+	})
+
+	active, err := s.Q.MostActiveShops(ctx, from)
+	if err != nil {
+		return err
+	}
+	activeViews := make([]M, 0, len(active))
+	for _, a := range active {
+		activeViews = append(activeViews, M{"id": a.ID, "name": a.Name, "kind_label": domain.ShopKindLabel(a.Kind), "entries": a.Entries, "customers": a.Customers, "last_entry_at": a.LastEntryAt})
 	}
 
 	pendingStatus := int32(0)
@@ -79,17 +145,35 @@ func (s *Server) adminDashboard(c *echo.Context) error {
 	if err != nil {
 		return err
 	}
-	count, err := s.Q.PendingSubscriptionPaymentCount(ctx)
+	pendingCount, err := s.Q.PendingSubscriptionPaymentCount(ctx)
 	if err != nil {
 		return err
 	}
+
+	figure := func(by map[string]int64) M {
+		return M{"value": sumBetween(by, from, days), "previous": sumBetween(by, before, days), "series": series(from, days, func(d string) int64 { return by[d] })}
+	}
 	return c.JSON(http.StatusOK, M{
-		"approved_month_cents": revenueBy[thisKey], "approved_last_month_cents": revenueBy[lastKey],
-		"new_shops_month": shopsBy[thisKey], "new_shops_last_month": shopsBy[lastKey],
-		"shops_count": len(subs), "paying_count": paying, "trialing_count": mix["trialing"],
-		"locked_count": mix["disabled"], "pending_count": count, "pending": pending,
-		"plan_mix": mix, "months": months,
+		"days": days, "from": from, "shops_count": len(subs),
+		"approved":     figure(approved),
+		"new_shops":    figure(newShops),
+		"active_shops": M{"value": activeNow, "previous": activeBefore, "series": series(from, days, func(d string) int64 { return activeByDay[d] })},
+		"entries":      M{"value": sumBetween(credits, from, days) + sumBetween(payments, from, days), "previous": sumBetween(credits, before, days) + sumBetween(payments, before, days)},
+		"mrr_cents":    mrr, "mrr_by_plan": mrrByPlan, "plan_mix": mix,
+		"pending_count": pendingCount, "pending": pending,
+		"trials_ending": trialsEnding, "payment_due": paymentDue, "most_active": activeViews,
+		"activity_days": activityDays(from, days, credits, payments),
 	})
+}
+
+// activityDays is each day's credits and payments recorded across every shop.
+func activityDays(from time.Time, days int, credits, payments map[string]int64) []M {
+	out := make([]M, 0, days)
+	for i := 0; i < days; i++ {
+		day := from.AddDate(0, 0, i).Format("2006-01-02")
+		out = append(out, M{"day": day, "credits": credits[day], "payments": payments[day]})
+	}
+	return out
 }
 
 func (s *Server) adminShops(c *echo.Context) error {

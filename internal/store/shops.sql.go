@@ -10,6 +10,24 @@ import (
 	"time"
 )
 
+const activeShopsBetween = `-- name: ActiveShopsBetween :one
+SELECT COUNT(DISTINCT a.shop_id)::bigint FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE t.created_at >= $1::timestamptz AND t.created_at < $2::timestamptz
+`
+
+type ActiveShopsBetweenParams struct {
+	Since time.Time
+	Until time.Time
+}
+
+// Shops that recorded at least one entry in [since, until).
+func (q *Queries) ActiveShopsBetween(ctx context.Context, arg ActiveShopsBetweenParams) (int64, error) {
+	row := q.db.QueryRow(ctx, activeShopsBetween, arg.Since, arg.Until)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const adminShops = `-- name: AdminShops :many
 SELECT s.id, s.name, s.kind, s.created_at, u.name AS owner_name, u.email_address AS owner_email,
        (SELECT COUNT(*) FROM accounts a WHERE a.shop_id = s.id)::bigint AS customers
@@ -147,6 +165,113 @@ func (q *Queries) CreateShop(ctx context.Context, arg CreateShopParams) (int64, 
 	return id, err
 }
 
+const dailyApproved = `-- name: DailyApproved :many
+SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COALESCE(SUM(amount_cents), 0)::bigint AS cents
+FROM subscription_payments WHERE status = 1 AND reviewed_at >= $1::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type DailyApprovedRow struct {
+	Day   string
+	Cents int64
+}
+
+// Subscription money approved per day, days as Bhutan has them, from `since` on.
+func (q *Queries) DailyApproved(ctx context.Context, since time.Time) ([]DailyApprovedRow, error) {
+	rows, err := q.db.Query(ctx, dailyApproved, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DailyApprovedRow
+	for rows.Next() {
+		var i DailyApprovedRow
+		if err := rows.Scan(&i.Day, &i.Cents); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const dailyNewShops = `-- name: DailyNewShops :many
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day, COUNT(*)::bigint AS shops
+FROM shops WHERE created_at >= $1::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type DailyNewShopsRow struct {
+	Day   string
+	Shops int64
+}
+
+func (q *Queries) DailyNewShops(ctx context.Context, since time.Time) ([]DailyNewShopsRow, error) {
+	rows, err := q.db.Query(ctx, dailyNewShops, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DailyNewShopsRow
+	for rows.Next() {
+		var i DailyNewShopsRow
+		if err := rows.Scan(&i.Day, &i.Shops); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const dailyPlatformActivity = `-- name: DailyPlatformActivity :many
+SELECT to_char(t.created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM-DD')::varchar AS day,
+       COUNT(*) FILTER (WHERE t.kind = 0)::bigint AS credits,
+       COUNT(*) FILTER (WHERE t.kind = 1)::bigint AS payments,
+       COUNT(DISTINCT a.shop_id)::bigint AS shops
+FROM transactions t JOIN accounts a ON a.id = t.account_id
+WHERE t.created_at >= $1::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type DailyPlatformActivityRow struct {
+	Day      string
+	Credits  int64
+	Payments int64
+	Shops    int64
+}
+
+// Across every shop: entries recorded per day, and how many shops recorded any.
+func (q *Queries) DailyPlatformActivity(ctx context.Context, since time.Time) ([]DailyPlatformActivityRow, error) {
+	rows, err := q.db.Query(ctx, dailyPlatformActivity, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DailyPlatformActivityRow
+	for rows.Next() {
+		var i DailyPlatformActivityRow
+		if err := rows.Scan(
+			&i.Day,
+			&i.Credits,
+			&i.Payments,
+			&i.Shops,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const extendSubscription = `-- name: ExtendSubscription :exec
 UPDATE subscriptions SET status = 1, current_period_end = $2, grace_until = $3, disabled_at = NULL, updated_at = now()
 WHERE id = $1
@@ -175,60 +300,41 @@ func (q *Queries) LockShop(ctx context.Context, id int64) (int64, error) {
 	return id, err
 }
 
-const monthlyApproved = `-- name: MonthlyApproved :many
-SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month,
-       COALESCE(SUM(amount_cents), 0)::bigint AS cents
-FROM subscription_payments WHERE status = 1 AND reviewed_at >= $1::timestamptz
-GROUP BY 1 ORDER BY 1
+const mostActiveShops = `-- name: MostActiveShops :many
+SELECT s.id, s.name, s.kind, COUNT(t.id)::bigint AS entries, COUNT(DISTINCT t.account_id)::bigint AS customers,
+       MAX(t.created_at)::timestamptz AS last_entry_at
+FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN shops s ON s.id = a.shop_id
+WHERE t.created_at >= $1::timestamptz
+GROUP BY s.id, s.name, s.kind ORDER BY entries DESC, s.id LIMIT 6
 `
 
-type MonthlyApprovedRow struct {
-	Month string
-	Cents int64
+type MostActiveShopsRow struct {
+	ID          int64
+	Name        string
+	Kind        *string
+	Entries     int64
+	Customers   int64
+	LastEntryAt time.Time
 }
 
-// Subscription money approved per month, months as Bhutan has them, from `since` on.
-func (q *Queries) MonthlyApproved(ctx context.Context, since time.Time) ([]MonthlyApprovedRow, error) {
-	rows, err := q.db.Query(ctx, monthlyApproved, since)
+// The shops that recorded the most entries since `since`: counts only, never amounts.
+func (q *Queries) MostActiveShops(ctx context.Context, since time.Time) ([]MostActiveShopsRow, error) {
+	rows, err := q.db.Query(ctx, mostActiveShops, since)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MonthlyApprovedRow
+	var items []MostActiveShopsRow
 	for rows.Next() {
-		var i MonthlyApprovedRow
-		if err := rows.Scan(&i.Month, &i.Cents); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const monthlyNewShops = `-- name: MonthlyNewShops :many
-SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month, COUNT(*)::bigint AS shops
-FROM shops WHERE created_at >= $1::timestamptz
-GROUP BY 1 ORDER BY 1
-`
-
-type MonthlyNewShopsRow struct {
-	Month string
-	Shops int64
-}
-
-func (q *Queries) MonthlyNewShops(ctx context.Context, since time.Time) ([]MonthlyNewShopsRow, error) {
-	rows, err := q.db.Query(ctx, monthlyNewShops, since)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []MonthlyNewShopsRow
-	for rows.Next() {
-		var i MonthlyNewShopsRow
-		if err := rows.Scan(&i.Month, &i.Shops); err != nil {
+		var i MostActiveShopsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Kind,
+			&i.Entries,
+			&i.Customers,
+			&i.LastEntryAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

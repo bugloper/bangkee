@@ -1,286 +1,380 @@
-import { useQuery } from "@tanstack/react-query"
-import { CircleCheckBigIcon, MinusIcon, TrendingDownIcon, TrendingUpIcon } from "lucide-react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
+import { AlarmClockIcon, ArrowDownRightIcon, ArrowRightIcon, ArrowUpRightIcon, CircleAlertIcon, MinusIcon, ReceiptTextIcon, type LucideIcon } from "lucide-react"
 import { useState } from "react"
 
 import { api } from "@/api/client"
-import type { AdminDashboard } from "@/api/types"
+import type { AdminDashboard, PeriodFigure } from "@/api/types"
 import { AppLink } from "@/components/app-link"
-import { AreaChart } from "@/components/area-chart"
+import { AreaChart, Sparkline } from "@/components/area-chart"
 import { Loading } from "@/components/form"
-import { Empty, Initial } from "@/components/kit"
-import { Badge } from "@/components/ui/badge"
+import { Initial } from "@/components/kit"
 import { buttonVariants } from "@/components/ui/button"
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { coverPeriod, ngultrum, pluralize } from "@/lib/money"
+import { ngultrum, pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
-import { dayMonth, longDate } from "@/lib/time"
+import { longDate, timeAgoInWords } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-// The console's front page, after shadcn's dashboard: four figures with how
-// they moved since last month, money approved over time, where the shops
-// stand, and the work waiting — all from /api/admin/dashboard.
+// The console's front page: how Bangkee is doing across every shop over the
+// last 7, 30 or 90 days, each figure against the period before; where the
+// subscriptions stand and what they bring in a month; and what needs the
+// operator — payments to approve, payments overdue, trials about to end.
 
-/** How a figure moved from last month: "+12%", "−20%", "new", or level. */
-function change(now: number, before: number): { text: string; direction: "up" | "down" | "flat" } {
-  if (now === before) return { text: "Level", direction: "flat" }
-  if (before === 0) return { text: "New", direction: "up" }
-  const percent = Math.round(((now - before) / before) * 100)
-  return { text: `${percent > 0 ? "+" : "−"}${Math.abs(percent)}%`, direction: percent >= 0 ? "up" : "down" }
-}
+const PERIODS = [7, 30, 90] as const
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const dayLabel = (day: string) => `${Number(day.slice(8, 10))} ${MONTHS[Number(day.slice(5, 7)) - 1]}`
 
-function Trend({ now, before }: { now: number; before: number }) {
-  const { text, direction } = change(now, before)
-  const Icon = direction === "up" ? TrendingUpIcon : direction === "down" ? TrendingDownIcon : MinusIcon
+/** How a figure moved against the period before. */
+function Delta({ figure }: { figure: PeriodFigure }) {
+  const { value, previous } = figure
+  if (value === previous)
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+        <MinusIcon className="size-3" /> 0%
+      </span>
+    )
+  const up = value > previous
+  const ratio = previous === 0 ? Infinity : value / previous
+  const text = previous === 0 ? "New" : ratio >= 10 ? `×${Math.round(ratio)}` : `${Math.abs(Math.round(((value - previous) / previous) * 100))}%`
+  const Icon = up ? ArrowUpRightIcon : ArrowDownRightIcon
   return (
-    <Badge variant="outline" className="gap-1">
-      <Icon className="size-3.5" /> {text}
-    </Badge>
+    <span className={cn("inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium", up ? "bg-paid/10 text-paid" : "bg-owed/10 text-owed")}>
+      <Icon className="size-3" /> {text}
+    </span>
   )
 }
 
-function Figure({ label, value, action, line, note }: { label: string; value: React.ReactNode; action?: React.ReactNode; line: React.ReactNode; note: string }) {
+function Kpi({ label, value, figure, footnote, spark }: { label: string; value: React.ReactNode; figure?: PeriodFigure; footnote: React.ReactNode; spark?: number[] }) {
   return (
-    <Card className="bg-gradient-to-t from-primary/5 to-card shadow-xs">
+    <Card className="gap-3 shadow-xs">
       <CardHeader>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className="tabular text-2xl font-semibold tracking-tight @[250px]/card:text-3xl">{value}</CardTitle>
-        {action && <CardAction>{action}</CardAction>}
+        <CardDescription className="font-medium">{label}</CardDescription>
+        {figure && (
+          <CardAction>
+            <Delta figure={figure} />
+          </CardAction>
+        )}
       </CardHeader>
-      <CardFooter className="flex-col items-start gap-1 border-t-0 bg-transparent pb-4 text-sm">
-        <div className="flex items-center gap-1.5 font-medium">{line}</div>
-        <div className="text-muted-foreground">{note}</div>
-      </CardFooter>
-    </Card>
-  )
-}
-
-const RANGES = [
-  [3, "3 mo"],
-  [6, "6 mo"],
-  [12, "12 mo"],
-] as const
-
-function MoneyChart({ months }: { months: AdminDashboard["months"] }) {
-  const [range, setRange] = useState<number>(6)
-  const shown = months.slice(-range)
-  const total = shown.reduce((sum, m) => sum + m.approved_cents, 0)
-  return (
-    <Card className="shadow-xs">
-      <CardHeader>
-        <CardTitle>Subscription money approved</CardTitle>
-        <CardDescription>
-          {ngultrum(total)} over the last {range} months
-        </CardDescription>
-        <CardAction>
-          <div role="radiogroup" aria-label="How far back" className="inline-flex rounded-lg border p-0.5">
-            {RANGES.map(([value, text]) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={range === value}
-                aria-label={`Last ${value} months`}
-                onClick={() => setRange(value)}
-                className={cn("rounded-md px-2.5 py-1 text-xs font-medium transition-colors", range === value ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground")}
-              >
-                {text}
-              </button>
-            ))}
-          </div>
-        </CardAction>
-      </CardHeader>
-      <CardContent>
-        <AreaChart
-          label={`Subscription money approved each month, the last ${range} months`}
-          points={shown.map((m) => ({ key: m.month, label: m.label, value: m.approved_cents, detail: pluralize(m.new_shops, "new shop") }))}
-          format={(cents) => ngultrum(cents)}
-          axis={(cents) => (cents >= 100_000 ? `${Number((cents / 100_000).toFixed(1))}k` : String(Math.round(cents / 100)))}
-        />
+      <CardContent className="grid gap-3">
+        <div className="tabular text-[1.75rem] leading-none font-semibold tracking-tight">{value}</div>
+        {spark ? <Sparkline values={spark} /> : <div className="h-9" />}
+        <div className="text-xs text-muted-foreground">{footnote}</div>
       </CardContent>
     </Card>
   )
 }
 
-const MIX: [keyof AdminDashboard["plan_mix"], string][] = [
-  ["trialing", "Free trial"],
-  ["basic", "Basic"],
-  ["pro", "Pro"],
-  ["business", "Business"],
-  ["past_due", "Payment due"],
-  ["disabled", "Locked"],
+function Legend({ items }: { items: { label: string; color: string; value: string }[] }) {
+  return (
+    <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-center gap-2 text-sm">
+          <span className="size-2.5 rounded-[3px]" style={{ background: item.color }} />
+          <span className="text-muted-foreground">{item.label}</span>
+          <span className="tabular font-semibold">{item.value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// The plans in order, one hue from light to full: Basic, then Pro, then Business.
+const PLAN_SHADES: [keyof AdminDashboard["mrr_by_plan"], string, string][] = [
+  ["basic", "Basic", "color-mix(in oklab, var(--primary) 35%, var(--card))"],
+  ["pro", "Pro", "color-mix(in oklab, var(--primary) 65%, var(--card))"],
+  ["business", "Business", "var(--primary)"],
 ]
 
-function PlanMix({ mix, total }: { mix: AdminDashboard["plan_mix"]; total: number }) {
+function Subscriptions({ data }: { data: AdminDashboard }) {
+  const { plan_mix: mix } = data
+  const paying = mix.basic + mix.pro + mix.business
+  const cells: [string, number, string][] = [
+    ["Free trial", mix.trialing, ""],
+    ["Paying", paying, paying > 0 ? "text-paid" : ""],
+    ["Payment due", mix.past_due, mix.past_due > 0 ? "text-warn" : ""],
+    ["Locked", mix.disabled, mix.disabled > 0 ? "text-owed" : ""],
+  ]
   return (
     <Card className="shadow-xs">
       <CardHeader>
-        <CardTitle>Shops by plan</CardTitle>
-        <CardDescription>{pluralize(total, "shop")} on Bangkee</CardDescription>
+        <CardTitle>Subscriptions</CardTitle>
+        <CardDescription>What paying shops bring in each month</CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-3.5">
-        {MIX.map(([key, label]) => {
-          const count = mix[key]
-          const share = total > 0 ? count / total : 0
-          return (
-            <div key={key} className="grid gap-1.5">
-              <div className="flex items-baseline justify-between text-sm">
-                <span className={cn(key === "disabled" && count > 0 && "text-owed", key === "past_due" && count > 0 && "text-warn")}>{label}</span>
-                <span className="tabular font-medium">
-                  {count}
-                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">{Math.round(share * 100)}%</span>
+      <CardContent className="grid gap-5">
+        <div>
+          <div className="tabular text-3xl font-semibold tracking-tight">{ngultrum(data.mrr_cents)}</div>
+          <div className="text-sm text-muted-foreground">a month · {ngultrum(data.mrr_cents * 12)} a year</div>
+        </div>
+        <div>
+          <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-muted" role="img" aria-label="Monthly revenue by plan">
+            {PLAN_SHADES.map(([key, , color]) =>
+              data.mrr_by_plan[key] > 0 ? <div key={key} style={{ width: `${(data.mrr_by_plan[key] / Math.max(1, data.mrr_cents)) * 100}%`, background: color }} /> : null,
+            )}
+          </div>
+          <div className="mt-3 grid gap-2">
+            {PLAN_SHADES.map(([key, name, color]) => (
+              <div key={key} className="flex items-center justify-between gap-3 text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="size-2.5 rounded-[3px]" style={{ background: color }} />
+                  {name}
+                  <span className="text-muted-foreground">· {pluralize(mix[key], "shop")}</span>
                 </span>
+                <span className="tabular font-medium">{ngultrum(data.mrr_by_plan[key])}</span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
-                <div className="h-full rounded-full bg-primary/80" style={{ width: `${share * 100}%` }} />
-              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border">
+          {cells.map(([label, count, tone]) => (
+            <div key={label} className="bg-card px-3.5 py-3">
+              <div className="text-xs text-muted-foreground">{label}</div>
+              <div className={cn("tabular text-lg font-semibold", tone)}>{count}</div>
             </div>
-          )
-        })}
+          ))}
+        </div>
       </CardContent>
     </Card>
   )
 }
 
-function NewestShops() {
-  const { data } = useQuery({ queryKey: ["admin", "shops"], queryFn: api.adminShops })
-  if (!data) return <Loading />
-  const newest = [...data.shops].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 8)
+function Attention({ data }: { data: AdminDashboard }) {
+  const items: { icon: LucideIcon; tone: string; title: string; detail: string; href: string; count: number }[] = [
+    {
+      icon: ReceiptTextIcon,
+      tone: "bg-primary/10 text-primary",
+      title: "Payments to approve",
+      detail: data.pending[0] ? `Oldest from ${data.pending[0].shop.name}, ${timeAgoInWords(data.pending[0].created_at)} ago` : "Nothing waiting",
+      href: "/subscription_payments",
+      count: data.pending_count,
+    },
+    {
+      icon: CircleAlertIcon,
+      tone: "bg-warn/10 text-warn",
+      title: "Payment due",
+      detail: data.payment_due[0] ? `${data.payment_due[0].name} locks in ${pluralize(data.payment_due[0].days_left, "day")}` : "Every paid shop is covered",
+      href: "/all_shops",
+      count: data.payment_due.length,
+    },
+    {
+      icon: AlarmClockIcon,
+      tone: "bg-muted text-muted-foreground",
+      title: "Trials ending in 14 days",
+      detail: data.trials_ending[0] ? `${data.trials_ending[0].name} first, in ${pluralize(data.trials_ending[0].days_left, "day")}` : "None soon",
+      href: "/all_shops",
+      count: data.trials_ending.length,
+    },
+  ]
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Shop</TableHead>
-          <TableHead className="max-md:hidden">Owner</TableHead>
-          <TableHead>Plan</TableHead>
-          <TableHead className="text-right">Joined</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {newest.map((shop) => (
-          <TableRow key={shop.id}>
-            <TableCell className="font-medium">{shop.name}</TableCell>
-            <TableCell className="text-muted-foreground max-md:hidden">{shop.owner_name}</TableCell>
-            <TableCell>{shop.subscription ? <Badge variant="outline">{shop.subscription.status === "trialing" ? "Trial" : shop.subscription.plan_name}</Badge> : "—"}</TableCell>
-            <TableCell className="tabular text-right text-muted-foreground">{longDate(shop.created_at)}</TableCell>
-          </TableRow>
+    <Card className="shadow-xs">
+      <CardHeader>
+        <CardTitle>Needs attention</CardTitle>
+        <CardDescription>What is waiting on Bangkee</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-1 px-2">
+        {items.map((item) => (
+          <AppLink key={item.title} href={item.href} className="group flex items-center gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-muted">
+            <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", item.tone)}>
+              <item.icon className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium">{item.title}</span>
+              <span className="block truncate text-xs text-muted-foreground">{item.detail}</span>
+            </span>
+            <span className={cn("tabular text-lg font-semibold", item.count === 0 && "text-muted-foreground")}>{item.count}</span>
+            <ArrowRightIcon className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          </AppLink>
         ))}
-      </TableBody>
-    </Table>
+      </CardContent>
+    </Card>
+  )
+}
+
+function MostActive({ data }: { data: AdminDashboard }) {
+  return (
+    <Card className="gap-0 pb-0 shadow-xs">
+      <CardHeader className="pb-3">
+        <CardTitle>Most active shops</CardTitle>
+        <CardDescription>By entries recorded in the last {data.days} days</CardDescription>
+        <CardAction>
+          <AppLink href="/all_shops" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            All shops
+          </AppLink>
+        </CardAction>
+      </CardHeader>
+      {data.most_active.length > 0 ? (
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/40">
+              <TableHead className="pl-4">Shop</TableHead>
+              <TableHead className="text-right">Entries</TableHead>
+              <TableHead className="text-right max-sm:hidden">Customers</TableHead>
+              <TableHead className="pr-4 text-right max-md:hidden">Last entry</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.most_active.map((shop, i) => (
+              <TableRow key={shop.id}>
+                <TableCell className="pl-4">
+                  <span className="flex items-center gap-2.5">
+                    <span className="tabular w-4 text-xs text-muted-foreground">{i + 1}</span>
+                    <Initial text={shop.name} size="sm" />
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{shop.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{shop.kind_label}</span>
+                    </span>
+                  </span>
+                </TableCell>
+                <TableCell className="tabular text-right font-medium">{shop.entries}</TableCell>
+                <TableCell className="tabular text-right text-muted-foreground max-sm:hidden">{shop.customers}</TableCell>
+                <TableCell className="pr-4 text-right text-muted-foreground max-md:hidden">{timeAgoInWords(shop.last_entry_at)} ago</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <div className="px-4 pt-2 pb-6 text-sm text-muted-foreground">No shop recorded anything in these days.</div>
+      )}
+    </Card>
+  )
+}
+
+function TrialsEnding({ data }: { data: AdminDashboard }) {
+  if (data.trials_ending.length === 0) return null
+  return (
+    <Card className="gap-0 pb-0 shadow-xs">
+      <CardHeader className="pb-3">
+        <CardTitle>Trials ending soon</CardTitle>
+        <CardDescription>Shops to welcome onto a plan</CardDescription>
+      </CardHeader>
+      <Table>
+        <TableBody>
+          {data.trials_ending.slice(0, 6).map((trial) => (
+            <TableRow key={trial.shop_id}>
+              <TableCell className="pl-4 font-medium">{trial.name}</TableCell>
+              <TableCell className="pr-4 text-right text-muted-foreground">
+                {longDate(trial.ends_at)} · <span className={cn(trial.days_left <= 3 && "font-medium text-warn")}>{pluralize(trial.days_left, "day")}</span>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
   )
 }
 
 export function AdminOverview() {
   usePage("Overview")
-  const { data } = useQuery({ queryKey: ["admin", "dashboard"], queryFn: api.adminDashboard })
+  const [days, setDays] = useState<number>(30)
+  const { data, isFetching } = useQuery({ queryKey: ["admin", "dashboard", days], queryFn: () => api.adminDashboard(days), placeholderData: keepPreviousData })
   if (!data) return <Loading />
+  const credits = data.activity_days.map((d) => d.credits)
+  const payments = data.activity_days.map((d) => d.payments)
+  const sum = (values: number[]) => values.reduce((total, v) => total + v, 0)
+  const paying = data.plan_mix.basic + data.plan_mix.pro + data.plan_mix.business
 
   return (
-    <div className="grid gap-4 md:gap-6">
-      <div className="grid grid-cols-1 gap-4 *:@container/card sm:grid-cols-2 xl:grid-cols-4">
-        <Figure
-          label="Approved this month"
-          value={ngultrum(data.approved_month_cents)}
-          action={<Trend now={data.approved_month_cents} before={data.approved_last_month_cents} />}
-          line={`${ngultrum(data.approved_last_month_cents)} last month`}
-          note="Subscription payments approved"
-        />
-        <Figure
-          label="New shops this month"
-          value={data.new_shops_month}
-          action={<Trend now={data.new_shops_month} before={data.new_shops_last_month} />}
-          line={`${data.new_shops_last_month} last month`}
-          note="Opened a book on Bangkee"
-        />
-        <Figure
-          label="Paying shops"
-          value={data.paying_count}
-          action={<Badge variant="outline">{data.shops_count > 0 ? Math.round((data.paying_count / data.shops_count) * 100) : 0}%</Badge>}
-          line={`${data.trialing_count} on free trial`}
-          note={data.locked_count > 0 ? `${pluralize(data.locked_count, "shop")} write-locked` : "No shop is locked"}
-        />
-        <Figure
-          label="Payments to review"
-          value={data.pending_count}
-          action={data.pending_count > 0 ? <Badge variant="warn">Waiting</Badge> : <Badge variant="outline">Clear</Badge>}
-          line={
-            data.pending_count > 0 ? (
-              <AppLink href="/subscription_payments" className="text-primary hover:underline">
-                Review the queue
-              </AppLink>
-            ) : (
-              "Nothing waiting"
-            )
-          }
-          note="Approve within one working day"
-        />
-      </div>
-
-      <div className="grid items-start gap-4 md:gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <MoneyChart months={data.months} />
-        <PlanMix mix={data.plan_mix} total={data.shops_count} />
-      </div>
-
-      <Tabs defaultValue="review" className="flex-col">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <TabsList>
-            <TabsTrigger value="review">
-              Waiting for review {data.pending_count > 0 && <Badge variant="brand">{data.pending_count}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="shops">Newest shops</TabsTrigger>
-          </TabsList>
-          <AppLink href="/subscription_payments" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Open payments
-          </AppLink>
+    <div className={cn("grid gap-4 transition-opacity md:gap-5", isFetching && "opacity-70")}>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Across every shop</h2>
+          <p className="text-sm text-muted-foreground">
+            {longDate(data.from)} – today, against the {data.days} days before
+          </p>
         </div>
-        <TabsContent value="review">
-          <Card className="py-0 shadow-xs">
-            {data.pending.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Shop</TableHead>
-                    <TableHead className="max-md:hidden">Sent by</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead className="max-sm:hidden">Sent</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.pending.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>
-                        <span className="flex items-center gap-2.5">
-                          <Initial text={payment.shop.name} size="sm" />
-                          <span className="font-medium">{payment.shop.name}</span>
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground max-md:hidden">{payment.submitted_by_name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {payment.plan_name} · {coverPeriod(payment.months)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground max-sm:hidden">{dayMonth(payment.created_at)}</TableCell>
-                      <TableCell className="tabular text-right font-medium">{ngultrum(payment.amount_cents)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <Empty icon={CircleCheckBigIcon} title="Queue is clear">
-                Nothing is waiting on Bangkee.
-              </Empty>
-            )}
-          </Card>
-        </TabsContent>
-        <TabsContent value="shops">
-          <Card className="py-0 shadow-xs">
-            <NewestShops />
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <div className="flex items-center gap-2">
+          <div role="radiogroup" aria-label="Period" className="inline-flex rounded-lg border bg-card p-0.5 shadow-xs">
+            {PERIODS.map((period) => (
+              <button
+                key={period}
+                type="button"
+                role="radio"
+                aria-checked={days === period}
+                onClick={() => setDays(period)}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  days === period ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {period} days
+              </button>
+            ))}
+          </div>
+          {data.pending_count > 0 && (
+            <AppLink href="/subscription_payments" className={buttonVariants({ className: "max-sm:hidden" })}>
+              Review {pluralize(data.pending_count, "payment")}
+            </AppLink>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Kpi
+          label="Money approved"
+          value={ngultrum(data.approved.value)}
+          figure={data.approved}
+          spark={data.approved.series?.map((d) => d.value)}
+          footnote={`${ngultrum(data.approved.previous)} the ${data.days} days before`}
+        />
+        <Kpi label="Monthly recurring revenue" value={ngultrum(data.mrr_cents)} footnote={`${ngultrum(data.mrr_cents * 12)} a year · ${pluralize(paying, "paying shop")}`} />
+        <Kpi
+          label="Active shops"
+          value={
+            <>
+              {data.active_shops.value}
+              <span className="text-base font-normal text-muted-foreground"> / {data.shops_count}</span>
+            </>
+          }
+          figure={data.active_shops}
+          spark={data.active_shops.series?.map((d) => d.value)}
+          footnote="Recorded at least one entry"
+        />
+        <Kpi
+          label="New shops"
+          value={data.new_shops.value}
+          figure={data.new_shops}
+          spark={data.new_shops.series?.map((d) => d.value)}
+          footnote={`${data.new_shops.previous} the ${data.days} days before`}
+        />
+      </div>
+
+      <div className="grid items-start gap-4 md:gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Card className="shadow-xs">
+          <CardHeader>
+            <CardTitle>Platform activity</CardTitle>
+            <CardDescription className="flex flex-wrap items-center gap-2">
+              {pluralize(data.entries.value, "entry", "entries")} recorded across every shop <Delta figure={data.entries} />
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Legend
+              items={[
+                { label: "Credits", color: "var(--owed)", value: sum(credits).toLocaleString() },
+                { label: "Payments", color: "var(--paid)", value: sum(payments).toLocaleString() },
+              ]}
+            />
+            <AreaChart
+              label={`Credits and payments recorded each day across every shop, the last ${data.days} days`}
+              labels={data.activity_days.map((d) => dayLabel(d.day))}
+              series={[
+                { key: "credits", label: "Credits", color: "var(--owed)", values: credits },
+                { key: "payments", label: "Payments", color: "var(--paid)", values: payments },
+              ]}
+              format={(v) => v.toLocaleString()}
+              axis={(v) => (v >= 1000 ? `${Number((v / 1000).toFixed(1))}k` : String(Math.round(v)))}
+            />
+          </CardContent>
+        </Card>
+        <Subscriptions data={data} />
+      </div>
+
+      <div className="grid items-start gap-4 md:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="grid gap-4 md:gap-5">
+          <Attention data={data} />
+          <TrialsEnding data={data} />
+        </div>
+        <MostActive data={data} />
+      </div>
     </div>
   )
 }

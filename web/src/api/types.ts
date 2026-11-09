@@ -560,19 +560,31 @@ export interface AdminPayment extends SubscriptionPayment {
 }
 
 /** GET /api/admin/dashboard */
+/** A figure for the period and the same figure for the period before, with a value a day. */
+export interface PeriodFigure {
+  value: number
+  previous: number
+  series?: { day: string; value: number }[]
+}
+
+/** GET /api/admin/dashboard?days=7|30|90 */
 export interface AdminDashboard {
-  approved_month_cents: Cents // approved this month (Thimphu)
-  approved_last_month_cents: Cents
-  new_shops_month: number
-  new_shops_last_month: number
+  days: number
+  from: Timestamp // the period's first day
   shops_count: number
-  paying_count: number // on a paid plan, inside their cover
-  trialing_count: number
-  locked_count: number // write-locked: cover and grace both over
+  approved: PeriodFigure // subscription money approved, cents
+  new_shops: PeriodFigure
+  active_shops: PeriodFigure // shops that recorded at least one entry
+  entries: PeriodFigure // credits and payments recorded across every shop
+  activity_days: { day: string; credits: number; payments: number }[]
+  mrr_cents: Cents // what the paying shops pay a month, at their own prices
+  mrr_by_plan: { basic: Cents; pro: Cents; business: Cents }
+  plan_mix: { trialing: number; basic: number; pro: number; business: number; past_due: number; disabled: number }
   pending_count: number
   pending: AdminPayment[] // up to 5, oldest first
-  plan_mix: { trialing: number; basic: number; pro: number; business: number; past_due: number; disabled: number }
-  months: { month: string; label: string; approved_cents: Cents; new_shops: number }[] // 12, this month last
+  trials_ending: { shop_id: number; name: string; ends_at: Timestamp; days_left: number }[] // within 14 days, soonest first
+  payment_due: { shop_id: number; name: string; grace_until: Timestamp | null; days_left: number }[]
+  most_active: { id: number; name: string; kind_label: string; entries: number; customers: number; last_entry_at: Timestamp }[] // counts only
 }
 
 /** GET /api/admin/subscription_payments?status=pending|approved|rejected|all */

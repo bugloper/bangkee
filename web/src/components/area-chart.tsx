@@ -2,15 +2,17 @@ import { useId, useState } from "react"
 
 import { cn } from "@/lib/utils"
 
-// One series over time as a filled area, in plain SVG: a soft gradient
-// under a 2px line, three recessive gridlines, and a crosshair with the
-// figure for whichever point the pointer (or keyboard) is on.
+// Series over time as filled areas, in plain SVG: soft gradients under 2px
+// lines, three recessive gridlines, and a crosshair with every series'
+// figure for whichever point the pointer (or the arrow keys) is on. With
+// more than one series the caller shows a legend; colour is never the only
+// way to tell them apart, as the tooltip names each one.
 
-export interface AreaPoint {
+export interface Series {
   key: string
-  label: string // the x-axis label
-  value: number
-  detail?: string // a second line for the tooltip
+  label: string
+  color: string // a CSS colour, usually a theme variable
+  values: number[]
 }
 
 function niceCeiling(value: number): number {
@@ -20,47 +22,65 @@ function niceCeiling(value: number): number {
   return 10 * power
 }
 
-export function AreaChart({ points, format, axis, label, className }: { points: AreaPoint[]; format: (value: number) => string; axis: (value: number) => string; label: string; className?: string }) {
+export function AreaChart({
+  labels,
+  series,
+  format,
+  axis,
+  label,
+  className,
+  height = 240,
+}: {
+  labels: string[] // one per point: what the tooltip and the x-axis say
+  series: Series[]
+  format: (value: number) => string
+  axis: (value: number) => string
+  label: string
+  className?: string
+  height?: number
+}) {
   const id = useId().replace(/:/g, "")
   const [hover, setHover] = useState<number | null>(null)
-  const width = 640
-  const height = 220
-  const pad = { top: 12, right: 8, bottom: 26, left: 44 }
-  const top = niceCeiling(Math.max(...points.map((p) => p.value)))
-  const x = (i: number) => pad.left + (points.length === 1 ? 0 : (i / (points.length - 1)) * (width - pad.left - pad.right))
+  const count = labels.length
+  const width = 720
+  const pad = { top: 12, right: 8, bottom: 26, left: 40 }
+  const top = niceCeiling(Math.max(0, ...series.flatMap((s) => s.values)))
+  const x = (i: number) => pad.left + (count <= 1 ? 0 : (i / (count - 1)) * (width - pad.left - pad.right))
   const y = (v: number) => pad.top + (1 - v / top) * (height - pad.top - pad.bottom)
-  const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ")
-  const area = `${line} L${x(points.length - 1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z`
   const ticks = [0, 0.5, 1].map((share) => top * share)
-  const shown = hover ?? points.length - 1
-  const every = Math.ceil(points.length / 6)
+  const every = Math.ceil(count / 6)
+  const shown = hover ?? count - 1
+
+  const path = (values: number[]) => values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")
 
   return (
     <div className={cn("relative", className)}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-auto w-full overflow-visible"
+        className="h-auto w-full overflow-visible outline-none"
         role="img"
         aria-label={label}
         tabIndex={0}
         onKeyDown={(event) => {
           if (event.key === "ArrowLeft") setHover(Math.max(0, shown - 1))
-          if (event.key === "ArrowRight") setHover(Math.min(points.length - 1, shown + 1))
+          if (event.key === "ArrowRight") setHover(Math.min(count - 1, shown + 1))
         }}
         onPointerLeave={() => setHover(null)}
         onBlur={() => setHover(null)}
         onPointerMove={(event) => {
           const box = event.currentTarget.getBoundingClientRect()
           const at = ((event.clientX - box.left) / box.width) * width
-          const i = Math.round(((at - pad.left) / (width - pad.left - pad.right)) * (points.length - 1))
-          setHover(Math.max(0, Math.min(points.length - 1, i)))
+          const i = Math.round(((at - pad.left) / (width - pad.left - pad.right)) * (count - 1))
+          setHover(Math.max(0, Math.min(count - 1, i)))
         }}
       >
         <defs>
-          <linearGradient id={`fill-${id}`} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.02" />
-          </linearGradient>
+          {series.map((s) => (
+            <linearGradient key={s.key} id={`fill-${id}-${s.key}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={s.color} stopOpacity="0.24" />
+              <stop offset="100%" stopColor={s.color} stopOpacity="0.01" />
+            </linearGradient>
+          ))}
         </defs>
         {ticks.map((tick) => (
           <g key={tick}>
@@ -70,26 +90,64 @@ export function AreaChart({ points, format, axis, label, className }: { points: 
             </text>
           </g>
         ))}
-        <path d={area} fill={`url(#fill-${id})`} />
-        <path d={line} fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        {points.map((p, i) =>
-          i % every === 0 || i === points.length - 1 ? (
-            <text key={p.key} x={x(i)} y={height - 6} textAnchor={i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"} className="fill-muted-foreground text-[11px]">
-              {p.label}
+        {series.map((s) => (
+          <path key={`a-${s.key}`} d={`${path(s.values)} L${x(count - 1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z`} fill={`url(#fill-${id}-${s.key})`} />
+        ))}
+        {series.map((s) => (
+          <path key={`l-${s.key}`} d={path(s.values)} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        ))}
+        {labels.map((text, i) =>
+          i % every === 0 || i === count - 1 ? (
+            <text key={i} x={x(i)} y={height - 6} textAnchor={i === 0 ? "start" : i === count - 1 ? "end" : "middle"} className="fill-muted-foreground text-[11px]">
+              {text}
             </text>
           ) : null,
         )}
-        {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.top} y2={y(0)} stroke="var(--muted-foreground)" strokeOpacity="0.5" />}
-        <circle cx={x(shown)} cy={y(points[shown].value)} r="4.5" fill="var(--primary)" stroke="var(--card)" strokeWidth="2" />
+        {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.top} y2={y(0)} stroke="var(--muted-foreground)" strokeOpacity="0.45" />}
+        {series.map((s) => (
+          <circle key={`d-${s.key}`} cx={x(shown)} cy={y(s.values[shown] ?? 0)} r="4" fill={s.color} stroke="var(--card)" strokeWidth="2" />
+        ))}
       </svg>
-      <div
-        className="tabular pointer-events-none absolute top-0 rounded-md border bg-popover px-2.5 py-1.5 text-xs whitespace-nowrap shadow-md"
-        style={{ left: `${(x(shown) / width) * 100}%`, transform: `translateX(${shown > points.length / 2 ? "-105%" : "5%"})` }}
-      >
-        <div className="text-muted-foreground">{points[shown].label}</div>
-        <div className="font-semibold">{format(points[shown].value)}</div>
-        {points[shown].detail && <div className="text-muted-foreground">{points[shown].detail}</div>}
-      </div>
+      {hover !== null && (
+        <div
+          className="tabular pointer-events-none absolute top-0 min-w-36 rounded-lg border bg-popover px-3 py-2 text-xs whitespace-nowrap shadow-md"
+          style={{ left: `${(x(shown) / width) * 100}%`, transform: `translateX(${shown > count / 2 ? "calc(-100% - 10px)" : "10px"})` }}
+        >
+          <div className="mb-1 font-medium">{labels[shown]}</div>
+          {series.map((s) => (
+            <div key={s.key} className="flex items-center justify-between gap-4">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="size-2 rounded-[2px]" style={{ background: s.color }} />
+                {s.label}
+              </span>
+              <span className="font-medium">{format(s.values[shown] ?? 0)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
+  )
+}
+
+/** A figure's shape over the period, with no axes: the card beside it carries the numbers. */
+export function Sparkline({ values, color = "var(--primary)", className }: { values: number[]; color?: string; className?: string }) {
+  const id = useId().replace(/:/g, "")
+  const width = 120
+  const height = 36
+  const top = Math.max(1, ...values)
+  const x = (i: number) => (values.length <= 1 ? 0 : (i / (values.length - 1)) * width)
+  const y = (v: number) => 2 + (1 - v / top) * (height - 4)
+  const line = values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className={cn("h-9 w-full", className)} aria-hidden="true">
+      <defs>
+        <linearGradient id={`spark-${id}`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L${width},${height} L0,${height} Z`} fill={`url(#spark-${id})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="1.75" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+    </svg>
   )
 }

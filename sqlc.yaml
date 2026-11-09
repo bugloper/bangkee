@@ -17,6 +17,7 @@ sql:
       - migrations/20261109092706_create_installment_plans.sql
       - migrations/20261109093840_create_suppliers.sql
       - migrations/20261109094729_create_shop_staff.sql
+      - migrations/20261109122240_index_transactions_on_created_at.sql
     queries: db/queries
     gen:
       go:
