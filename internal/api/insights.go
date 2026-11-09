@@ -79,6 +79,10 @@ func (s *Server) insights(c *echo.Context) error {
 		})
 	}
 
+	monthSales, err := domain.SalesBetween(ctx, s.Q, o.Shop.ID, month, month.AddDate(0, 1, 0))
+	if err != nil {
+		return err
+	}
 	rows, err := s.Q.ShopTransactionsBetween(ctx, store.ShopTransactionsBetweenParams{ShopID: o.Shop.ID, Since: month, Until: month.AddDate(0, 1, 0)})
 	if err != nil {
 		return err
@@ -113,7 +117,7 @@ func (s *Server) insights(c *echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, M{
-		"months": months, "month": month.Format("2006-01"), "entries": listed,
+		"months": months, "month": month.Format("2006-01"), "entries": listed, "sales": monthSales,
 		"outstanding_cents": outstanding, "owing": owingViews, "overdue_count": overdue, "customers_count": counts.Customers,
 	})
 }

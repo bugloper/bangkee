@@ -152,16 +152,12 @@ func ThimphuDay(name string, now time.Time) time.Time {
 	return time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, Thimphu)
 }
 
-func SalesForDay(ctx context.Context, q *store.Queries, shopID int64, day, now time.Time) (SalesDay, error) {
-	next := day.AddDate(0, 0, 1)
-	out := SalesDay{Day: day.Format("2006-01-02"), PreviousDay: day.AddDate(0, 0, -1).Format("2006-01-02"), Sales: []SaleDTO{}, ByMethod: []MethodTotal{}}
-	if next.Before(now) {
-		n := next.Format("2006-01-02")
-		out.NextDay = &n
-	}
-	rows, err := q.SalesBetween(ctx, store.SalesBetweenParams{ShopID: shopID, FromTime: day, ToTime: next})
+// SalesBetween lists a shop's sales in [from, to), newest first (at most 500),
+// crossed-out ones included and marked.
+func SalesBetween(ctx context.Context, q *store.Queries, shopID int64, from, to time.Time) ([]SaleDTO, error) {
+	rows, err := q.SalesBetween(ctx, store.SalesBetweenParams{ShopID: shopID, FromTime: from, ToTime: to})
 	if err != nil {
-		return out, err
+		return nil, err
 	}
 	ids := make([]int64, 0, len(rows))
 	for _, r := range rows {
@@ -173,19 +169,35 @@ func SalesForDay(ctx context.Context, q *store.Queries, shopID int64, day, now t
 	if len(ids) > 0 {
 		found, err := q.SaleItemsFor(ctx, ids)
 		if err != nil {
-			return out, err
+			return nil, err
 		}
 		for _, it := range found {
 			items[it.SaleID] = append(items[it.SaleID], SaleItemDTO{Name: it.Name, Quantity: it.Quantity.String(), UnitPriceCents: it.UnitPriceCents})
 		}
 	}
+	out := make([]SaleDTO, 0, len(rows))
 	for _, r := range rows {
 		s := r.Sale
-		out.Sales = append(out.Sales, SaleDTO{
+		out = append(out, SaleDTO{
 			ID: s.ID, AmountCents: s.AmountCents, PaymentMethod: s.PaymentMethod, Description: s.Description, Items: append([]SaleItemDTO{}, items[s.ID]...),
 			AccountID: s.AccountID, CustomerName: r.CustomerName, CreatedByName: r.CreatedByName, OccurredAt: s.OccurredAt, CrossedOut: s.CrossedOutAt != nil,
 		})
 	}
+	return out, nil
+}
+
+func SalesForDay(ctx context.Context, q *store.Queries, shopID int64, day, now time.Time) (SalesDay, error) {
+	next := day.AddDate(0, 0, 1)
+	out := SalesDay{Day: day.Format("2006-01-02"), PreviousDay: day.AddDate(0, 0, -1).Format("2006-01-02"), Sales: []SaleDTO{}, ByMethod: []MethodTotal{}}
+	if next.Before(now) {
+		n := next.Format("2006-01-02")
+		out.NextDay = &n
+	}
+	sales, err := SalesBetween(ctx, q, shopID, day, next)
+	if err != nil {
+		return out, err
+	}
+	out.Sales = sales
 	byMethod, err := q.SalesByMethod(ctx, store.SalesByMethodParams{ShopID: shopID, FromTime: day, ToTime: next})
 	if err != nil {
 		return out, err

@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { ArrowDownUpIcon, CircleAlertIcon, ScrollTextIcon, TrendingDownIcon, TrendingUpIcon, XIcon } from "lucide-react"
+import { ArrowDownUpIcon, CircleAlertIcon, ScrollTextIcon, ShoppingBagIcon, TrendingDownIcon, TrendingUpIcon, XIcon } from "lucide-react"
 import { useState } from "react"
 
 import { api } from "@/api/client"
@@ -12,20 +12,21 @@ import { InsightsOverview } from "@/components/insights-overview"
 import { Empty, Initial, Money, Panel, Row, Rows } from "@/components/kit"
 import { ngultrum, pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
-import { dayMonth } from "@/lib/time"
+import { clock, dayMonth } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-type View = "overview" | "credit" | "payments" | "owed"
+type View = "overview" | "credit" | "payments" | "sales" | "owed"
 const VIEWS: [View, string][] = [
   ["overview", "Overview"],
   ["credit", "Credit"],
   ["payments", "Payments"],
+  ["sales", "Sales"],
   ["owed", "Owed"],
 ]
 
 export const Route = createFileRoute("/_app/insights")({
   validateSearch: (search: Record<string, unknown>): { view: View; month?: string } => ({
-    view: search.view === "credit" || search.view === "payments" || search.view === "owed" ? search.view : "overview",
+    view: search.view === "credit" || search.view === "payments" || search.view === "sales" || search.view === "owed" ? search.view : "overview",
     month: typeof search.month === "string" && /^\d{4}-\d{2}$/.test(search.month) ? search.month : undefined,
   }),
   component: InsightsScreen,
@@ -41,7 +42,7 @@ function InsightsScreen() {
 
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-4 xl:max-w-none">
-      <div role="tablist" aria-label="What to look at" className="grid grid-cols-4 gap-1 rounded-full border bg-card p-1 xl:w-xl">
+      <div role="tablist" aria-label="What to look at" className="grid grid-cols-5 gap-0.5 rounded-full border bg-card p-1 sm:gap-1 xl:w-2xl">
         {VIEWS.map(([key, name]) => (
           <button
             key={key}
@@ -49,7 +50,10 @@ function InsightsScreen() {
             role="tab"
             aria-selected={view === key}
             onClick={() => void navigate({ search: { view: key, month }, replace: true })}
-            className={cn("h-11 rounded-full text-[0.9375rem] font-medium transition-colors", view === key ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")}
+            className={cn(
+              "h-11 rounded-full px-1 text-[0.8125rem] font-medium transition-colors sm:text-[0.9375rem]",
+              view === key ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+            )}
           >
             {name}
           </button>
@@ -61,6 +65,8 @@ function InsightsScreen() {
         <InsightsOverview data={data} onMonth={(key) => void navigate({ search: { view, month: key }, replace: true })} />
       ) : view === "owed" ? (
         <Owed data={data} />
+      ) : view === "sales" ? (
+        <SalesFlow data={data} onMonth={(key) => void navigate({ search: { view, month: key }, replace: true })} />
       ) : (
         <Flow data={data} kind={view === "credit" ? "credit" : "payment"} onMonth={(key) => void navigate({ search: { view, month: key }, replace: true })} />
       )}
@@ -148,6 +154,126 @@ function Flow({ data, kind, onMonth }: { data: Insights; kind: "credit" | "payme
         ) : (
           <Empty icon={ScrollTextIcon} title={`Nothing in ${monthName(data.month)}`}>
             {kind === "credit" ? "No credit was given this month." : "No payments came in this month."}
+          </Empty>
+        )}
+      </Panel>
+    </div>
+  )
+}
+
+/** The day a moment falls on in Bhutan (UTC+6, all year), as 2026-11-09. */
+const thimphuDay = (at: string) => new Date(Date.parse(at) + 6 * 3600_000).toISOString().slice(0, 10)
+
+/** Sales paid on the spot: the months as bars, then the chosen month's sales and what sold best. */
+function SalesFlow({ data, onMonth }: { data: Insights; onMonth: (month: string) => void }) {
+  const [method, setMethod] = useState<(typeof METHODS)[number]>("All")
+  const index = data.months.findIndex((m) => m.month === data.month)
+  const chosen = data.months[index]
+  const before = index > 0 ? data.months[index - 1] : undefined
+  const change = before && before.sales_cents > 0 ? ((chosen.sales_cents - before.sales_cents) / before.sales_cents) * 100 : null
+  const sales = data.sales.filter((s) => method === "All" || s.payment_method === method)
+
+  // What sold best, from sales recorded item by item.
+  const byItem = new Map<string, { cents: number; quantity: number }>()
+  for (const sale of data.sales) {
+    if (sale.crossed_out) continue
+    for (const item of sale.items) {
+      const row = byItem.get(item.name) ?? { cents: 0, quantity: 0 }
+      row.cents += Math.round(Number(item.quantity) * item.unit_price_cents)
+      row.quantity += Number(item.quantity)
+      byItem.set(item.name, row)
+    }
+  }
+  const best = [...byItem.entries()].sort((a, b) => b[1].cents - a[1].cents).slice(0, 6)
+  const bestTop = best[0]?.[1].cents ?? 0
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:items-start">
+      <div className="grid gap-4">
+        <Panel>
+          <div className="text-sm font-medium text-muted-foreground">Sales paid on the spot · {monthName(data.month)}</div>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="tabular text-4xl font-semibold tracking-tight">{ngultrum(chosen.sales_cents)}</span>
+            {change != null && (
+              <span className={cn("tabular inline-flex items-center gap-1 text-sm font-semibold", change >= 0 ? "text-paid" : "text-owed")}>
+                {change >= 0 ? <TrendingUpIcon className="size-4" /> : <TrendingDownIcon className="size-4" />}
+                {Math.abs(change).toFixed(1)}%<span className="font-normal text-muted-foreground">vs {before!.label}</span>
+              </span>
+            )}
+          </div>
+          <div className="mt-1 text-sm text-muted-foreground">{pluralize(chosen.sales_count, "sale")} — not in anyone's credit</div>
+          <div className="mt-8">
+            <MonthBars bars={data.months.map((m) => ({ key: m.month, label: m.label, cents: m.sales_cents }))} selected={data.month} onSelect={onMonth} label="Sales paid on the spot by month" />
+          </div>
+        </Panel>
+        {best.length > 0 && (
+          <Panel title="What sold best" description={`From sales recorded item by item in ${monthName(data.month)}`}>
+            <div className="grid gap-3">
+              {best.map(([name, row]) => (
+                <div key={name}>
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="truncate">
+                      {name} <span className="text-muted-foreground">· {Number(row.quantity.toFixed(2))} sold</span>
+                    </span>
+                    <span className="tabular font-medium">{ngultrum(row.cents)}</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: `${bestTop ? Math.max(4, (row.cents / bestTop) * 100) : 0}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        )}
+      </div>
+
+      <Panel flush>
+        <div role="tablist" aria-label="How they paid" className="flex overflow-x-auto border-b px-2">
+          {METHODS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="tab"
+              aria-selected={method === m}
+              onClick={() => setMethod(m)}
+              className={cn(
+                "-mb-px shrink-0 border-b-2 px-3 py-3.5 text-sm font-medium whitespace-nowrap transition-colors",
+                method === m ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {m === "Mobile transfer" ? "Mobile" : m}
+            </button>
+          ))}
+        </div>
+        {sales.length > 0 ? (
+          <Rows>
+            {sales.map((sale) => (
+              <Row
+                key={sale.id}
+                href={`/sales?day=${thimphuDay(sale.occurred_at)}`}
+                leading={
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-paid/10 text-paid">
+                    <ShoppingBagIcon className="size-4" />
+                  </span>
+                }
+                title={
+                  <span className={cn(sale.crossed_out && "text-muted-foreground line-through")}>
+                    {sale.items.length > 0 ? sale.items.map((it) => it.name).join(", ") : sale.description || "Sale"}
+                  </span>
+                }
+                subtitle={`${dayMonth(sale.occurred_at)}, ${clock(sale.occurred_at)}${sale.customer_name ? ` · ${sale.customer_name}` : ""}${sale.crossed_out ? " · crossed out" : ""}`}
+                trailing={
+                  <>
+                    <Money cents={sale.amount_cents} tone={sale.crossed_out ? "neutral" : "paid"} className={cn("text-[0.9375rem] font-semibold", sale.crossed_out && "line-through")} />
+                    <span className="text-xs text-muted-foreground">{sale.payment_method}</span>
+                  </>
+                }
+              />
+            ))}
+          </Rows>
+        ) : (
+          <Empty icon={ShoppingBagIcon} title={`No sales in ${monthName(data.month)}`}>
+            Record what customers pay for on the spot from + and it shows here.
           </Empty>
         )}
       </Panel>

@@ -49,6 +49,9 @@ func TestSalesAreTheShopsOwnRecordOfItsTakings(t *testing.T) {
 	equal(t, dashboard.num("sales_today_cents"), int64(84_500), "on the dashboard")
 	equal(t, dashboard.num("sales_month_cents"), int64(84_500), "this month")
 
+	insights := owner.get("/api/insights")
+	equal(t, insights.len("sales"), 2, "Insights lists the month's sales")
+	equal(t, insights.num(fmt.Sprintf("months.%d.sales_cents", insights.len("months")-1)), int64(84_500), "and this month's total")
 	equal(t, owner.post(fmt.Sprintf("/api/sales/%d/cross_out", cash.num("sale_id")), nil).Status, 200, "crossed out")
 	equal(t, owner.post(fmt.Sprintf("/api/sales/%d/cross_out", cash.num("sale_id")), nil).Status, 422, "once")
 	day = owner.get("/api/sales")
