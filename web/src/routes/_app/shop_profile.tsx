@@ -28,7 +28,7 @@ const PinPicker = lazy(() => import("@/components/shop-map").then((m) => ({ defa
 // Profile → Shop profile: what customers read above the shop's items when
 // they browse shops. Only the name is needed.
 function ShopProfileScreen() {
-  usePage("Shop profile", "/settings", { narrow: true })
+  usePage("Shop profile", "/dashboard", { narrow: true })
   const { data } = useQuery({ queryKey: ["shop_profile"], queryFn: api.shopProfile })
   if (!data) return <Loading />
   return <ProfileForm data={data} />

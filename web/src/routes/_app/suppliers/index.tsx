@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_app/suppliers/")({ component: Suppliers 
 // apart from the customer book — this total is never added to what
 // customers owe.
 function Suppliers() {
-  usePage("Suppliers", "/settings")
+  usePage("Suppliers", "/dashboard")
   const { data } = useQuery({ queryKey: ["suppliers"], queryFn: api.suppliers })
   const canManage = useCan("manage")
   if (!data) return <Loading />

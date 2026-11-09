@@ -28,7 +28,7 @@ const OUT = "\u0000out" // the "Out of stock" chip; no category can be named thi
 // The shop's catalog: what it sells, by category, with prices and whether it
 // is in stock. Picked from when recording a credit; customers browse it.
 function Catalog() {
-  usePage("Items", "/settings")
+  usePage("Items", "/dashboard")
   const me = useMe()
   const { data } = useQuery({ queryKey: ["menu_items"], queryFn: api.menuItems })
   const [q, setQ] = useState("")

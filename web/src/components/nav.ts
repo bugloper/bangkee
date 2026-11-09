@@ -2,6 +2,10 @@ import {
   BarChart3Icon,
   BellIcon,
   BellRingIcon,
+  CreditCardIcon,
+  LandmarkIcon,
+  LifeBuoyIcon,
+  PackageIcon,
   HouseIcon,
   InboxIcon,
   LayoutGridIcon,
@@ -59,20 +63,35 @@ export function navItems(me: Me): NavItem[] {
 }
 
 /**
- * The shop's business tools, for the desktop sidebar under their own heading:
- * the bottom tab bar on a phone has no room for them, so on a phone they stay
- * in Profile. Each shows only to whoever may use it.
+ * The rest of a shop's work, in the desktop sidebar under headings, so a
+ * shopkeeper sees it without opening Profile. (A phone's tab bar has no room:
+ * there the Home screen's Shop panel carries the same links.) Each shows only
+ * to whoever may use it.
  */
-export function businessItems(me: Me): NavItem[] {
+export function sidebarSections(me: Me): { label: string; items: NavItem[] }[] {
   if (!me.shop || (me.user.role !== "shop_owner" && me.user.role !== "staff")) return []
-  const items: NavItem[] = []
-  if (me.permissions.includes("view")) items.push({ label: "Suppliers", icon: TruckIcon, path: "/suppliers", key: "suppliers" })
-  if (me.permissions.includes("owner")) {
-    items.push({ label: "Reminders", icon: BellRingIcon, path: "/reminders", key: "reminders" })
-    items.push({ label: "Staff", icon: UsersRoundIcon, path: "/staff", key: "staff" })
+  const can = (p: string) => me.permissions.includes(p as never)
+  const shop: NavItem[] = []
+  if (can("view")) shop.push({ label: "Items", icon: PackageIcon, path: "/menu_items", key: "items" })
+  if (can("owner")) {
+    shop.push({ label: "Shop profile", icon: StoreIcon, path: "/shop_profile", key: "shop_profile" })
+    shop.push({ label: "Bank details", icon: LandmarkIcon, path: "/bank_accounts", key: "bank_accounts" })
+    shop.push({ label: "Billing", icon: CreditCardIcon, path: "/subscription", key: "billing" })
   }
-  return items
+  const business: NavItem[] = []
+  if (can("view")) business.push({ label: "Suppliers", icon: TruckIcon, path: "/suppliers", key: "suppliers" })
+  if (can("owner")) {
+    business.push({ label: "Reminders", icon: BellRingIcon, path: "/reminders", key: "reminders" })
+    business.push({ label: "Staff", icon: UsersRoundIcon, path: "/staff", key: "staff" })
+  }
+  return [
+    { label: "Shop", items: shop },
+    { label: "Business", items: business },
+  ].filter((section) => section.items.length > 0)
 }
+
+/** Help, at the foot of a shop's sidebar. */
+export const helpItem: NavItem = { label: "Help & feedback", icon: LifeBuoyIcon, path: "/help", key: "help" }
 
 // Which nav item owns the screen we are on — so a child screen still lights
 // up its parent tab.
@@ -82,14 +101,14 @@ const NAV_ROOTS: Record<string, string> = {
   transactions: "accounts",
   insights: "insights",
   record: "accounts",
-  menu_items: "settings",
-  shop_profile: "settings",
+  menu_items: "items",
+  shop_profile: "shop_profile",
   settings: "settings",
-  bank_accounts: "settings",
-  subscription: "settings",
+  bank_accounts: "bank_accounts",
+  subscription: "billing",
   notifications: "notifications",
   shops: "shops",
-  help: "settings",
+  help: "help",
   testimonial: "settings",
   suppliers: "suppliers",
   reminders: "reminders",

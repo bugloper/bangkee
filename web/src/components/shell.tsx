@@ -8,7 +8,7 @@ import { QueueSummary } from "@/components/queued-writes"
 import { Logo } from "@/components/brand"
 import { ConsoleShell } from "@/components/console-shell"
 import { Initial } from "@/components/kit"
-import { businessItems, navItems, navRoot, type NavItem } from "@/components/nav"
+import { helpItem, navItems, navRoot, sidebarSections, type NavItem } from "@/components/nav"
 import { IosInstallSheet, PushPrompt } from "@/components/pwa"
 import { RecordSheet } from "@/components/record-sheet"
 import { Button } from "@/components/ui/button"
@@ -67,15 +67,20 @@ function Sidebar({ me, active, onRecord }: { me: Me; active?: string; onRecord?:
         {navItems(me).map((item) => (
           <SidebarLink key={item.key} item={item} current={active === item.key} />
         ))}
-        {businessItems(me).length > 0 && (
-          <>
-            <div className="px-3.5 pt-5 pb-1.5 text-xs font-medium text-muted-foreground/80">Business</div>
-            {businessItems(me).map((item) => (
+        {sidebarSections(me).map((section) => (
+          <div key={section.label}>
+            <div className="px-3.5 pt-5 pb-1.5 text-xs font-medium text-muted-foreground/80">{section.label}</div>
+            {section.items.map((item) => (
               <SidebarLink key={item.key} item={item} current={active === item.key} />
             ))}
-          </>
-        )}
+          </div>
+        ))}
       </nav>
+      {sidebarSections(me).length > 0 && (
+        <div className="px-3 pb-2">
+          <SidebarLink item={helpItem} current={active === helpItem.key} />
+        </div>
+      )}
       <div className="border-t p-3">
         <DropdownMenu>
           <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted data-popup-open:bg-muted">

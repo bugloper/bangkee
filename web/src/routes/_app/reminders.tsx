@@ -21,7 +21,7 @@ const hourLabel = (hour: number) => `${hour % 12 || 12}:00 ${hour < 12 ? "AM" : 
 
 // The shop's automatic reminders: on or off, how often, and at what hour.
 function ReminderSettingsScreen() {
-  usePage("Reminders", "/settings", { narrow: true })
+  usePage("Reminders", "/dashboard", { narrow: true })
   const { data } = useQuery({ queryKey: ["reminder-settings"], queryFn: api.reminderSettings })
   if (!data) return <Loading />
   return <SettingsForm settings={data} />

@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import {
   ArrowDownLeftIcon,
   ArrowUpRightIcon,
+  BellRingIcon,
   CreditCardIcon,
   LandmarkIcon,
   PlusIcon,
@@ -11,6 +12,7 @@ import {
   ShoppingBagIcon,
   StoreIcon,
   TruckIcon,
+  UsersRoundIcon,
 } from "lucide-react"
 
 import { api } from "@/api/client"
@@ -227,11 +229,15 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
           </Panel>
         )}
 
-        <Panel flush title="Shop">
+        {/* A phone's tab bar has no room for these; a desktop has them in the sidebar. */}
+        <Panel flush title="Shop" className="md:hidden">
           <Rows>
             <Row href="/menu_items" leading={<RowIcon icon={PackageIcon} />} title="Items" subtitle="What you sell, to pick from when recording credit" chevron />
+            {owns && <Row href="/shop_profile" leading={<RowIcon icon={StoreIcon} />} title="Shop profile" subtitle="What customers read about your shop" chevron />}
             {owns && <Row href="/bank_accounts" leading={<RowIcon icon={LandmarkIcon} />} title="Bank details" subtitle="What customers see when they pay you" chevron />}
             <Row href="/suppliers" leading={<RowIcon icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
+            {owns && <Row href="/reminders" leading={<RowIcon icon={BellRingIcon} />} title="Reminders" subtitle="Reminding overdue customers, and when" chevron />}
+            {owns && <Row href="/staff" leading={<RowIcon icon={UsersRoundIcon} />} title="Staff" subtitle="The people who record entries with you" chevron />}
             {owns && (
               <Row
                 href="/subscription"

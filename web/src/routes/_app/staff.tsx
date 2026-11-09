@@ -31,7 +31,7 @@ const ROLES: [StaffRole, string, string][] = [
 // entry says who recorded it. Billing, bank details, the shop's settings and
 // the staff stay the owner's.
 function StaffScreen() {
-  usePage("Staff", "/settings", { narrow: true })
+  usePage("Staff", "/dashboard", { narrow: true })
   const { data } = useQuery({ queryKey: ["staff"], queryFn: api.staff })
   const done = async (result: { notice?: string }) => {
     flashNotice(result.notice)

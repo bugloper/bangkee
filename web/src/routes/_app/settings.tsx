@@ -50,9 +50,9 @@ function Tile({ icon: Icon }: { icon: LucideIcon }) {
 }
 
 /** A group's heading, above its card. */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className="grid gap-2.5">
+    <section className={cn("grid gap-2.5", className)}>
       <h2 className="px-1 text-base font-semibold tracking-tight">{title}</h2>
       {children}
     </section>
@@ -132,7 +132,7 @@ function Settings() {
 
       <div className="grid gap-5">
         {shop && !console && (
-          <Section title="Shop">
+          <Section title="Shop" className="md:hidden">
             <Panel flush>
               <Rows>
                 {owns && (
@@ -188,7 +188,14 @@ function Settings() {
           <Section title="Help & feedback">
             <Panel flush>
               <Rows>
-                <Row href="/help" leading={<Tile icon={LifeBuoyIcon} />} title="Help & feedback" subtitle="Feedback, a feature you'd like, or help with a problem" chevron />
+                <Row
+                  href="/help"
+                  className={shop ? "md:hidden" : undefined}
+                  leading={<Tile icon={LifeBuoyIcon} />}
+                  title="Help & feedback"
+                  subtitle="Feedback, a feature you'd like, or help with a problem"
+                  chevron
+                />
                 <Row href="/testimonial" leading={<Tile icon={MessageSquareQuoteIcon} />} title="Share your experience" subtitle="A few words for the Bangkee homepage" chevron />
               </Rows>
             </Panel>
