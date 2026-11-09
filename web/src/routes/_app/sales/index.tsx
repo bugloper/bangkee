@@ -96,7 +96,7 @@ function Sales() {
             <Share2Icon /> Share summary
           </Button>
           {canRecord && (
-            <AppLink href="/sales/new" className={buttonVariants({ variant: "payment", size: "sm" })}>
+            <AppLink href="/sales/new" className={buttonVariants({ size: "sm" })}>
               <PlusIcon /> New sale
             </AppLink>
           )}

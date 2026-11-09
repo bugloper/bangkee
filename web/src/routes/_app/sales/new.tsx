@@ -6,6 +6,7 @@ import { useState } from "react"
 import { api } from "@/api/client"
 import { PAYMENT_METHODS, type LineItemInput, type MenuItem, type Notice } from "@/api/types"
 import { AmountField } from "@/components/amount"
+import { AppLink } from "@/components/app-link"
 import { ChoiceField } from "@/components/choice-field"
 import { DateTimeField } from "@/components/date-time-field"
 import { ErrorBox, Field, FormActions, Segmented } from "@/components/form"
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
+import { useCan } from "@/lib/me"
 import { majorAmount } from "@/lib/money"
 import { newKey } from "@/lib/offline-queue"
 import { usePage } from "@/lib/page"
@@ -48,6 +50,7 @@ function NewSale() {
   // One key per sale: a double tap, or a retry after a dropped connection, records it once.
   const [key, setKey] = useState(newKey)
   const itemized = mode === "Pick items"
+  const canManage = useCan("manage")
 
   const updateLine = (lineKey: number, field: keyof LineItemInput, value: string) => setLines(lines.map((line) => (line.key === lineKey ? { ...line, [field]: value } : line)))
   const pick = (item: MenuItem) => {
@@ -107,13 +110,35 @@ function NewSale() {
         }}
       >
         <ErrorBox errors={validationErrors(save.error)} />
-        {items.length > 0 && <Segmented label="Record by" name="mode" options={MODES} value={mode} onChange={setMode} />}
+        <Segmented label="Record by" name="mode" options={MODES} value={mode} onChange={setMode} />
 
         {itemized ? (
           <div>
-            <div className="mb-2 text-sm font-medium text-muted-foreground">Tap what was sold</div>
-            <ItemChooser items={items} counts={picked} onPick={pick} />
-            <div className="mt-5 grid gap-2">
+            {items.length > 0 ? (
+              <>
+                <div className="mb-2 text-sm font-medium text-muted-foreground">Tap what was sold</div>
+                <ItemChooser items={items} counts={picked} onPick={pick} />
+              </>
+            ) : (
+              <p className="rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground">
+                Type what was sold below.{" "}
+                {canManage && (
+                  <>
+                    To tap items instead, add what you sell once in{" "}
+                    <AppLink href="/menu_items" className="font-medium text-primary hover:underline">
+                      Items
+                    </AppLink>
+                    .
+                  </>
+                )}
+              </p>
+            )}
+            <div className="mt-5 grid grid-cols-[1fr_4.5rem_6rem_2.25rem] gap-2 text-xs font-medium text-muted-foreground">
+              <span>Item</span>
+              <span>Qty</span>
+              <span>Price (Nu.)</span>
+            </div>
+            <div className="mt-1.5 grid gap-2">
               {lines.map((line) => (
                 <div key={line.key} className="grid grid-cols-[1fr_4.5rem_6rem_2.25rem] items-center gap-2">
                   <Input placeholder="Item" aria-label="Item" value={line.name} onChange={(e) => updateLine(line.key, "name", e.target.value)} />
