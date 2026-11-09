@@ -32,6 +32,7 @@ export function Landing() {
       <main>
         <Hero />
         <Bento />
+        <Pricing />
         <Testimonials />
         <Shops />
         <Faq />
@@ -153,37 +154,21 @@ function Bento() {
           </div>
         </Box>
 
-        <div id="pricing" className="flex scroll-mt-24 flex-col justify-between overflow-hidden rounded-[1.75rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-6 text-white shadow-lg shadow-primary/25 md:col-span-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-white/75">from</span>
-            {pricing ? <span className="tabular text-5xl font-semibold tracking-[-0.04em]">{ngultrum(pricing.monthly_price_cents)}</span> : <Skeleton className="h-12 w-40 bg-white/20" />}
-            <span className="text-white/75">a month</span>
+        <div className="flex flex-col justify-between overflow-hidden rounded-[1.75rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-6 text-white shadow-lg shadow-primary/25 md:col-span-2">
+          <div>
+            <div className="text-sm font-medium text-white/75">Free for {pricing?.trial_months ?? 3} months</div>
+            <div className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Every feature, from day one</div>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/80">
+              Then from {pricing ? ngultrum(pricing.monthly_price_cents) : "Nu. 150"} a month, paid once a year. Your customers never pay.
+            </p>
           </div>
-          {pricing && (
-            <ul className="mt-5 grid gap-2 text-sm sm:grid-cols-3">
-              {pricing.plans.map((plan) => (
-                <li key={plan.key} className="rounded-2xl bg-white/10 px-3.5 py-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="font-semibold">{plan.name}</span>
-                    <span className="tabular">{ngultrum(plan.monthly_price_cents)}</span>
-                  </div>
-                  <p className="mt-1 text-[0.8125rem] leading-snug text-white/75">
-                    {plan.key === "basic" ? "The shared book, statements, receipts" : plan.key === "pro" ? "+ automatic reminders, installments, files, suppliers" : `+ up to ${plan.max_staff} staff`}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold tracking-tight">The first {pricing?.trial_months ?? 3} months are free</h3>
-              <p className="mt-1 text-sm text-white/75">
-                With every feature on. Then choose a plan, paid yearly. Customers never pay.
-              </p>
-            </div>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link to="/registration/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90" })}>
               Start free <ArrowRightIcon />
             </Link>
+            <a href="#pricing" className="text-sm font-medium text-white/90 underline-offset-4 hover:underline">
+              Compare plans
+            </a>
           </div>
         </div>
 
@@ -237,6 +222,74 @@ function Bento() {
 
 // What shop owners and customers say, in their words — only what Bangkee has
 // read and approved. Not shown at all until there is something to show.
+// ------------------------------------------------------------------ pricing
+
+// What every plan has; the higher plans list what they add on top.
+const EVERY_PLAN = [
+  "Unlimited customers and entries",
+  "Customers see their balance on their phone",
+  "Statements and receipts, as PDFs to share",
+  "Customers confirm entries, or flag them",
+  "Remind a customer with one tap",
+  "Insights and your dashboard",
+  "Works with no signal",
+]
+
+function Pricing() {
+  const pricing = usePricing()
+  return (
+    <section id="pricing" className={cn(container, "scroll-mt-20 pb-20 sm:pb-28")}>
+      <SectionIntro eyebrow="Pricing" title="One price a year. Nothing for your customers." center>
+        The first {pricing?.trial_months ?? 3} months are free with every feature on. Then pick the plan that fits your shop.
+      </SectionIntro>
+      <div className="mx-auto mt-12 grid max-w-5xl gap-5 lg:grid-cols-3">
+        {pricing
+          ? pricing.plans.map((plan, i) => {
+              const featured = plan.key === "pro"
+              const previous = i > 0 ? pricing.plans[i - 1].name : null
+              const includes = previous ? plan.features.filter((f) => !pricing.plans[i - 1].features.includes(f)) : EVERY_PLAN
+              return (
+                <div
+                  key={plan.key}
+                  className={cn(
+                    "relative flex flex-col rounded-[1.75rem] border bg-card p-7 shadow-xs",
+                    featured && "max-lg:order-first border-primary shadow-lg ring-1 shadow-primary/15 ring-primary lg:-my-3 lg:py-10",
+                  )}
+                >
+                  {featured && <span className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm">Recommended</span>}
+                  <h3 className="text-lg font-semibold tracking-tight">{plan.name}</h3>
+                  <p className="mt-1 min-h-10 text-sm text-muted-foreground">
+                    {plan.key === "basic" ? "The shared credit book, for any shop." : plan.key === "pro" ? "Bangkee chases what you are owed." : "For a shop with people at the counter."}
+                  </p>
+                  <div className="mt-6 flex items-baseline gap-1.5">
+                    <span className="tabular text-4xl font-semibold tracking-[-0.03em]">{ngultrum(plan.monthly_price_cents)}</span>
+                    <span className="text-sm text-muted-foreground">/ month</span>
+                  </div>
+                  <p className="tabular mt-1 text-sm text-muted-foreground">{ngultrum(plan.annual_price_cents)} billed once a year</p>
+                  <Link to="/registration/new" className={buttonVariants({ size: "lg", variant: featured ? "default" : "outline", className: "mt-6 w-full" })}>
+                    Start free
+                  </Link>
+                  <div className="mt-7 border-t pt-6">
+                    <p className="text-sm font-medium">{previous ? `Everything in ${previous}, and` : "Everything a shop needs"}</p>
+                    <ul className="mt-3 grid gap-2.5 text-sm">
+                      {[...includes, ...(plan.key === "business" ? ["Manager, cashier and viewer roles, each allowed only their part"] : [])].map((feature) => (
+                        <li key={feature} className="flex items-start gap-2.5">
+                          <CheckIcon className="mt-0.5 size-4 shrink-0 text-primary" />
+                          <span>{plan.key === "business" && feature === "Staff accounts" ? `Staff accounts — up to ${plan.max_staff} people` : feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )
+            })
+          : [0, 1, 2].map((i) => <Skeleton key={i} className="h-[30rem] rounded-[1.75rem]" />)}
+      </div>
+      <p className="mt-8 text-center text-sm text-muted-foreground">Prices in Ngultrum. Pay by bank transfer from the app; Bangkee approves it within one working day.</p>
+    </section>
+  )
+}
+
 function Testimonials() {
   const { data } = useQuery({ queryKey: ["public_testimonials"], queryFn: api.publicTestimonials, staleTime: 60_000 })
   if (!data || data.testimonials.length === 0) return null
@@ -349,7 +402,11 @@ function Demo() {
       {/* The customer's side */}
       <div className="flex flex-col rounded-2xl border bg-background/60 p-4">
         <div className="text-xs font-medium text-muted-foreground">Lhaki's phone</div>
-        <div key={latest.id} role="status" className="mt-3 flex items-start gap-2.5 rounded-xl border bg-card p-2.5 text-left shadow-md shadow-foreground/5 duration-500 animate-in fade-in slide-in-from-top-4">
+        <div
+          key={latest.id}
+          role="status"
+          className="mt-3 flex items-start gap-2.5 rounded-xl border bg-card p-2.5 text-left shadow-md shadow-foreground/5 duration-500 animate-in fade-in slide-in-from-top-4"
+        >
           <LogoMark className="size-7 shrink-0" />
           <div className="min-w-0 text-xs leading-snug">
             <div className="truncate font-semibold">{latest.kind === "credit" ? "New credit · Karma General Shop" : "Payment · Karma General Shop"}</div>
@@ -538,10 +595,7 @@ function Faq() {
       "How do I pay for Bangkee?",
       `By bank transfer. From Billing in the app, transfer ${annual} to Bangkee's account and attach the screenshot. We check it and approve it, usually within one working day.`,
     ],
-    [
-      "Do I need to install an app?",
-      "No app store needed. Bangkee opens in any phone browser, and you can add it to your home screen so it opens like an app, with notifications.",
-    ],
+    ["Do I need to install an app?", "No app store needed. Bangkee opens in any phone browser, and you can add it to your home screen so it opens like an app, with notifications."],
   ]
   return (
     <section id="faq" className="scroll-mt-16 py-20 sm:py-28">

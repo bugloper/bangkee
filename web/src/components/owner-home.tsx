@@ -7,6 +7,8 @@ import type { LedgerEntry, Me, OwnerDashboard } from "@/api/types"
 import { AppLink } from "@/components/app-link"
 import { AreaChart } from "@/components/area-chart"
 import { Initial, Money } from "@/components/kit"
+import { helpItem, sidebarSections } from "@/components/nav"
+import { InstallCard } from "@/components/pwa"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,11 +18,12 @@ import { ngultrum, pluralize } from "@/lib/money"
 import { timeAgoInWords } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-// The owner's home on a desktop, after Square UI and shadcn-admin: a
-// greeting with the two things to do, four figures with icon tiles, the
-// fortnight's money in and out beside what just happened, anything that
-// needs looking at, and the customers who owe as a table. A phone keeps its
-// own home (dashboard.tsx).
+// The owner's home, after Square UI and shadcn-admin: a greeting with the
+// two things to do, four figures with icon tiles, the fortnight's money in
+// and out beside what just happened, anything that needs looking at, and the
+// customers who owe as a table. On a phone the same home stacks: figures two
+// by two, the table down to who, status and amount, and the shop's pages as
+// tiles, since the tab bar has no room for them.
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 const dayLabel = (day: string) => `${Number(day.slice(8, 10))} ${MONTHS[Number(day.slice(5, 7)) - 1]}`
@@ -50,16 +53,16 @@ function Figure({ label, value, icon: Icon, note, tone, href }: { label: string;
   const body = (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 space-y-1">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className={cn("tabular text-2xl font-medium tracking-tight", tone === "owed" && "text-owed", tone === "paid" && "text-paid", tone === "warn" && "text-warn")}>{value}</p>
-        <p className="truncate text-xs text-muted-foreground">{note}</p>
+        <p className="text-[0.8125rem] text-muted-foreground sm:text-sm">{label}</p>
+        <p className={cn("tabular text-xl font-medium tracking-tight sm:text-2xl", tone === "owed" && "text-owed", tone === "paid" && "text-paid", tone === "warn" && "text-warn")}>{value}</p>
+        <p className="line-clamp-2 text-xs text-muted-foreground sm:truncate">{note}</p>
       </div>
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border bg-muted">
-        <Icon className="size-6 text-muted-foreground" />
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted sm:size-12">
+        <Icon className="size-4 text-muted-foreground sm:size-6" />
       </div>
     </div>
   )
-  const classes = "block rounded-xl border bg-card p-4"
+  const classes = "block min-w-0 rounded-xl border bg-card p-3.5 sm:p-4"
   return href ? (
     <AppLink href={href} className={cn(classes, "transition-colors hover:bg-muted/40")}>
       {body}
@@ -100,8 +103,8 @@ function Owing({ data }: { data: OwnerDashboard }) {
           <h2 className="text-[0.9375rem] tracking-tight">Who owes you</h2>
           <span className="tabular rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{data.owing_count}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-56">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <div className="relative min-w-0 flex-1 sm:w-56 sm:flex-none">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name or phone" aria-label="Search who owes" className="h-8 pl-8 text-sm" />
           </div>
@@ -115,9 +118,9 @@ function Owing({ data }: { data: OwnerDashboard }) {
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
               <TableHead className="pl-5">Customer</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Last entry</TableHead>
+              <TableHead className="hidden md:table-cell">Phone</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead className="hidden md:table-cell">Last entry</TableHead>
               <TableHead className="pr-5 text-right">Owes</TableHead>
             </TableRow>
           </TableHeader>
@@ -125,13 +128,18 @@ function Owing({ data }: { data: OwnerDashboard }) {
             {rows.map((a) => (
               <TableRow key={a.id} className="cursor-pointer" onClick={() => go(`/accounts/${a.id}`)}>
                 <TableCell className="pl-5">
-                  <AppLink href={`/accounts/${a.id}`} className="flex items-center gap-2.5 font-medium">
+                  <AppLink href={`/accounts/${a.id}`} className="flex max-w-[13rem] items-center gap-2.5 font-medium sm:max-w-none">
                     <Initial text={a.display_name} size="sm" src={a.customer_photo_url} />
-                    {a.display_name}
+                    <span className="min-w-0">
+                      <span className="block truncate">{a.display_name}</span>
+                      <span className={cn("block text-xs font-normal sm:hidden", a.overdue ? "text-warn" : "text-muted-foreground")}>
+                        {a.overdue ? `${pluralize(a.days_overdue, "day")} overdue` : a.joined ? "Joined" : "Not joined"}
+                      </span>
+                    </span>
                   </AppLink>
                 </TableCell>
-                <TableCell className="tabular text-muted-foreground">{a.customer_phone ?? "—"}</TableCell>
-                <TableCell>
+                <TableCell className="tabular hidden text-muted-foreground md:table-cell">{a.customer_phone ?? "—"}</TableCell>
+                <TableCell className="hidden sm:table-cell">
                   {a.overdue ? (
                     <Badge variant="warn">{pluralize(a.days_overdue, "day")} overdue</Badge>
                   ) : a.joined ? (
@@ -140,7 +148,7 @@ function Owing({ data }: { data: OwnerDashboard }) {
                     <Badge variant="muted">Not joined</Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-muted-foreground">{a.last_activity_at ? `${timeAgoInWords(a.last_activity_at)} ago` : "—"}</TableCell>
+                <TableCell className="hidden text-muted-foreground md:table-cell">{a.last_activity_at ? `${timeAgoInWords(a.last_activity_at)} ago` : "—"}</TableCell>
                 <TableCell className="pr-5 text-right">
                   <Money cents={a.balance_cents} tone="owed" className="font-semibold" />
                 </TableCell>
@@ -155,7 +163,27 @@ function Owing({ data }: { data: OwnerDashboard }) {
   )
 }
 
-export function OwnerDesktop({ data, me, className }: { data: OwnerDashboard; me: Me; className?: string }) {
+/** On a phone, the pages a desktop keeps in its sidebar, as tiles to tap. */
+function ShopTiles({ me }: { me: Me }) {
+  const items = [...sidebarSections(me).flatMap((section) => section.items), helpItem]
+  return (
+    <section className="md:hidden" aria-label="Your shop">
+      <h2 className="mb-3 text-[0.9375rem] tracking-tight">Your shop</h2>
+      <div className="grid grid-cols-3 gap-2.5">
+        {items.map((item) => (
+          <AppLink key={item.path} href={item.path} className="flex flex-col items-center gap-2 rounded-xl border bg-card px-2 py-3.5 text-center transition-colors active:bg-muted">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <item.icon className="size-[1.125rem]" />
+            </span>
+            <span className="text-xs leading-tight font-medium">{item.label}</span>
+          </AppLink>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export function OwnerHome({ data, me }: { data: OwnerDashboard; me: Me }) {
   const first = me.user.display_name.split(" ")[0]
   const credits = data.trend.map((d) => d.credit_cents)
   const payments = data.trend.map((d) => d.payment_cents)
@@ -181,10 +209,10 @@ export function OwnerDesktop({ data, me, className }: { data: OwnerDashboard; me
   ].filter(Boolean) as { icon: LucideIcon; tone: string; title: string; href: string }[]
 
   return (
-    <div className={cn("gap-5", className)}>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 sm:gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-medium tracking-tight">
+          <h2 className="text-xl font-medium tracking-tight sm:text-2xl">
             {greeting()}, {first}
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -203,7 +231,7 @@ export function OwnerDesktop({ data, me, className }: { data: OwnerDashboard; me
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Figure label="Owed to you" value={ngultrum(data.total_outstanding_cents)} icon={WalletIcon} note={`by ${pluralize(data.owing_count, "customer")}`} href="/accounts?filter=outstanding" />
         <Figure label="Collected today" value={ngultrum(data.payments_today_cents)} icon={ArrowDownLeftIcon} tone="paid" note={`${ngultrum(data.repaid_month_cents)} this month`} />
         <Figure label="Credit given today" value={ngultrum(data.credit_today_cents)} icon={ArrowUpRightIcon} tone="owed" note="Goods taken on credit" />
@@ -216,6 +244,8 @@ export function OwnerDesktop({ data, me, className }: { data: OwnerDashboard; me
           href="/accounts?filter=overdue"
         />
       </div>
+
+      <InstallCard />
 
       {attention.length > 0 && (
         <div className="grid gap-3 lg:grid-cols-3">
@@ -285,6 +315,8 @@ export function OwnerDesktop({ data, me, className }: { data: OwnerDashboard; me
       </div>
 
       <Owing data={data} />
+
+      <ShopTiles me={me} />
     </div>
   )
 }
