@@ -56,23 +56,32 @@ type note struct {
 
 func (n *Notifier) deliver(ctx context.Context, notes ...note) {
 	for _, nt := range notes {
-		id, err := n.q.CreateNotification(ctx, store.CreateNotificationParams{
-			UserID: nt.userID, Kind: nt.kind, Title: nt.title, Body: util.Presence(nt.body), Path: util.Presence(nt.path),
-		})
-		if err != nil {
+		if err := n.deliverOne(ctx, nt); err != nil {
 			slog.Error("could not write a notification", "error", err)
-			continue
 		}
-		n.Live.publish(nt.userID, message(id, nt.kind, nt.title, util.Presence(nt.body), util.Presence(nt.path)))
-		n.pending.Add(1)
-		go func() {
-			defer n.pending.Done()
-			background, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-			defer cancel()
-			n.push(background, id)
-			n.email(background, id)
-		}()
 	}
+}
+
+// deliverOne writes the notification and starts pushing and mailing it. An
+// error means nothing reached the person; push and email failures after that
+// are logged, as the in-app notification is already there.
+func (n *Notifier) deliverOne(ctx context.Context, nt note) error {
+	id, err := n.q.CreateNotification(ctx, store.CreateNotificationParams{
+		UserID: nt.userID, Kind: nt.kind, Title: nt.title, Body: util.Presence(nt.body), Path: util.Presence(nt.path),
+	})
+	if err != nil {
+		return err
+	}
+	n.Live.publish(nt.userID, message(id, nt.kind, nt.title, util.Presence(nt.body), util.Presence(nt.path)))
+	n.pending.Add(1)
+	go func() {
+		defer n.pending.Done()
+		background, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		n.push(background, id)
+		n.email(background, id)
+	}()
+	return nil
 }
 
 func accountPath(id int64) string { return fmt.Sprintf("/accounts/%d", id) }
@@ -170,20 +179,33 @@ func (n *Notifier) AccountJoined(ctx context.Context, accountID int64) {
 	}
 }
 
-func (n *Notifier) OverdueReminder(ctx context.Context, accountID int64, creditDueDays int32) {
+// PaymentReminder reminds the account's customer what they owe. The error
+// says the reminder did not go out at all.
+func (n *Notifier) PaymentReminder(ctx context.Context, accountID int64, creditDueDays int32) error {
 	c, ok := n.context(ctx, accountID)
-	if !ok {
+	if !ok || c.account.CustomerID == nil {
+		return fmt.Errorf("account %d has no customer to remind", accountID)
+	}
+	body := money.Ngultrum(c.account.BalanceCents, false) + " is outstanding"
+	if days := domain.DaysOverdue(c.account, creditDueDays); days > 0 {
+		body += fmt.Sprintf(", with nothing paid for %d days", days)
+	}
+	return n.deliverOne(ctx, note{userID: *c.account.CustomerID, kind: "overdue", title: "A reminder from " + c.shopName,
+		body: body + ". Open Bangkee to see the entries and how to pay.", path: accountPath(accountID)})
+}
+
+// RemindersDigest is the owner's one note after their shop's reminders went
+// out: how many were reminded, and how many they need to reach themselves.
+func (n *Notifier) RemindersDigest(ctx context.Context, ownerID int64, sent, skipped int) {
+	if sent == 0 && skipped == 0 {
 		return
 	}
-	days := domain.DaysOverdue(c.account, creditDueDays)
-	owed := money.Ngultrum(c.account.BalanceCents, false)
-	notes := []note{{userID: c.ownerID, kind: "overdue", title: "Overdue — " + c.account.CustomerName,
-		body: fmt.Sprintf("%s outstanding for %d days", owed, days), path: accountPath(accountID)}}
-	if c.account.CustomerID != nil {
-		notes = append(notes, note{userID: *c.account.CustomerID, kind: "overdue", title: "Balance overdue at " + c.shopName,
-			body: fmt.Sprintf("%s has been outstanding for %d days", owed, days), path: accountPath(accountID)})
+	title := "Reminded " + money.Pluralize(int64(sent), "overdue customer")
+	body := "They were sent a note about what they owe."
+	if skipped > 0 {
+		body = money.Pluralize(int64(skipped), "customer") + " could not be reminded through Bangkee — see who, and remind them yourself."
 	}
-	n.deliver(ctx, notes...)
+	n.deliver(ctx, note{userID: ownerID, kind: "overdue", title: title, body: body, path: "/accounts?filter=overdue"})
 }
 
 // SubscriptionPaymentSubmitted is §17: every platform admin hears about it.

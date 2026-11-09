@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { ArrowDownLeftIcon, ArrowUpRightIcon, CheckCheckIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowUpRightIcon, BellRingIcon, CheckCheckIcon, LockIcon, PencilIcon, PrinterIcon, ScrollTextIcon, Share2Icon, ShoppingBasketIcon } from "lucide-react"
 import { useEffect } from "react"
 
 import { api } from "@/api/client"
@@ -101,6 +101,11 @@ function OwnerView({ data }: { data: OwnerData }) {
               <AppLink href={`/accounts/${account.id}/statement`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <PrinterIcon /> <span className="max-sm:sr-only">Statement</span>
               </AppLink>
+              {account.balance_cents > 0 && (
+                <AppLink href={`/accounts/${account.id}/reminders`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  <BellRingIcon /> <span className="max-sm:sr-only">Remind</span>
+                </AppLink>
+              )}
             </div>
           </div>
 

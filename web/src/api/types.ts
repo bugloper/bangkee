@@ -21,7 +21,8 @@ export type Timestamp = string
 export interface ApiErrorBody {
   error?: string
   errors?: string[]
-  code?: "write_locked" | "unauthenticated"
+  code?: "write_locked" | "unauthenticated" | "plan_required"
+  feature?: string // plan_required: which feature
 }
 
 /** Every successful mutation says what happened, in the words the Rails flash used. */
@@ -45,6 +46,7 @@ export interface User {
   display_name: string
   initial: string
   photo_url: string | null // their profile photo, if they added one
+  reminders_opt_out: boolean // a customer who turned payment reminders off
 }
 
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "disabled"
@@ -638,4 +640,36 @@ export interface AdminTestimonialQueue {
     reviewed_by_name: string | null
     reviewed_at: Timestamp | null
   }[]
+}
+
+// ---------------------------------------------------------------- reminders
+
+/** What happened when one account was reminded. */
+export interface ReminderOutcome {
+  account_id: number
+  customer_name: string
+  status: "sent" | "skipped" | "failed" | "duplicate"
+  detail: string
+}
+
+export interface Reminder {
+  kind: "automatic" | "manual"
+  channel: "app" | "whatsapp" | "sms"
+  status: "sent" | "skipped" | "failed"
+  detail: string | null
+  balance_cents: Cents
+  sent_by_name: string | null
+  at: Timestamp
+}
+
+/** GET /api/shop/reminders */
+export interface ReminderSettings {
+  enabled: boolean
+  every_days: number
+  hour: number // Thimphu
+  every_days_options: number[]
+  first_hour: number
+  last_hour: number
+  credit_due_days: number
+  plan_allows: boolean // automatic reminders are on the shop's plan (or its trial)
 }

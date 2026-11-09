@@ -1,0 +1,31 @@
+# Staging: a second Bangkee on the same VM as production, with its own
+# PostgreSQL, photos and secrets, served at stg.bangkee.app through the same
+# shared Caddy (deploy/bangkee-staging.caddy). It lives in /opt/bangkee-staging,
+# whose .env sets COMPOSE_FILE=docker-compose.staging.yml so plain
+# `docker compose ...` there means this file. See README "Staging".
+#
+# The app service is named bangkee-staging, not bangkee: every service is known
+# on the "edge" network by its name, and a second "bangkee" there would have
+# Caddy send production traffic to staging too.
+name: bangkee-staging
+
+services:
+  bangkee-staging:
+    extends:
+      file: docker-compose.yml
+      service: bangkee
+    container_name: bangkee-staging
+
+  db:
+    extends:
+      file: docker-compose.yml
+      service: db
+    container_name: bangkee-staging-db
+
+networks:
+  edge:
+    external: true
+
+volumes:
+  bangkee-db:
+  bangkee-storage:

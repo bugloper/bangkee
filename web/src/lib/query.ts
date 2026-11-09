@@ -8,6 +8,7 @@ import { go, rememberReturnPath } from "@/lib/go"
 // every query and mutation:
 //   401          -> sign in, then come back
 //   403 locked   -> Billing, with the reason (BR-40)
+//   403 plan     -> Billing, with what the plan does not include
 //   403 / 404    -> home, with the reason
 //   422 / 429    -> the reason as an alert on this screen; a mutation's
 //                   validation list (errors[]) is left for its form to show
@@ -25,7 +26,7 @@ function handle(error: unknown, kind: "query" | "mutation") {
       return
     case 403:
       flashAlert(error.body.error)
-      go(error.writeLocked ? "/subscription" : "/", { replace: true })
+      go(error.writeLocked || error.planRequired ? "/subscription" : "/", { replace: true })
       return
     case 404:
       flashAlert(error.body.error && error.body.error !== "Not found" ? error.body.error : "That page does not exist.")

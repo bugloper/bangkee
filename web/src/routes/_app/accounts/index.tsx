@@ -1,15 +1,17 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { PlusIcon, SearchIcon, UsersIcon } from "lucide-react"
+import { BellRingIcon, PlusIcon, SearchIcon, UsersIcon } from "lucide-react"
 
 import { api } from "@/api/client"
 import { Empty, Initial, Money, Panel, Row, Rows } from "@/components/kit"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { flashNotice } from "@/lib/flash"
 import { useT } from "@/lib/i18n"
 import { balanceBadge, balanceWord } from "@/lib/ledger"
 import { usePage } from "@/lib/page"
+import { refreshAll } from "@/lib/query"
 import { timeAgoInWords } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -73,6 +75,8 @@ function Accounts() {
           </Link>
         ))}
       </nav>
+
+      {filter === "overdue" && accounts.length > 0 && <RemindAll count={accounts.length} />}
 
       <Panel flush>
         {accounts.length > 0 ? (
@@ -159,6 +163,26 @@ function Accounts() {
       >
         <PlusIcon className="size-6" />
       </Link>
+    </div>
+  )
+}
+
+/** On the overdue list: remind everyone on it at once, through Bangkee. */
+function RemindAll({ count }: { count: number }) {
+  const remind = useMutation({
+    mutationFn: () => api.remindAllOverdue(),
+    onSuccess: async (result) => {
+      const skipped = result.outcomes.filter((o) => o.status === "skipped" || o.status === "failed").length
+      flashNotice(skipped > 0 ? `${result.notice} ${skipped} could not be reminded through Bangkee — open them to remind by WhatsApp or SMS.` : result.notice)
+      await refreshAll()
+    },
+  })
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.25rem] border bg-card px-4 py-3 sm:px-5">
+      <span className="text-sm text-muted-foreground">{count === 1 ? "1 customer is overdue." : `${count} customers are overdue.`}</span>
+      <Button size="sm" disabled={remind.isPending} onClick={() => remind.mutate()}>
+        <BellRingIcon /> Remind all
+      </Button>
     </div>
   )
 }

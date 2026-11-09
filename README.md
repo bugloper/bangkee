@@ -66,6 +66,28 @@ Migrations run when the server starts. The database and uploaded photos live in 
 `bangkee-db` and `bangkee-storage` volumes and survive rebuilds. For a server that is only for
 trying Bangkee out, `docker compose exec bangkee ./seed` loads the demo data.
 
+## Staging
+
+A second Bangkee runs on the same VM at https://stg.bangkee.app (console: `admin.stg.bangkee.app`)
+from `/opt/bangkee-staging`, with its own database, photos and secrets (`docker-compose.staging.yml`,
+whose app service is `bangkee-staging` so it never shares the name Caddy sends production to).
+Its `.env` sets `COMPOSE_FILE=docker-compose.staging.yml` and `BANGKEE_DOMAIN=stg.bangkee.app`
+plus its own `SECRET_KEY_BASE`, `POSTGRES_PASSWORD` and VAPID pair. It is not backed up.
+
+In Cloudflare, `stg` is Proxied but `admin.stg` must be DNS only — the free edge certificate covers
+one level of subdomain, so Caddy's own certificate serves it instead.
+
+To deploy a commit there, as for production but into the staging directory:
+
+```sh
+ssh myserver 'find /opt/bangkee-staging -mindepth 1 -maxdepth 1 ! -name .env -exec rm -rf {} +'
+git archive HEAD | ssh myserver 'tar -x -C /opt/bangkee-staging'
+ssh myserver 'cd /opt/bangkee-staging && docker compose up -d --build'
+ssh myserver 'cp /opt/bangkee-staging/deploy/bangkee-staging.caddy /opt/proxy/sites/ && docker exec caddy caddy reload --config /etc/caddy/Caddyfile'
+```
+
+`docker compose exec bangkee-staging ./seed` loads the demo data.
+
 ## Backups
 
 Every night at 02:30 Thimphu time, `deploy/backup.sh` (installed on the VM as

@@ -24,6 +24,7 @@ import { Panel, Row, Rows } from "@/components/kit"
 import { PhotoUpload } from "@/components/photo-upload"
 import { InstallCard } from "@/components/pwa"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { flashNotice } from "@/lib/flash"
 import { isAdminHost } from "@/lib/host"
 import { languageName, LOCALES, storeLocale, translate, useLocale, useT } from "@/lib/i18n"
@@ -136,6 +137,7 @@ function Settings() {
                 />
                 <Row href="/menu_items" leading={<Tile icon={NotebookTextIcon} />} title="Items" subtitle={`${pluralize(info.data?.menu_items_count ?? 0, "item")} you sell`} chevron />
                 <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
+                <Row href="/reminders" leading={<Tile icon={BellRingIcon} />} title="Reminders" subtitle="Reminding overdue customers, and when" chevron />
               </Rows>
             </Panel>
           </Section>
@@ -195,6 +197,7 @@ function Settings() {
                   )
                 }
               />
+              {me.user.role === "customer" && <ReminderOptOut optOut={me.user.reminders_opt_out} />}
               <Row
                 href="/notifications"
                 leading={<Tile icon={BellIcon} />}
@@ -243,5 +246,24 @@ function Guide({ icon, title, children }: { icon: LucideIcon; title: string; chi
         <p className="mt-0.5 text-[0.8125rem] leading-relaxed text-muted-foreground">{children}</p>
       </div>
     </div>
+  )
+}
+
+/** A customer's own switch: shops' payment reminders through Bangkee, on or off. */
+function ReminderOptOut({ optOut }: { optOut: boolean }) {
+  const toggle = useMutation({
+    mutationFn: (off: boolean) => api.setMyReminders(off),
+    onSuccess: async (result) => {
+      flashNotice(result.notice)
+      await refreshAll()
+    },
+  })
+  return (
+    <Row
+      leading={<Tile icon={BellIcon} />}
+      title="Payment reminders"
+      subtitle={<span className="whitespace-normal">{optOut ? "Off — shops cannot remind you through Bangkee" : "Shops can remind you when a balance is overdue"}</span>}
+      trailing={<Switch checked={!optOut} disabled={toggle.isPending} onCheckedChange={(on) => toggle.mutate(!on)} aria-label="Payment reminders" />}
+    />
   )
 }

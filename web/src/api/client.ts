@@ -24,6 +24,10 @@ export class ApiError extends Error {
   get writeLocked(): boolean {
     return this.body.code === "write_locked"
   }
+  /** The shop's plan does not include this; Billing is where to change it. */
+  get planRequired(): boolean {
+    return this.body.code === "plan_required"
+  }
   get unauthenticated(): boolean {
     return this.status === 401
   }
@@ -111,6 +115,14 @@ export const api = {
   disputeEntry: (id: number, reason: string) => post<T.Notice>(`/api/transactions/${id}/dispute`, { reason }),
   replyToDispute: (id: number, note: string) => post<T.Notice>(`/api/transactions/${id}/dispute_reply`, { note }),
   confirmAll: (accountId: number) => post<T.Notice & { confirmed: number }>(`/api/accounts/${accountId}/confirm_all`),
+  remind: (accountId: number) => post<T.Notice & { outcome: T.ReminderOutcome }>(`/api/accounts/${accountId}/remind`),
+  logReminder: (accountId: number, channel: "whatsapp" | "sms") => post<T.Notice>(`/api/accounts/${accountId}/reminders/log`, { channel }),
+  accountReminders: (accountId: number) => get<{ paused: boolean; reminders: T.Reminder[] }>(`/api/accounts/${accountId}/reminders`),
+  pauseReminders: (accountId: number, paused: boolean) => patch<T.Notice>(`/api/accounts/${accountId}/reminders`, { paused }),
+  remindAllOverdue: (accountIds: number[] = []) => post<T.Notice & { sent: number; outcomes: T.ReminderOutcome[] }>("/api/reminders/overdue", { account_ids: accountIds }),
+  reminderSettings: () => get<T.ReminderSettings>("/api/shop/reminders"),
+  updateReminderSettings: (input: { enabled: boolean; every_days: number; hour: number }) => patch<T.Notice>("/api/shop/reminders", input),
+  setMyReminders: (optOut: boolean) => patch<T.Notice>("/api/me/reminders", { opt_out: optOut }),
   crossOutTransaction: (id: number) => post<T.Notice & { account_id: number }>(`/api/transactions/${id}/cross_out`),
 
   bankAccounts: () => get<{ bank_accounts: T.BankAccount[] }>("/api/bank_accounts"),

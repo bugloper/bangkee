@@ -185,7 +185,7 @@ func (q *Queries) DemoteOtherPrimaries(ctx context.Context, arg DemoteOtherPrima
 }
 
 const lockSubscriptionPayment = `-- name: LockSubscriptionPayment :one
-SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, s.name AS shop_name
+SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, p.plan, s.name AS shop_name
 FROM subscription_payments p JOIN shops s ON s.id = p.shop_id
 WHERE p.id = $1 FOR UPDATE OF p
 `
@@ -212,6 +212,7 @@ func (q *Queries) LockSubscriptionPayment(ctx context.Context, id int64) (LockSu
 		&i.SubscriptionPayment.ReviewedAt,
 		&i.SubscriptionPayment.CreatedAt,
 		&i.SubscriptionPayment.UpdatedAt,
+		&i.SubscriptionPayment.Plan,
 		&i.ShopName,
 	)
 	return i, err
@@ -245,7 +246,7 @@ func (q *Queries) RejectSubscriptionPayment(ctx context.Context, arg RejectSubsc
 }
 
 const subscriptionPaymentList = `-- name: SubscriptionPaymentList :many
-SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, r.name AS reviewed_by_name, u.name AS submitted_by_name, s.name AS shop_name
+SELECT p.id, p.shop_id, p.submitted_by_id, p.reviewed_by_id, p.amount_cents, p.months, p.method, p.reference, p.status, p.rejection_reason, p.reviewed_at, p.created_at, p.updated_at, p.plan, r.name AS reviewed_by_name, u.name AS submitted_by_name, s.name AS shop_name
 FROM subscription_payments p
 JOIN shops s ON s.id = p.shop_id
 JOIN users u ON u.id = p.submitted_by_id
@@ -299,6 +300,7 @@ func (q *Queries) SubscriptionPaymentList(ctx context.Context, arg SubscriptionP
 			&i.SubscriptionPayment.ReviewedAt,
 			&i.SubscriptionPayment.CreatedAt,
 			&i.SubscriptionPayment.UpdatedAt,
+			&i.SubscriptionPayment.Plan,
 			&i.ReviewedByName,
 			&i.SubmittedByName,
 			&i.ShopName,

@@ -23,6 +23,7 @@ import { Route as AppHelpRouteImport } from './routes/_app/help'
 import { Route as AppInsightsRouteImport } from './routes/_app/insights'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppRecordRouteImport } from './routes/_app/record'
+import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShop_profileRouteImport } from './routes/_app/shop_profile'
 import { Route as AppSubscriptionRouteImport } from './routes/_app/subscription'
@@ -44,6 +45,7 @@ import { Route as AppAccountsIdIndexRouteImport } from './routes/_app/accounts/$
 import { Route as AppAccountsIdEditRouteImport } from './routes/_app/accounts/$id/edit'
 import { Route as AppAccountsIdInviteRouteImport } from './routes/_app/accounts/$id/invite'
 import { Route as AppAccountsIdReceiptsRouteImport } from './routes/_app/accounts/$id/receipts'
+import { Route as AppAccountsIdRemindersRouteImport } from './routes/_app/accounts/$id/reminders'
 import { Route as AppAccountsIdStatementRouteImport } from './routes/_app/accounts/$id/statement'
 import { Route as AppBank_accountsIdEditRouteImport } from './routes/_app/bank_accounts/$id/edit'
 import { Route as AppMenu_itemsIdEditRouteImport } from './routes/_app/menu_items/$id/edit'
@@ -118,6 +120,11 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
 const AppRecordRoute = AppRecordRouteImport.update({
   id: '/record',
   path: '/record',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRemindersRoute = AppRemindersRouteImport.update({
+  id: '/reminders',
+  path: '/reminders',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -225,6 +232,11 @@ const AppAccountsIdReceiptsRoute = AppAccountsIdReceiptsRouteImport.update({
   path: '/accounts/$id/receipts',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAccountsIdRemindersRoute = AppAccountsIdRemindersRouteImport.update({
+  id: '/accounts/$id/reminders',
+  path: '/accounts/$id/reminders',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAccountsIdStatementRoute = AppAccountsIdStatementRouteImport.update({
   id: '/accounts/$id/statement',
   path: '/accounts/$id/statement',
@@ -274,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/insights': typeof AppInsightsRoute
   '/notifications': typeof AppNotificationsRoute
   '/record': typeof AppRecordRoute
+  '/reminders': typeof AppRemindersRoute
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
@@ -294,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
   '/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
+  '/accounts/$id/reminders': typeof AppAccountsIdRemindersRoute
   '/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
@@ -315,6 +329,7 @@ export interface FileRoutesByTo {
   '/insights': typeof AppInsightsRoute
   '/notifications': typeof AppNotificationsRoute
   '/record': typeof AppRecordRoute
+  '/reminders': typeof AppRemindersRoute
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
   '/subscription': typeof AppSubscriptionRoute
@@ -334,6 +349,7 @@ export interface FileRoutesByTo {
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/accounts/$id/invite': typeof AppAccountsIdInviteRoute
   '/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
+  '/accounts/$id/reminders': typeof AppAccountsIdRemindersRoute
   '/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
@@ -359,6 +375,7 @@ export interface FileRoutesById {
   '/_app/insights': typeof AppInsightsRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/record': typeof AppRecordRoute
+  '/_app/reminders': typeof AppRemindersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shop_profile': typeof AppShop_profileRoute
   '/_app/subscription': typeof AppSubscriptionRoute
@@ -379,6 +396,7 @@ export interface FileRoutesById {
   '/_app/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/_app/accounts/$id/invite': typeof AppAccountsIdInviteRoute
   '/_app/accounts/$id/receipts': typeof AppAccountsIdReceiptsRoute
+  '/_app/accounts/$id/reminders': typeof AppAccountsIdRemindersRoute
   '/_app/accounts/$id/statement': typeof AppAccountsIdStatementRoute
   '/_app/bank_accounts/$id/edit': typeof AppBank_accountsIdEditRoute
   '/_app/menu_items/$id/edit': typeof AppMenu_itemsIdEditRoute
@@ -402,6 +420,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/notifications'
     | '/record'
+    | '/reminders'
     | '/settings'
     | '/shop_profile'
     | '/subscription'
@@ -422,6 +441,7 @@ export interface FileRouteTypes {
     | '/accounts/$id/edit'
     | '/accounts/$id/invite'
     | '/accounts/$id/receipts'
+    | '/accounts/$id/reminders'
     | '/accounts/$id/statement'
     | '/bank_accounts/$id/edit'
     | '/menu_items/$id/edit'
@@ -443,6 +463,7 @@ export interface FileRouteTypes {
     | '/insights'
     | '/notifications'
     | '/record'
+    | '/reminders'
     | '/settings'
     | '/shop_profile'
     | '/subscription'
@@ -462,6 +483,7 @@ export interface FileRouteTypes {
     | '/accounts/$id/edit'
     | '/accounts/$id/invite'
     | '/accounts/$id/receipts'
+    | '/accounts/$id/reminders'
     | '/accounts/$id/statement'
     | '/bank_accounts/$id/edit'
     | '/menu_items/$id/edit'
@@ -486,6 +508,7 @@ export interface FileRouteTypes {
     | '/_app/insights'
     | '/_app/notifications'
     | '/_app/record'
+    | '/_app/reminders'
     | '/_app/settings'
     | '/_app/shop_profile'
     | '/_app/subscription'
@@ -506,6 +529,7 @@ export interface FileRouteTypes {
     | '/_app/accounts/$id/edit'
     | '/_app/accounts/$id/invite'
     | '/_app/accounts/$id/receipts'
+    | '/_app/accounts/$id/reminders'
     | '/_app/accounts/$id/statement'
     | '/_app/bank_accounts/$id/edit'
     | '/_app/menu_items/$id/edit'
@@ -623,6 +647,13 @@ declare module '@tanstack/react-router' {
       path: '/record'
       fullPath: '/record'
       preLoaderRoute: typeof AppRecordRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reminders': {
+      id: '/_app/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof AppRemindersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -772,6 +803,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountsIdReceiptsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/accounts/$id/reminders': {
+      id: '/_app/accounts/$id/reminders'
+      path: '/accounts/$id/reminders'
+      fullPath: '/accounts/$id/reminders'
+      preLoaderRoute: typeof AppAccountsIdRemindersRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/accounts/$id/statement': {
       id: '/_app/accounts/$id/statement'
       path: '/accounts/$id/statement'
@@ -846,6 +884,7 @@ interface AppRouteChildren {
   AppInsightsRoute: typeof AppInsightsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppRecordRoute: typeof AppRecordRoute
+  AppRemindersRoute: typeof AppRemindersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppShop_profileRoute: typeof AppShop_profileRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
@@ -861,6 +900,7 @@ interface AppRouteChildren {
   AppAccountsIdEditRoute: typeof AppAccountsIdEditRoute
   AppAccountsIdInviteRoute: typeof AppAccountsIdInviteRoute
   AppAccountsIdReceiptsRoute: typeof AppAccountsIdReceiptsRoute
+  AppAccountsIdRemindersRoute: typeof AppAccountsIdRemindersRoute
   AppAccountsIdStatementRoute: typeof AppAccountsIdStatementRoute
   AppBank_accountsIdEditRoute: typeof AppBank_accountsIdEditRoute
   AppMenu_itemsIdEditRoute: typeof AppMenu_itemsIdEditRoute
@@ -876,6 +916,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInsightsRoute: AppInsightsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppRecordRoute: AppRecordRoute,
+  AppRemindersRoute: AppRemindersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppShop_profileRoute: AppShop_profileRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
@@ -891,6 +932,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccountsIdEditRoute: AppAccountsIdEditRoute,
   AppAccountsIdInviteRoute: AppAccountsIdInviteRoute,
   AppAccountsIdReceiptsRoute: AppAccountsIdReceiptsRoute,
+  AppAccountsIdRemindersRoute: AppAccountsIdRemindersRoute,
   AppAccountsIdStatementRoute: AppAccountsIdStatementRoute,
   AppBank_accountsIdEditRoute: AppBank_accountsIdEditRoute,
   AppMenu_itemsIdEditRoute: AppMenu_itemsIdEditRoute,

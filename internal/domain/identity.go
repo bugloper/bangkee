@@ -37,6 +37,8 @@ type UserDTO struct {
 	DisplayName   string  `json:"display_name"`
 	Initial       string  `json:"initial"`
 	PhotoURL      *string `json:"photo_url"` // their profile photo, if they added one
+	// RemindersOptOut: a customer who asked Bangkee not to remind them what they owe.
+	RemindersOptOut bool `json:"reminders_opt_out"`
 }
 
 func DisplayName(u store.User) string {
@@ -73,7 +75,7 @@ func UserView(u store.User) UserDTO {
 	return UserDTO{
 		ID: u.ID, Name: u.Name, EmailAddress: u.EmailAddress, Phone: u.Phone, Role: role,
 		PlatformAdmin: u.PlatformAdmin, Locale: ReadingLocale(u), DisplayName: DisplayName(u),
-		Initial: util.FirstUpper(DisplayName(u)),
+		Initial: util.FirstUpper(DisplayName(u)), RemindersOptOut: u.RemindersOptOut,
 	}
 }
 

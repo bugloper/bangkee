@@ -27,12 +27,15 @@ const (
 	// Rule: a business rule said no ("That entry was already crossed out.").
 	Rule
 	RateLimited
+	// PlanRequired: the shop's plan does not include this; a higher one does.
+	PlanRequired
 )
 
 type Error struct {
 	Kind     Kind
 	Message  string
 	Messages []string
+	Feature  string // PlanRequired: which feature
 }
 
 func (e *Error) Error() string {
@@ -46,6 +49,9 @@ func NewForbidden(message string) error   { return &Error{Kind: Forbidden, Messa
 func NewRule(message string) error        { return &Error{Kind: Rule, Message: message} }
 func NewNotFound(message string) error    { return &Error{Kind: NotFound, Message: message} }
 func NewRateLimited(message string) error { return &Error{Kind: RateLimited, Message: message} }
+func NewPlanRequired(message, feature string) error {
+	return &Error{Kind: PlanRequired, Message: message, Feature: feature}
+}
 func NewValidation(messages ...string) error {
 	return &Error{Kind: Validation, Messages: messages}
 }
@@ -79,6 +85,8 @@ func Render(err error) (int, map[string]any, bool) {
 		return http.StatusUnprocessableEntity, map[string]any{"errors": appErr.Messages}, false
 	case RateLimited:
 		return http.StatusTooManyRequests, map[string]any{"error": appErr.Message}, false
+	case PlanRequired:
+		return http.StatusForbidden, map[string]any{"error": appErr.Message, "code": "plan_required", "feature": appErr.Feature}, false
 	default:
 		return http.StatusUnprocessableEntity, map[string]any{"error": appErr.Message}, false
 	}

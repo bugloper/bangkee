@@ -11,17 +11,18 @@ import (
 )
 
 type Account struct {
-	ID             int64
-	ShopID         int64
-	CustomerID     *int64
-	CustomerName   string
-	CustomerPhone  *string
-	InviteToken    string
-	PinResetUntil  *time.Time
-	BalanceCents   int64
-	LastActivityAt *time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              int64
+	ShopID          int64
+	CustomerID      *int64
+	CustomerName    string
+	CustomerPhone   *string
+	InviteToken     string
+	PinResetUntil   *time.Time
+	BalanceCents    int64
+	LastActivityAt  *time.Time
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	RemindersPaused bool
 }
 
 type ActiveStorageAttachment struct {
@@ -129,6 +130,19 @@ type PushSubscription struct {
 	UpdatedAt  time.Time
 }
 
+type Reminder struct {
+	ID           int64
+	AccountID    int64
+	Kind         string
+	Channel      string
+	Status       string
+	Detail       *string
+	BalanceCents int64
+	SentByID     *int64
+	RemindedOn   time.Time
+	CreatedAt    time.Time
+}
+
 type Session struct {
 	ID        int64
 	UserID    int64
@@ -140,19 +154,22 @@ type Session struct {
 }
 
 type Shop struct {
-	ID            int64
-	OwnerID       int64
-	Name          string
-	Kind          *string
-	CreditDueDays int32
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	About         *string
-	Location      *string
-	Phone         *string
-	Hours         *string
-	Latitude      *float64
-	Longitude     *float64
+	ID                int64
+	OwnerID           int64
+	Name              string
+	Kind              *string
+	CreditDueDays     int32
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	About             *string
+	Location          *string
+	Phone             *string
+	Hours             *string
+	Latitude          *float64
+	Longitude         *float64
+	RemindersEnabled  bool
+	ReminderEveryDays int32
+	ReminderHour      int32
 }
 
 type Subscription struct {
@@ -182,6 +199,7 @@ type SubscriptionPayment struct {
 	ReviewedAt      *time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	Plan            string
 }
 
 type Testimonial struct {
@@ -224,14 +242,15 @@ type TransactionResponse struct {
 }
 
 type User struct {
-	ID             int64
-	EmailAddress   *string
-	PasswordDigest string
-	Name           string
-	Phone          *string
-	Locale         *string
-	Role           int32
-	PlatformAdmin  bool
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              int64
+	EmailAddress    *string
+	PasswordDigest  string
+	Name            string
+	Phone           *string
+	Locale          *string
+	Role            int32
+	PlatformAdmin   bool
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	RemindersOptOut bool
 }

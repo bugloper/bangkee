@@ -162,6 +162,7 @@ func DestroyAccount(ctx context.Context, q *store.Queries, accountID int64) ([]s
 		func() error {
 			return q.DeleteAuditEvents(ctx, store.DeleteAuditEventsParams{AuditableType: "Account", Ids: []int64{accountID}})
 		},
+		func() error { return q.DeleteAccountReminders(ctx, accountID) },
 		func() error { return q.DeleteAccount(ctx, accountID) },
 	}
 	for _, step := range steps {
