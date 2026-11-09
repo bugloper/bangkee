@@ -18,7 +18,8 @@ Built with [Capacitor 8](https://capacitorjs.com) (Android only). It lives in
  │  │ MainActivity (Capacitor BridgeActivity)                  │ │
  │  │  · splash until the first page loads                     │ │
  │  │  · back button walks web history, then closes            │ │
- │  │  · App Links (/passwords/…, /join/…) → same path in app  │ │
+ │  │  · App Links (any bangkee.app link) → same path in app   │ │
+ │  │  · shims: print, share sheet, Downloads (FilesPlugin)    │ │
  │  │  · TrustedWebViewClient + NavigationPolicy               │ │
  │  │      own origin ─────────────► stays in the WebView      │ │
  │  │      other https sites ──────► browser / Maps / WhatsApp │ │
@@ -47,6 +48,9 @@ Built with [Capacitor 8](https://capacitorjs.com) (Android only). It lives in
 | `…/NavigationPolicy.java` | Which URLs stay in the app, go to another app, or are refused. Plain Java, unit-tested |
 | `…/TrustedWebViewClient.java` | Applies `NavigationPolicy` in front of Capacitor's client; refuses certificate errors |
 | `…/WebPrintPlugin.java` | Makes `window.print()` (a statement's Print button) open Android's print dialog |
+| `…/FilesPlugin.java` | Shares a PDF the web app made (statement, receipt, supplier statement) through Android's share sheet, saves it to Downloads, and opens attachments in a viewer |
+| `…/FileNames.java` | Makes file names from the page or the server safe to write. Plain Java, unit-tested |
+| `android/app/src/main/assets/bangkee-shims.js` | Added before every page of the app's origin: points `window.print`, `navigator.share`/`canShare` and `<a download>` on a `blob:` URL at the plugins, so `web/` needs no Android code |
 | `android/app/src/main/AndroidManifest.xml` | Permissions, App Links intent filter, backup off |
 | `android/app/src/main/res/xml/network_security_config.xml` | HTTPS only, system CAs only (debug build: plain HTTP to localhost) |
 | `www/wrapper-offline.html` | The "can't connect" page shipped inside the APK |
@@ -282,13 +286,22 @@ match its Play listing and Data safety form.
 | Pinning a shop | Location permission asked when the owner taps "use my location" |
 | Directions, WhatsApp, phone, SMS, email | Handed to Maps / WhatsApp / dialler / messaging / mail app |
 | Printing a statement | Android's print dialog (printer or Save as PDF) |
+| Share PDF (statements, receipts, supplier statements) | Android's share sheet with the PDF attached: WhatsApp, Telegram, Gmail, Drive. WebView has no Web Share; the shim hands the file to `FilesPlugin` |
+| Download PDF | Saved to Downloads with a "Saved to Downloads" toast (Android 10+); on Android 7–9 it opens in a PDF viewer to save from there, since writing to Downloads would need a storage permission |
+| Entry attachments (photos, PDFs, HEIC) | Photos open in the page's own viewer; a PDF or HEIC is fetched with the session cookie (25 MB cap) and opened in the phone's viewer |
+| Receipts and statements links sent to customers, staff invites (`/staff/join/…`) | App Links: any `https://bangkee.app` link opens in the app once verified |
+| Pin a shop on the map | Location permission when asked; the street and town are filled in by the server |
+| The operator console | Same address since the single-host change: an operator signs in in the app and gets the console |
+| Plans, billing, suppliers, reminders, staff, installments, insights | Plain web screens; nothing native needed |
 | Live updates and the chime while open | The `/api/live` WebSocket, as on the web |
 | Offline reading, queued writes | The service worker and IndexedDB queue; queued writes go out when the app is open with a signal |
 | Rotation, foldables, tablets, dark mode | Same activity and page through configuration changes; the web app's desktop layout above 768 px |
 
 **Known limitations**
 
-- **No phone notifications while the app is closed.** Android's WebView has no Web
+- **No phone notifications while the app is closed.** A customer who uses
+  only the app sees automatic reminders in the app and by email (when they
+  have one), but gets no phone notification for them. Android's WebView has no Web
   Push, so the in-app prompt to turn on notifications does not appear in the app.
   Adding them means native push (Firebase Cloud Messaging via
   `@capacitor/push-notifications`) plus the server sending to FCM tokens next to
@@ -298,7 +311,6 @@ match its Play listing and Data safety form.
   not while it is closed.
 - **Separate sign-in from the browser.** The app has its own cookie jar, so
   signing in on bangkee.app in Chrome does not sign in the app, and vice versa.
-- **The operator console** (`admin.bangkee.app`) opens in the browser, not the app.
 - **Old WebViews.** Android 7–9 phones with a WebView that was never updated may
   lack features the web app uses. Capacitor needs WebView 60+ and shows the
   offline page below that.

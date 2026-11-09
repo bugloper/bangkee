@@ -4,4 +4,8 @@
     <string name="title_activity_main">Bangkee</string>
     <string name="no_app_for_link">No app on this phone can open that link.</string>
     <string name="print_job_name">Bangkee statement</string>
+    <string name="saved_to_downloads">Saved to Downloads: %1$s</string>
+    <string name="no_app_for_file">No app on this phone can open that file.</string>
+    <string name="opening_file">Opening…</string>
+    <string name="file_failed">That file could not be opened.</string>
 </resources>

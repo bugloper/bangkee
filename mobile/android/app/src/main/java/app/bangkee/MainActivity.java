@@ -6,7 +6,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.webkit.URLUtil;
 import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
@@ -19,7 +21,14 @@ import androidx.webkit.WebViewFeature;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.CapConfig;
 import com.getcapacitor.WebViewListener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -44,6 +53,10 @@ public class MainActivity extends BridgeActivity {
     /** The splash never outstays this, even on a very slow network. */
     private static final long SPLASH_TIMEOUT_MS = 8000;
 
+    /** Attachments opened from an entry are fetched into the cache up to this size. */
+    private static final long MAX_DOWNLOAD_BYTES = 25L * 1024 * 1024;
+
+    private final ExecutorService downloads = Executors.newSingleThreadExecutor();
     private NavigationPolicy policy;
     private volatile boolean firstPageShown = false;
 
@@ -69,6 +82,7 @@ public class MainActivity extends BridgeActivity {
 
         policy = new NavigationPolicy(BuildConfig.APP_URL);
         registerPlugin(WebPrintPlugin.class);
+        registerPlugin(FilesPlugin.class);
         config = buildConfig();
 
         super.onCreate(savedInstanceState);
@@ -106,12 +120,12 @@ public class MainActivity extends BridgeActivity {
     /**
      * Capacitor creates the Bridge here and starts loading the page. The WebView exists
      * (the layout is already inflated) but has not loaded anything yet, so this is the
-     * one place to add the print shim before the first document.
+     * one place to add the page shims before the first document.
      */
     @Override
     protected void load() {
         WebView webView = findViewById(com.getcapacitor.android.R.id.webview);
-        if (webView != null) addPrintShim(webView);
+        if (webView != null) addPageShims(webView);
 
         super.load();
         if (bridge == null) return;
@@ -163,18 +177,73 @@ public class MainActivity extends BridgeActivity {
         CookieManager cookies = CookieManager.getInstance();
         cookies.setAcceptCookie(true);
         cookies.setAcceptThirdPartyCookies(webView, false);
+
+        // A response the WebView cannot show (an entry's PDF or HEIC attachment, served
+        // inline) arrives here instead of loading. The web app's own blob: downloads
+        // never do: bangkee-shims.js saves those through FilesPlugin.
+        webView.setDownloadListener(onDownload);
     }
 
-    /** Points window.print() at WebPrintPlugin, on the app's own origin only. */
-    private void addPrintShim(WebView webView) {
+    private final DownloadListener onDownload = (url, userAgent, contentDisposition, mimeType, contentLength) -> {
+        NavigationPolicy.Decision decision = policy.decide(url, true);
+        if (decision == NavigationPolicy.Decision.BROWSER) {
+            openExternally(decision, Uri.parse(url));
+            return;
+        }
+        if (!url.startsWith("http") || !policy.isAppOrigin(url)) return;
+        String name = URLUtil.guessFileName(url, contentDisposition, mimeType);
+        String type = mimeType == null || mimeType.isEmpty() ? "application/octet-stream" : mimeType;
+        Toast.makeText(this, R.string.opening_file, Toast.LENGTH_SHORT).show();
+        downloads.execute(() -> {
+            try {
+                Uri file = fetchIntoCache(url, userAgent, name, type);
+                FilesPlugin.open(this, file, type);
+            } catch (IOException e) {
+                runOnUiThread(() -> Toast.makeText(this, R.string.file_failed, Toast.LENGTH_SHORT).show());
+            }
+        });
+    };
+
+    /** Fetches a file from the app's own origin with the WebView's session cookie. */
+    private Uri fetchIntoCache(String url, String userAgent, String name, String type) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setInstanceFollowRedirects(false);
+        connection.setConnectTimeout(15_000);
+        connection.setReadTimeout(30_000);
+        String cookie = CookieManager.getInstance().getCookie(url);
+        if (cookie != null) connection.setRequestProperty("Cookie", cookie);
+        if (userAgent != null) connection.setRequestProperty("User-Agent", userAgent);
+        try {
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) throw new IOException("HTTP " + connection.getResponseCode());
+            if (connection.getContentLengthLong() > MAX_DOWNLOAD_BYTES) throw new IOException("Too large");
+            try (InputStream in = connection.getInputStream()) {
+                return FilesPlugin.cacheUri(this, FileNames.withExtension(name, type), in, MAX_DOWNLOAD_BYTES);
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    /**
+     * assets/bangkee-shims.js, added before every page of the app's own origin (and no
+     * other): window.print, navigator.share and blob: downloads, pointed at the app.
+     */
+    private void addPageShims(WebView webView) {
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return;
-        // Looked up when called: Capacitor's own bridge script is added after this one.
-        String script =
-            "window.print = function () {" +
-            "  var cap = window.Capacitor;" +
-            "  if (cap && typeof cap.nativePromise === 'function') cap.nativePromise('BangkeePrint', 'print', {}).catch(function () {});" +
-            "};";
+        String script;
+        try (InputStream in = getAssets().open("bangkee-shims.js")) {
+            script = new String(readAll(in), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return;
+        }
         WebViewCompat.addDocumentStartJavaScript(webView, script, Collections.singleton(policy.origin()));
+    }
+
+    private static byte[] readAll(InputStream in) throws IOException {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        for (int n; (n = in.read(buffer)) != -1; ) out.write(buffer, 0, n);
+        return out.toByteArray();
     }
 
     private void syncBackButton() {
@@ -223,6 +292,12 @@ public class MainActivity extends BridgeActivity {
         // Handled once: a recreated activity starts at the app, not the old link.
         setIntent(new Intent(Intent.ACTION_MAIN));
         if (target != null) bridge.getWebView().loadUrl(target);
+    }
+
+    @Override
+    public void onDestroy() {
+        downloads.shutdown();
+        super.onDestroy();
     }
 
     @Override

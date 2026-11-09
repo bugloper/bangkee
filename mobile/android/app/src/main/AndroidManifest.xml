@@ -50,8 +50,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Android App Links: password-reset emails (/passwords/<token>/edit) and
-                 customer invites (/join/<token>) open in the app instead of the browser.
+            <!-- Android App Links: any link to the app host opens in the app instead of the
+                 browser: password-reset emails (/passwords/<token>/edit), customer invites
+                 (/join/<token>), staff invites (/staff/join/<token>), receipts.
                  Verification needs /.well-known/assetlinks.json on the app host; until it
                  is there, Android keeps opening these links in the browser, which still
                  works. ${appLinkHost} comes from bangkee.appUrl (app/build.gradle). -->
