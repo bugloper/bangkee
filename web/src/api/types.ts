@@ -561,11 +561,18 @@ export interface AdminPayment extends SubscriptionPayment {
 
 /** GET /api/admin/dashboard */
 export interface AdminDashboard {
-  approved_month_cents: Cents
+  approved_month_cents: Cents // approved this month (Thimphu)
+  approved_last_month_cents: Cents
+  new_shops_month: number
+  new_shops_last_month: number
   shops_count: number
+  paying_count: number // on a paid plan, inside their cover
+  trialing_count: number
+  locked_count: number // write-locked: cover and grace both over
   pending_count: number
-  locked_count: number
   pending: AdminPayment[] // up to 5, oldest first
+  plan_mix: { trialing: number; basic: number; pro: number; business: number; past_due: number; disabled: number }
+  months: { month: string; label: string; approved_cents: Cents; new_shops: number }[] // 12, this month last
 }
 
 /** GET /api/admin/subscription_payments?status=pending|approved|rejected|all */
@@ -580,8 +587,12 @@ export interface AdminShops {
   shops: {
     id: number
     name: string
+    kind: string | null
+    kind_label: string
+    created_at: Timestamp
     owner_name: string
     owner_email: string
+    customers: number
     subscription: Subscription | null
   }[]
 }

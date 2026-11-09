@@ -14,8 +14,8 @@ import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as OfflineRouteImport } from './routes/offline'
+import { Route as AdminAll_shopsRouteImport } from './routes/_admin/all_shops'
 import { Route as AdminFeedbackRouteImport } from './routes/_admin/feedback'
-import { Route as AdminShopsRouteImport } from './routes/_admin/shops'
 import { Route as AdminSubscription_paymentsRouteImport } from './routes/_admin/subscription_payments'
 import { Route as AdminTestimonialsRouteImport } from './routes/_admin/testimonials'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
@@ -83,14 +83,14 @@ const OfflineRoute = OfflineRouteImport.update({
   path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAll_shopsRoute = AdminAll_shopsRouteImport.update({
+  id: '/all_shops',
+  path: '/all_shops',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminShopsRoute = AdminShopsRouteImport.update({
-  id: '/shops',
-  path: '/shops',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSubscription_paymentsRoute =
@@ -320,8 +320,8 @@ const AppAccountsIdPaymentsNewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/offline': typeof OfflineRoute
+  '/all_shops': typeof AdminAll_shopsRoute
   '/feedback': typeof AdminFeedbackRoute
-  '/shops': typeof AdminShopsRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/testimonials': typeof AdminTestimonialsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -370,8 +370,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/offline': typeof OfflineRoute
+  '/all_shops': typeof AdminAll_shopsRoute
   '/feedback': typeof AdminFeedbackRoute
-  '/shops': typeof AppShopsIndexRoute
   '/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/testimonials': typeof AdminTestimonialsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -398,6 +398,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof AppAccountsIndexRoute
   '/bank_accounts': typeof AppBank_accountsIndexRoute
   '/menu_items': typeof AppMenu_itemsIndexRoute
+  '/shops': typeof AppShopsIndexRoute
   '/suppliers': typeof AppSuppliersIndexRoute
   '/accounts/$id/edit': typeof AppAccountsIdEditRoute
   '/accounts/$id/installments': typeof AppAccountsIdInstallmentsRoute
@@ -423,8 +424,8 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/offline': typeof OfflineRoute
+  '/_admin/all_shops': typeof AdminAll_shopsRoute
   '/_admin/feedback': typeof AdminFeedbackRoute
-  '/_admin/shops': typeof AdminShopsRoute
   '/_admin/subscription_payments': typeof AdminSubscription_paymentsRoute
   '/_admin/testimonials': typeof AdminTestimonialsRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -475,8 +476,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/offline'
+    | '/all_shops'
     | '/feedback'
-    | '/shops'
     | '/subscription_payments'
     | '/testimonials'
     | '/dashboard'
@@ -525,8 +526,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/offline'
+    | '/all_shops'
     | '/feedback'
-    | '/shops'
     | '/subscription_payments'
     | '/testimonials'
     | '/dashboard'
@@ -553,6 +554,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/bank_accounts'
     | '/menu_items'
+    | '/shops'
     | '/suppliers'
     | '/accounts/$id/edit'
     | '/accounts/$id/installments'
@@ -577,8 +579,8 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/offline'
+    | '/_admin/all_shops'
     | '/_admin/feedback'
-    | '/_admin/shops'
     | '/_admin/subscription_payments'
     | '/_admin/testimonials'
     | '/_app/dashboard'
@@ -671,18 +673,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_admin/all_shops': {
+      id: '/_admin/all_shops'
+      path: '/all_shops'
+      fullPath: '/all_shops'
+      preLoaderRoute: typeof AdminAll_shopsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/feedback': {
       id: '/_admin/feedback'
       path: '/feedback'
       fullPath: '/feedback'
       preLoaderRoute: typeof AdminFeedbackRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/shops': {
-      id: '/_admin/shops'
-      path: '/shops'
-      fullPath: '/shops'
-      preLoaderRoute: typeof AdminShopsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/subscription_payments': {
@@ -997,15 +999,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminAll_shopsRoute: typeof AdminAll_shopsRoute
   AdminFeedbackRoute: typeof AdminFeedbackRoute
-  AdminShopsRoute: typeof AdminShopsRoute
   AdminSubscription_paymentsRoute: typeof AdminSubscription_paymentsRoute
   AdminTestimonialsRoute: typeof AdminTestimonialsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAll_shopsRoute: AdminAll_shopsRoute,
   AdminFeedbackRoute: AdminFeedbackRoute,
-  AdminShopsRoute: AdminShopsRoute,
   AdminSubscription_paymentsRoute: AdminSubscription_paymentsRoute,
   AdminTestimonialsRoute: AdminTestimonialsRoute,
 }

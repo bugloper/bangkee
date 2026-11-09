@@ -11,15 +11,19 @@ import (
 )
 
 const adminShops = `-- name: AdminShops :many
-SELECT s.id, s.name, u.name AS owner_name, u.email_address AS owner_email
+SELECT s.id, s.name, s.kind, s.created_at, u.name AS owner_name, u.email_address AS owner_email,
+       (SELECT COUNT(*) FROM accounts a WHERE a.shop_id = s.id)::bigint AS customers
 FROM shops s JOIN users u ON u.id = s.owner_id ORDER BY s.name, s.id
 `
 
 type AdminShopsRow struct {
 	ID         int64
 	Name       string
+	Kind       *string
+	CreatedAt  time.Time
 	OwnerName  string
 	OwnerEmail *string
+	Customers  int64
 }
 
 func (q *Queries) AdminShops(ctx context.Context) ([]AdminShopsRow, error) {
@@ -34,8 +38,11 @@ func (q *Queries) AdminShops(ctx context.Context) ([]AdminShopsRow, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Kind,
+			&i.CreatedAt,
 			&i.OwnerName,
 			&i.OwnerEmail,
+			&i.Customers,
 		); err != nil {
 			return nil, err
 		}
@@ -45,27 +52,6 @@ func (q *Queries) AdminShops(ctx context.Context) ([]AdminShopsRow, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const adminStats = `-- name: AdminStats :one
-SELECT (SELECT COUNT(*) FROM shops)::bigint AS shops,
-       (SELECT COALESCE(SUM(amount_cents), 0) FROM subscription_payments
-        WHERE status = 1 AND reviewed_at >= $1::timestamptz)::bigint AS approved,
-       (SELECT COUNT(*) FROM subscriptions
-        WHERE now() > current_period_end AND (grace_until IS NULL OR now() > grace_until))::bigint AS locked
-`
-
-type AdminStatsRow struct {
-	Shops    int64
-	Approved int64
-	Locked   int64
-}
-
-func (q *Queries) AdminStats(ctx context.Context, monthStart time.Time) (AdminStatsRow, error) {
-	row := q.db.QueryRow(ctx, adminStats, monthStart)
-	var i AdminStatsRow
-	err := row.Scan(&i.Shops, &i.Approved, &i.Locked)
-	return i, err
 }
 
 const allShops = `-- name: AllShops :many
@@ -98,6 +84,42 @@ func (q *Queries) AllShops(ctx context.Context) ([]Shop, error) {
 			&i.RemindersEnabled,
 			&i.ReminderEveryDays,
 			&i.ReminderHour,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const allSubscriptions = `-- name: AllSubscriptions :many
+SELECT id, shop_id, plan, price_cents, status, current_period_end, grace_until, disabled_at, created_at, updated_at FROM subscriptions
+`
+
+// Every shop's subscription, for the console's lists and counts in one read.
+func (q *Queries) AllSubscriptions(ctx context.Context) ([]Subscription, error) {
+	rows, err := q.db.Query(ctx, allSubscriptions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Subscription
+	for rows.Next() {
+		var i Subscription
+		if err := rows.Scan(
+			&i.ID,
+			&i.ShopID,
+			&i.Plan,
+			&i.PriceCents,
+			&i.Status,
+			&i.CurrentPeriodEnd,
+			&i.GraceUntil,
+			&i.DisabledAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -151,6 +173,70 @@ func (q *Queries) LockShop(ctx context.Context, id int64) (int64, error) {
 	row := q.db.QueryRow(ctx, lockShop, id)
 	err := row.Scan(&id)
 	return id, err
+}
+
+const monthlyApproved = `-- name: MonthlyApproved :many
+SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month,
+       COALESCE(SUM(amount_cents), 0)::bigint AS cents
+FROM subscription_payments WHERE status = 1 AND reviewed_at >= $1::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type MonthlyApprovedRow struct {
+	Month string
+	Cents int64
+}
+
+// Subscription money approved per month, months as Bhutan has them, from `since` on.
+func (q *Queries) MonthlyApproved(ctx context.Context, since time.Time) ([]MonthlyApprovedRow, error) {
+	rows, err := q.db.Query(ctx, monthlyApproved, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MonthlyApprovedRow
+	for rows.Next() {
+		var i MonthlyApprovedRow
+		if err := rows.Scan(&i.Month, &i.Cents); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const monthlyNewShops = `-- name: MonthlyNewShops :many
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month, COUNT(*)::bigint AS shops
+FROM shops WHERE created_at >= $1::timestamptz
+GROUP BY 1 ORDER BY 1
+`
+
+type MonthlyNewShopsRow struct {
+	Month string
+	Shops int64
+}
+
+func (q *Queries) MonthlyNewShops(ctx context.Context, since time.Time) ([]MonthlyNewShopsRow, error) {
+	rows, err := q.db.Query(ctx, monthlyNewShops, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MonthlyNewShopsRow
+	for rows.Next() {
+		var i MonthlyNewShopsRow
+		if err := rows.Scan(&i.Month, &i.Shops); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const overdueAccounts = `-- name: OverdueAccounts :many

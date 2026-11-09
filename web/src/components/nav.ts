@@ -35,7 +35,7 @@ export function navItems(me: Me): NavItem[] {
       { label: "Payments", icon: ReceiptTextIcon, path: "/subscription_payments", key: "admin_payments", badge: me.badges.admin_payments },
       { label: "Feedback", icon: InboxIcon, path: "/feedback", key: "admin_feedback", badge: me.badges.admin_feedback },
       { label: "Testimonials", icon: MessageSquareQuoteIcon, path: "/testimonials", key: "admin_testimonials", badge: me.badges.admin_testimonials },
-      { label: "Shops", icon: StoreIcon, path: "/shops", key: "admin_shops" },
+      { label: "Shops", icon: StoreIcon, path: "/all_shops", key: "admin_shops" },
       { label: "Settings", icon: SettingsIcon, path: "/settings", key: "settings" },
     ]
   }
@@ -80,7 +80,7 @@ export function navRoot(pathname: string, me: Me): string | undefined {
   if (isAdminHost()) {
     if (first === "") return "admin"
     if (first === "subscription_payments") return "admin_payments"
-    if (first === "shops") return "admin_shops"
+    if (first === "all_shops") return "admin_shops"
     if (first === "feedback") return "admin_feedback"
     if (first === "testimonials") return "admin_testimonials"
     return first === "settings" ? "settings" : undefined

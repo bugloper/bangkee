@@ -223,34 +223,6 @@ func (s *Server) adminPaymentViews(ctx context.Context, rows []store.Subscriptio
 	return out, nil
 }
 
-func (s *Server) adminDashboard(c *echo.Context) error {
-	if _, err := s.admin(c); err != nil {
-		return err
-	}
-	ctx := c.Request().Context()
-	stats, err := s.Q.AdminStats(ctx, util.MonthStart(time.Now()))
-	if err != nil {
-		return err
-	}
-	pendingStatus := int32(0)
-	rows, err := s.Q.SubscriptionPaymentList(ctx, store.SubscriptionPaymentListParams{Status: &pendingStatus, OldestFirst: true, RowLimit: 5})
-	if err != nil {
-		return err
-	}
-	pending, err := s.adminPaymentViews(ctx, rows)
-	if err != nil {
-		return err
-	}
-	count, err := s.Q.PendingSubscriptionPaymentCount(ctx)
-	if err != nil {
-		return err
-	}
-	return c.JSON(http.StatusOK, M{
-		"approved_month_cents": stats.Approved, "shops_count": stats.Shops, "pending_count": count,
-		"locked_count": stats.Locked, "pending": pending,
-	})
-}
-
 func (s *Server) adminPayments(c *echo.Context) error {
 	if _, err := s.admin(c); err != nil {
 		return err
@@ -341,31 +313,6 @@ func (s *Server) rejectPayment(c *echo.Context) error {
 	}
 	s.Notify.SubscriptionPaymentRejected(ctx, row.SubscriptionPayment.SubmittedByID, reason)
 	return notice(c, "Rejected. The owner has been told why.", nil)
-}
-
-func (s *Server) adminShops(c *echo.Context) error {
-	if _, err := s.admin(c); err != nil {
-		return err
-	}
-	ctx := c.Request().Context()
-	shops, err := s.Q.AdminShops(ctx)
-	if err != nil {
-		return err
-	}
-	out := make([]M, 0, len(shops))
-	for _, shop := range shops {
-		var view *domain.SubscriptionDTO
-		sub, err := domain.SubscriptionFor(ctx, s.Q, shop.ID)
-		if err != nil {
-			return err
-		}
-		if sub != nil {
-			dto := domain.SubscriptionView(*sub)
-			view = &dto
-		}
-		out = append(out, M{"id": shop.ID, "name": shop.Name, "owner_name": shop.OwnerName, "owner_email": shop.OwnerEmail, "subscription": view})
-	}
-	return c.JSON(http.StatusOK, M{"shops": out})
 }
 
 // ---------------------------------------------------------- notifications

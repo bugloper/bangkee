@@ -37,15 +37,9 @@ UPDATE subscriptions SET plan = $2, price_cents = $3, updated_at = now() WHERE i
 -- name: SetSubscriptionStatus :exec
 UPDATE subscriptions SET status = $2, disabled_at = $3, updated_at = now() WHERE id = $1;
 
--- name: AdminStats :one
-SELECT (SELECT COUNT(*) FROM shops)::bigint AS shops,
-       (SELECT COALESCE(SUM(amount_cents), 0) FROM subscription_payments
-        WHERE status = 1 AND reviewed_at >= sqlc.arg(month_start)::timestamptz)::bigint AS approved,
-       (SELECT COUNT(*) FROM subscriptions
-        WHERE now() > current_period_end AND (grace_until IS NULL OR now() > grace_until))::bigint AS locked;
-
 -- name: AdminShops :many
-SELECT s.id, s.name, u.name AS owner_name, u.email_address AS owner_email
+SELECT s.id, s.name, s.kind, s.created_at, u.name AS owner_name, u.email_address AS owner_email,
+       (SELECT COUNT(*) FROM accounts a WHERE a.shop_id = s.id)::bigint AS customers
 FROM shops s JOIN users u ON u.id = s.owner_id ORDER BY s.name, s.id;
 
 -- name: UpdateShopProfile :exec
@@ -68,3 +62,19 @@ LIMIT 200;
 -- Holds the shop's row until the transaction ends: what is decided about the
 -- shop in it (a staff place) is decided one at a time.
 SELECT id FROM shops WHERE id = $1 FOR UPDATE;
+
+-- name: AllSubscriptions :many
+-- Every shop's subscription, for the console's lists and counts in one read.
+SELECT * FROM subscriptions;
+
+-- name: MonthlyApproved :many
+-- Subscription money approved per month, months as Bhutan has them, from `since` on.
+SELECT to_char(reviewed_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month,
+       COALESCE(SUM(amount_cents), 0)::bigint AS cents
+FROM subscription_payments WHERE status = 1 AND reviewed_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;
+
+-- name: MonthlyNewShops :many
+SELECT to_char(created_at AT TIME ZONE 'Asia/Thimphu', 'YYYY-MM')::varchar AS month, COUNT(*)::bigint AS shops
+FROM shops WHERE created_at >= sqlc.arg(since)::timestamptz
+GROUP BY 1 ORDER BY 1;

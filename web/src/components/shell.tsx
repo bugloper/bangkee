@@ -6,6 +6,7 @@ import type { Me } from "@/api/types"
 import { FlashBanners, OfflineBanner, SubscriptionBanner } from "@/components/banners"
 import { QueueSummary } from "@/components/queued-writes"
 import { Logo } from "@/components/brand"
+import { ConsoleShell } from "@/components/console-shell"
 import { Initial } from "@/components/kit"
 import { navItems, navRoot, type NavItem } from "@/components/nav"
 import { IosInstallSheet, PushPrompt } from "@/components/pwa"
@@ -181,7 +182,12 @@ function Tabbar({ me, active, onRecord }: { me: Me; active?: string; onRecord?: 
   )
 }
 
+/** The frame around every signed-in screen: the console's at its own address, the app's everywhere else. */
 export function Shell({ me, children }: { me: Me; children: React.ReactNode }) {
+  return isAdminHost() ? <ConsoleShell me={me}>{children}</ConsoleShell> : <AppShell me={me}>{children}</AppShell>
+}
+
+function AppShell({ me, children }: { me: Me; children: React.ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const page = pageStore.use()
   const active = navRoot(pathname, me)
