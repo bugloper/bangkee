@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
-import { ArrowDownLeftIcon, ArrowRightIcon, ArrowUpRightIcon, CloudUploadIcon, MapPinIcon, SearchIcon, WifiOffIcon } from "lucide-react"
+import { ArrowDownLeftIcon, ArrowRightIcon, ArrowUpRightIcon, CheckIcon, CloudUploadIcon, FlagIcon, MapPinIcon, SearchIcon, WifiOffIcon } from "lucide-react"
 
 import { api } from "@/api/client"
 import { Logo, LogoMark } from "@/components/brand"
@@ -196,11 +196,14 @@ function Bento() {
           </div>
         </Box>
 
-        <Box title="English and Dzongkha" line="Everyone picks their own.">
-          <div aria-hidden="true" className="flex items-baseline gap-3">
-            <span className="text-3xl font-semibold tracking-tight">Aa</span>
-            <span className="text-muted-foreground/50">·</span>
-            <span lang="dz" className="text-3xl font-semibold text-primary">རྫོང་ཁ</span>
+        <Box title="Both sides agree" line="Customers confirm each entry, or flag it.">
+          <div aria-hidden="true" className="flex flex-col items-start gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-paid/10 px-3 py-1 text-sm font-medium text-paid">
+              <CheckIcon className="size-4" /> Confirmed
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-owed/10 px-3 py-1 text-sm font-medium text-owed">
+              <FlagIcon className="size-4" /> "I took one, not two"
+            </span>
           </div>
         </Box>
 
@@ -538,10 +541,6 @@ function Faq() {
     [
       "Do I need to install an app?",
       "No app store needed. Bangkee opens in any phone browser, and you can add it to your home screen so it opens like an app, with notifications.",
-    ],
-    [
-      "Is it in Dzongkha?",
-      "Yes — everyone can switch between English and Dzongkha from their Profile. Anything not yet translated is shown in English.",
     ],
   ]
   return (

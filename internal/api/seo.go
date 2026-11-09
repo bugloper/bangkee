@@ -29,7 +29,7 @@ import (
 const (
 	siteName           = "Bangkee"
 	homeTitle          = "Bangkee — the credit book your shop and your customers share"
-	homeDescription    = "Bangkee replaces the credit notebook in shops across Bhutan. The shop records every credit and payment; customers see their balance on their own phone, the moment it happens. English and Dzongkha."
+	homeDescription    = "Bangkee replaces the credit notebook in shops across Bhutan. The shop records every credit and payment; customers see their balance on their own phone, the moment it happens."
 	descriptionMaxRune = 160
 )
 
