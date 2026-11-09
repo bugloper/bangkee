@@ -109,7 +109,7 @@ export function AreaChart({
           <path key={`l-${s.key}`} d={path(s.values)} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         ))}
         {labels.map((text, i) =>
-          i % every === 0 || i === count - 1 ? (
+          (i % every === 0 && count - 1 - i >= Math.ceil(every / 2)) || i === count - 1 ? (
             <text key={i} x={x(i)} y={height - 6} textAnchor={i === 0 ? "start" : i === count - 1 ? "end" : "middle"} className="fill-muted-foreground text-[11px]">
               {text}
             </text>

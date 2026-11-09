@@ -1,32 +1,15 @@
-import { Link, useRouterState } from "@tanstack/react-router"
-import {
-  BellIcon,
-  ChevronLeftIcon,
-  ChevronsUpDownIcon,
-  InboxIcon,
-  LayoutGridIcon,
-  LogOutIcon,
-  MenuIcon,
-  MessageSquareQuoteIcon,
-  PanelLeftIcon,
-  ReceiptTextIcon,
-  SettingsIcon,
-  StoreIcon,
-  type LucideIcon,
-} from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import { BellIcon, ChevronLeftIcon, InboxIcon, LayoutGridIcon, MenuIcon, MessageSquareQuoteIcon, PanelLeftIcon, ReceiptTextIcon, SettingsIcon, StoreIcon } from "lucide-react"
 import { useState } from "react"
 
 import type { Me } from "@/api/types"
 import { FlashBanners, OfflineBanner } from "@/components/banners"
 import { LogoMark } from "@/components/brand"
-import { Initial } from "@/components/kit"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { InsetSidebar, type SideGroup } from "@/components/inset-sidebar"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { go } from "@/lib/go"
 import { useLive } from "@/lib/live"
 import { pageStore } from "@/lib/page"
-import { signOut } from "@/lib/session"
+import { readFolded, storeFolded } from "@/lib/sidebar"
 import { cn } from "@/lib/utils"
 
 // The operator console's frame, after shadcn's dashboard: a sidebar on the
@@ -35,14 +18,7 @@ import { cn } from "@/lib/utils"
 // folds to icons on a desktop (remembered on this device) and slides in
 // from the left on a phone.
 
-interface Item {
-  label: string
-  icon: LucideIcon
-  path: string
-  badge?: number
-}
-
-function groups(me: Me): { label?: string; items: Item[] }[] {
+function groups(me: Me): SideGroup[] {
   return [
     { items: [{ label: "Overview", icon: LayoutGridIcon, path: "/dashboard" }] },
     {
@@ -57,120 +33,26 @@ function groups(me: Me): { label?: string; items: Item[] }[] {
   ]
 }
 
-const FOLDED_KEY = "bangkee.console.folded"
-
-function readFolded() {
-  try {
-    return localStorage.getItem(FOLDED_KEY) === "1"
-  } catch {
-    return false
-  }
-}
-
-function Count({ count, folded }: { count?: number; folded?: boolean }) {
-  if (!count) return null
-  return folded ? (
-    <span className="absolute top-1 right-1 size-2 rounded-full bg-owed" aria-label={`${count} waiting`} />
-  ) : (
-    <span className="tabular ml-auto rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{count}</span>
-  )
-}
-
-function isCurrent(pathname: string, path: string) {
-  return pathname === path || pathname.startsWith(path + "/")
-}
-
-function NavLink({ item, pathname, folded, onNavigate }: { item: Item; pathname: string; folded: boolean; onNavigate?: () => void }) {
-  const Icon = item.icon
-  const current = isCurrent(pathname, item.path)
-  const link = (
-    <Link
-      to={item.path as never}
-      onClick={onNavigate}
-      aria-current={current ? "page" : undefined}
-      className={cn(
-        "relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors",
-        current ? "bg-background font-medium text-foreground shadow-xs ring-1 ring-border" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        folded && "justify-center px-0",
-      )}
-    >
-      <Icon className={cn("size-4 shrink-0", current && "text-primary")} />
-      {!folded && <span className="truncate">{item.label}</span>}
-      <Count count={item.badge} folded={folded} />
-    </Link>
-  )
-  if (!folded) return link
-  return (
-    <Tooltip>
-      <TooltipTrigger render={link} />
-      <TooltipContent side="right">
-        {item.label}
-        {item.badge ? ` · ${item.badge}` : ""}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
 function SidebarBody({ me, folded, onNavigate }: { me: Me; folded: boolean; onNavigate?: () => void }) {
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
   return (
-    <div className="flex h-full flex-col">
-      <Link to="/dashboard" onClick={onNavigate} className={cn("flex h-14 items-center gap-2.5 px-3", folded && "justify-center px-0")}>
-        <LogoMark className="size-7" />
-        {!folded && (
-          <span className="leading-tight">
-            <span className="block text-sm font-semibold">Bangkee</span>
-            <span className="block text-xs text-muted-foreground">Operator console</span>
-          </span>
-        )}
-      </Link>
-
-      <nav aria-label="Console" className="flex-1 overflow-y-auto px-2 py-2">
-        {groups(me).map((group, i) => (
-          <div key={i} className="mb-4">
-            {group.label && !folded && <div className="px-2.5 pb-1.5 text-xs font-medium text-muted-foreground/80">{group.label}</div>}
-            {group.label && folded && <div className="mx-auto mb-2 h-px w-6 bg-border" />}
-            <div className="grid gap-0.5">
-              {group.items.map((item) => (
-                <NavLink key={item.path} item={item} pathname={pathname} folded={folded} onNavigate={onNavigate} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      <div className="grid gap-0.5 px-2 pb-2">
-        <NavLink item={{ label: "Settings", icon: SettingsIcon, path: "/settings" }} pathname={pathname} folded={folded} onNavigate={onNavigate} />
-      </div>
-      <div className="border-t p-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn("flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-muted data-popup-open:bg-muted", folded && "justify-center")}
-            aria-label="Your account"
-          >
-            <Initial text={me.user.initial} size="sm" src={me.user.photo_url} />
-            {!folded && (
-              <>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{me.user.display_name}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{me.user.email_address}</span>
-                </span>
-                <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
-              </>
-            )}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side={folded ? "right" : "top"} align="start" className="w-56">
-            <DropdownMenuItem onClick={() => go("/settings")}>
-              <SettingsIcon /> Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => void signOut()}>
-              <LogOutIcon /> Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
+    <InsetSidebar
+      me={me}
+      folded={folded}
+      onNavigate={onNavigate}
+      header={
+        <Link to="/dashboard" onClick={onNavigate} className={cn("flex h-11 items-center gap-2.5 rounded-lg px-1.5", folded && "justify-center px-0")}>
+          <LogoMark className="size-7" />
+          {!folded && (
+            <span className="leading-tight">
+              <span className="block text-sm font-semibold">Bangkee</span>
+              <span className="block text-xs text-muted-foreground">Operator console</span>
+            </span>
+          )}
+        </Link>
+      }
+      groups={groups(me)}
+      bottom={[{ label: "Settings", icon: SettingsIcon, path: "/settings" }]}
+    />
   )
 }
 
@@ -181,13 +63,8 @@ export function ConsoleShell({ me, children }: { me: Me; children: React.ReactNo
   useLive(me.user.id)
 
   const fold = () => {
-    const next = !folded
-    setFolded(next)
-    try {
-      localStorage.setItem(FOLDED_KEY, next ? "1" : "0")
-    } catch {
-      /* private mode */
-    }
+    storeFolded(!folded)
+    setFolded(!folded)
   }
 
   return (

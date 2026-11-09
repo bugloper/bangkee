@@ -1,12 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router"
-import { BellIcon, ChevronLeftIcon, ChevronsUpDownIcon, LogOutIcon, PlusIcon, SettingsIcon } from "lucide-react"
-import { useState } from "react"
+import { BellIcon, ChevronLeftIcon, ChevronsUpDownIcon, CreditCardIcon, EyeIcon, LogOutIcon, PanelLeftIcon, PlusIcon, SearchIcon, StoreIcon, UserRoundIcon } from "lucide-react"
+import { useEffect, useState } from "react"
 
 import type { Me } from "@/api/types"
 import { FlashBanners, OfflineBanner, SubscriptionBanner } from "@/components/banners"
 import { QueueSummary } from "@/components/queued-writes"
-import { Logo } from "@/components/brand"
+import { LogoMark } from "@/components/brand"
+import { CommandPalette } from "@/components/command-palette"
 import { ConsoleShell } from "@/components/console-shell"
+import { InsetSidebar, type SideGroup, type SideItem } from "@/components/inset-sidebar"
 import { Initial } from "@/components/kit"
 import { helpItem, navItems, navRoot, sidebarSections, type NavItem } from "@/components/nav"
 import { IosInstallSheet, PushPrompt } from "@/components/pwa"
@@ -16,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { go } from "@/lib/go"
 import { useLive } from "@/lib/live"
 import { pageStore } from "@/lib/page"
+import { onCommandKey, readFolded, storeFolded } from "@/lib/sidebar"
 import { signOut } from "@/lib/session"
 import { cn } from "@/lib/utils"
 
@@ -25,84 +28,6 @@ function Badge({ count, className }: { count?: number; className?: string }) {
     <span className={cn("tabular inline-flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-owed px-1 text-[0.625rem] font-semibold text-white", className)}>
       {count > 99 ? "99+" : count}
     </span>
-  )
-}
-
-function subtitle(me: Me) {
-  if (me.user.platform_admin) return "Operator console"
-  return me.shop?.name ?? "My credit"
-}
-
-function SidebarLink({ item, current }: { item: NavItem; current: boolean }) {
-  const Icon = item.icon
-  return (
-    <Link
-      to={item.path as never}
-      className={cn(
-        "group flex h-10 items-center gap-3 rounded-full px-3.5 text-sm font-medium transition-colors",
-        current ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground",
-      )}
-    >
-      <Icon className={cn("size-[1.0625rem]", current ? "text-background" : "text-muted-foreground group-hover:text-foreground")} />
-      <span className="flex-1">{item.label}</span>
-      <Badge count={item.badge} />
-    </Link>
-  )
-}
-
-function Sidebar({ me, active, onRecord }: { me: Me; active?: string; onRecord?: () => void }) {
-  return (
-    <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r bg-sidebar md:flex">
-      <div className="flex h-18 items-center px-5">
-        <Logo sub={subtitle(me)} />
-      </div>
-      {onRecord && (
-        <div className="px-3 pb-2">
-          <Button className="w-full" size="lg" onClick={onRecord}>
-            <PlusIcon /> Record
-          </Button>
-        </div>
-      )}
-      <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
-        {navItems(me).map((item) => (
-          <SidebarLink key={item.key} item={item} current={active === item.key} />
-        ))}
-        {sidebarSections(me).map((section) => (
-          <div key={section.label}>
-            <div className="px-3.5 pt-5 pb-1.5 text-xs font-medium text-muted-foreground/80">{section.label}</div>
-            {section.items.map((item) => (
-              <SidebarLink key={item.key} item={item} current={active === item.key} />
-            ))}
-          </div>
-        ))}
-      </nav>
-      {sidebarSections(me).length > 0 && (
-        <div className="px-3 pb-2">
-          <SidebarLink item={helpItem} current={active === helpItem.key} />
-        </div>
-      )}
-      <div className="border-t p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-muted data-popup-open:bg-muted">
-            <Initial text={me.user.initial} size="sm" src={me.user.photo_url} />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">{me.user.display_name}</span>
-              <span className="block truncate text-xs text-muted-foreground">{me.user.email_address ?? me.user.phone}</span>
-            </span>
-            <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="start" className="w-56">
-            <DropdownMenuItem onClick={() => go("/settings")}>
-              <SettingsIcon /> Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => void signOut()}>
-              <LogOutIcon /> Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </aside>
   )
 }
 
@@ -127,27 +52,6 @@ function Topbar({ me }: { me: Me }) {
         <BellIcon className="size-5" />
         <Badge count={me.unread_notifications} className="absolute -top-0.5 -right-0.5" />
       </Link>
-    </header>
-  )
-}
-
-/** The desktop header: the title on the left, over the content it names. */
-function DesktopTopbar({ me }: { me: Me }) {
-  const page = pageStore.use()
-  return (
-    <header className="no-print sticky top-0 z-20 hidden h-20 items-center border-b border-transparent bg-background/85 px-8 backdrop-blur-xl md:flex">
-      <div className="mx-auto flex w-full max-w-[68rem] items-center gap-3">
-        {page.back && (
-          <Link to={page.back as never} aria-label="Back" className={cn(roundButton, "size-10")}>
-            <ChevronLeftIcon className="size-5" />
-          </Link>
-        )}
-        <h1 className="min-w-0 flex-1 truncate text-2xl font-semibold tracking-tight">{page.title ?? "Bangkee"}</h1>
-        <Link to="/notifications" aria-label="Notifications" className={cn(roundButton, "size-10")}>
-          <BellIcon className="size-[1.125rem]" />
-          <Badge count={me.unread_notifications} className="absolute -top-0.5 -right-0.5" />
-        </Link>
-      </div>
     </header>
   )
 }
@@ -201,37 +105,171 @@ export function Shell({ me, children }: { me: Me; children: React.ReactNode }) {
   return me.user.platform_admin ? <ConsoleShell me={me}>{children}</ConsoleShell> : <AppShell me={me}>{children}</AppShell>
 }
 
+// A desktop has the sidebar the console has too: whose shop this is, a
+// search that finds any customer (⌘K), the work under small headings, and
+// the page on a raised panel beside it under a slim header with the page's
+// title and the one action a shopkeeper takes most — Record. A phone keeps
+// its own top bar and tab bar, unchanged.
 function AppShell({ me, children }: { me: Me; children: React.ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const page = pageStore.use()
   const active = navRoot(pathname, me)
   const [recording, setRecording] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [folded, setFolded] = useState(readFolded)
   const record = me.permissions.includes("record") && !me.user.platform_admin ? () => setRecording(true) : undefined
   useLive(me.user.id)
+  useEffect(() => onCommandKey(() => setSearching(true)), [])
+
+  const shopSide = !!me.shop && (me.user.role === "shop_owner" || me.user.role === "staff")
+  const main: SideItem[] = navItems(me).filter((item) => item.key !== "settings")
+  const sections = sidebarSections(me)
+  const groups: SideGroup[] = [{ items: main }, ...sections]
+  const bottom: SideItem[] = [...(shopSide ? [helpItem] : []), { label: "Profile", icon: UserRoundIcon, path: "/settings" }]
+  const fold = () => {
+    storeFolded(!folded)
+    setFolded(!folded)
+  }
 
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh md:bg-sidebar">
       <IosInstallSheet />
-      <Sidebar me={me} active={active} onRecord={record} />
-      <div className="md:pl-64 print:pl-0">
-        <Topbar me={me} />
-        <DesktopTopbar me={me} />
-        {/* On a desktop a narrow screen keeps its measure but lines up under the title. */}
-        <main className="mx-auto w-full max-w-6xl px-4 pt-4 pb-28 sm:px-6 md:px-8 md:pt-2 md:pb-12 print:max-w-none print:p-0">
-          <div className={cn(page.narrow && "mx-auto max-w-2xl md:mx-0")}>
-            <div className="mb-4 grid gap-2 empty:hidden">
-              <OfflineBanner />
-              {me.permissions.includes("record") && <QueueSummary />}
-              <SubscriptionBanner me={me} />
-              <FlashBanners />
+      <aside className={cn("no-print fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 md:block", folded ? "w-16" : "w-60")}>
+        <InsetSidebar
+          me={me}
+          folded={folded}
+          header={<Workspace me={me} folded={folded} />}
+          top={<SearchButton folded={folded} customers={shopSide} onClick={() => setSearching(true)} />}
+          groups={groups}
+          bottom={bottom}
+        />
+      </aside>
+      <div className={cn("transition-[padding] duration-200 print:p-0 md:py-2 md:pr-2", folded ? "md:pl-16" : "md:pl-60")}>
+        <div className="md:flex md:min-h-[calc(100dvh-1rem)] md:flex-col md:rounded-xl md:border md:bg-background md:shadow-xs print:border-0">
+          <Topbar me={me} />
+          <header className="no-print sticky top-0 z-20 hidden h-14 shrink-0 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur md:flex md:rounded-t-xl">
+            <button
+              type="button"
+              onClick={fold}
+              aria-label={folded ? "Expand the sidebar" : "Collapse the sidebar"}
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <PanelLeftIcon className="size-4" />
+            </button>
+            <span aria-hidden="true" className="mx-1 h-4 w-px bg-border" />
+            {page.back && (
+              <Link to={page.back as never} aria-label="Back" className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted">
+                <ChevronLeftIcon className="size-4" />
+              </Link>
+            )}
+            <h1 className="min-w-0 flex-1 truncate text-base font-medium">{page.title ?? "Bangkee"}</h1>
+            <Link
+              to="/notifications"
+              aria-label="Notifications"
+              className="relative inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <BellIcon className="size-4" />
+              {me.unread_notifications > 0 && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-owed" />}
+            </Link>
+            {record && (
+              <Button size="sm" onClick={record} className="ml-1">
+                <PlusIcon /> Record
+              </Button>
+            )}
+          </header>
+          {/* On a desktop a narrow screen keeps its measure but lines up under the title. */}
+          <main className="mx-auto w-full max-w-6xl px-4 pt-4 pb-28 sm:px-6 md:max-w-7xl md:flex-1 md:px-6 md:py-6 print:max-w-none print:p-0">
+            <div className={cn(page.narrow && "mx-auto max-w-2xl md:mx-0")}>
+              <div className="mb-4 grid gap-2 empty:hidden">
+                <OfflineBanner />
+                {me.permissions.includes("record") && <QueueSummary />}
+                <SubscriptionBanner me={me} />
+                <FlashBanners />
+              </div>
+              {children}
             </div>
-            {children}
-          </div>
-        </main>
+          </main>
+        </div>
         <Tabbar me={me} active={active} onRecord={record} />
         {record && <RecordSheet open={recording} onOpenChange={setRecording} />}
+        <CommandPalette open={searching} onOpenChange={setSearching} pages={[...groups.flatMap((g) => g.items), ...bottom]} customers={shopSide && me.permissions.includes("view")} />
         <PushPrompt me={me} />
       </div>
     </div>
+  )
+}
+
+/** Whose workspace: the shop (with its quick menu), or the customer's own credit. */
+function Workspace({ me, folded }: { me: Me; folded: boolean }) {
+  const shop = me.shop
+  const owns = me.permissions.includes("owner")
+  const mark = shop ? <Initial text={shop.name} size="sm" /> : <LogoMark className="size-7" />
+  const name = shop?.name ?? "Bangkee"
+  const sub = shop ? (me.shop_role === "owner" ? (me.subscription ? `${me.subscription.plan_name} · ${me.subscription.status_label}` : "Your shop") : `Staff · ${me.shop_role}`) : "My credit"
+  if (!shop || folded) {
+    return (
+      <Link to="/dashboard" className={cn("flex h-11 items-center gap-2.5 rounded-lg px-1.5", folded && "justify-center px-0")} aria-label={name}>
+        {mark}
+        {!folded && (
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate text-sm font-semibold">{name}</span>
+            <span className="block truncate text-xs text-muted-foreground">{sub}</span>
+          </span>
+        )}
+      </Link>
+    )
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="flex h-11 w-full items-center gap-2.5 rounded-lg px-1.5 text-left transition-colors hover:bg-muted data-popup-open:bg-muted">
+        {mark}
+        <span className="min-w-0 flex-1 leading-tight">
+          <span className="block truncate text-sm font-semibold">{name}</span>
+          <span className="block truncate text-xs text-muted-foreground capitalize">{sub}</span>
+        </span>
+        <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-60">
+        <DropdownMenuItem onClick={() => go(`/shops/${shop.id}`)}>
+          <EyeIcon /> See your shop as customers do
+        </DropdownMenuItem>
+        {owns && (
+          <>
+            <DropdownMenuItem onClick={() => go("/shop_profile")}>
+              <StoreIcon /> Shop profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => go("/subscription")}>
+              <CreditCardIcon /> Billing
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => void signOut()}>
+          <LogOutIcon /> Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** The search box in the sidebar: opens the ⌘K palette. */
+function SearchButton({ folded, customers, onClick }: { folded: boolean; customers: boolean; onClick: () => void }) {
+  if (folded) {
+    return (
+      <button type="button" onClick={onClick} aria-label="Search" className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground">
+        <SearchIcon className="size-4" />
+      </button>
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-8 w-full items-center gap-2 rounded-md border bg-background px-2.5 text-sm text-muted-foreground shadow-xs transition-colors hover:text-foreground"
+    >
+      <SearchIcon className="size-3.5" />
+      <span className="flex-1 text-left">{customers ? "Find a customer…" : "Search…"}</span>
+      <kbd className="rounded border bg-muted px-1 font-mono text-[0.625rem]">⌘K</kbd>
+    </button>
   )
 }

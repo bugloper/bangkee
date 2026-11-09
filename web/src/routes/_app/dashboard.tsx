@@ -22,6 +22,7 @@ import { AppLink } from "@/components/app-link"
 import { DayBars } from "@/components/charts"
 import { Loading } from "@/components/form"
 import { Count, Empty, Initial, Money, Panel, Row, Rows, Stat, StatGrid } from "@/components/kit"
+import { OwnerDesktop } from "@/components/owner-desktop"
 import { InstallCard } from "@/components/pwa"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
@@ -58,10 +59,20 @@ function Direction({ kind }: { kind: LedgerEntry["kind"] }) {
 
 function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
   usePage(data.shop.name)
+  return (
+    <>
+      <OwnerDesktop data={data} me={me} className="hidden md:grid" />
+      <OwnerPhone data={data} me={me} />
+    </>
+  )
+}
+
+/** The owner's home on a phone, as it has been. */
+function OwnerPhone({ data, me }: { data: OwnerDashboard; me: Me }) {
   const subscription = me.subscription
   const owns = me.permissions.includes("owner")
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 md:hidden">
       <section className="relative overflow-hidden rounded-[1.25rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-5 text-white shadow-lg shadow-primary/25 sm:p-7">
         <div aria-hidden="true" className="absolute -top-20 -right-16 size-64 rounded-full bg-white/10 blur-2xl" />
         <div className="relative flex flex-wrap items-end justify-between gap-5">
