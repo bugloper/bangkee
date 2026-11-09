@@ -1,8 +1,0 @@
-{
-  "appId": "app.bangkee",
-  "appName": "Bangkee",
-  "webDir": "www",
-  "android": {
-    "path": "android"
-  }
-}

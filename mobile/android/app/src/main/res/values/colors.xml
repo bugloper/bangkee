@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Bangkee's own colours, from web/public/icon.svg and the web manifest. -->
-    <color name="ic_launcher_background">#003D9B</color>
-    <color name="brand">#2751B8</color>
-    <!-- The web app's light and dark page backgrounds (theme-color in web/index.html),
-         so the splash, the WebView and the first painted page are the same colour. -->
-    <color name="window_background">#FAFBFD</color>
-</resources>

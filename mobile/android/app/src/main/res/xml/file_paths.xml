@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Where Capacitor puts a photo taken for an <input type="file" capture> (the
-     app's own Pictures directory, BridgeWebChromeClient#createImageFile), and the
-     documents FilesPlugin shares or opens (cache/documents). Nothing else. -->
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-files-path name="captured_images" path="Pictures/" />
-    <cache-path name="documents" path="documents/" />
-</paths>
