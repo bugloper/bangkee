@@ -32,11 +32,13 @@ func (s *Server) me(c *echo.Context) error {
 	var shopView *domain.ShopRef
 	var subView *domain.SubscriptionDTO
 	var adminPayments, adminFeedback, adminTestimonials int64
-	if user.Role == domain.RoleShopOwner {
-		shop, err := domain.ShopForOwner(ctx, q, user.ID)
+	var staffRole string
+	if user.Role == domain.RoleShopOwner || user.Role == domain.RoleStaff {
+		shop, role, err := s.shopOf(ctx, user)
 		if err != nil {
 			return err
 		}
+		staffRole = role
 		if shop != nil {
 			view := domain.ShopView(*shop)
 			shopView = &view
@@ -86,6 +88,8 @@ func (s *Server) me(c *echo.Context) error {
 		"badges":               M{"admin_payments": adminPayments, "admin_feedback": adminFeedback, "admin_testimonials": adminTestimonials},
 		"unread_notifications": unread,
 		"push":                 M{"configured": s.Cfg.Vapid != nil, "public_key": publicKey, "devices": devices},
+		// The shop side: "owner" or a staff role, and what it may do; empty for a customer.
+		"shop_role": staffRole, "permissions": domain.Permissions(staffRole),
 	})
 }
 
@@ -371,7 +375,7 @@ func (s *Server) invitation(c *echo.Context) error {
 	// BR-25
 	user := cur.User
 	switch {
-	case user.Role == domain.RoleShopOwner:
+	case user.Role == domain.RoleShopOwner || user.Role == domain.RoleStaff:
 		return c.JSON(http.StatusOK, M{"outcome": "refused", "alert": "Invite links are for customers. Ask your customer to open it on their phone."})
 	case account.CustomerID != nil && *account.CustomerID == user.ID:
 		return c.JSON(http.StatusOK, M{"outcome": "already_yours", "account_id": account.ID, "notice": "You are already linked to " + shop.Name + "."})

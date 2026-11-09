@@ -174,6 +174,14 @@ func (s *Server) routes(g *echo.Group) {
 	g.GET("/suppliers/:id/statement", s.supplierStatement)
 	g.GET("/suppliers/:id/statement.pdf", s.supplierStatement)
 	g.POST("/supplier_entries/:id/cross_out", s.crossOutSupplierEntry)
+	// staff
+	g.GET("/staff", s.staff)
+	g.POST("/staff/invitations", s.inviteStaff)
+	g.DELETE("/staff/invitations/:id", s.withdrawStaffInvitation)
+	g.PATCH("/staff/:id", s.changeStaffRole)
+	g.DELETE("/staff/:id", s.removeStaff)
+	g.GET("/staff_invitations/:token", s.staffInvitation)
+	g.POST("/staff_invitations/:token/accept", s.acceptStaffInvitation)
 	// bank details
 	g.GET("/bank_accounts", s.bankAccounts)
 	g.POST("/bank_accounts", s.createBankAccount)

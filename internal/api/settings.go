@@ -25,8 +25,8 @@ func (s *Server) settings(c *echo.Context) error {
 		return err
 	}
 	counts := store.ShopCountsRow{}
-	if cur.User.Role == domain.RoleShopOwner {
-		shop, err := domain.ShopForOwner(c.Request().Context(), s.Q, cur.User.ID)
+	if cur.User.Role != domain.RoleCustomer {
+		shop, _, err := s.shopOf(c.Request().Context(), cur.User)
 		if err != nil {
 			return err
 		}

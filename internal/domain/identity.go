@@ -22,6 +22,8 @@ import (
 const (
 	RoleShopOwner int32 = 0
 	RoleCustomer  int32 = 1
+	// RoleStaff works in someone else's shop (see staff.go).
+	RoleStaff int32 = 2
 )
 
 var Locales = []string{"en", "dz"}
@@ -69,8 +71,11 @@ func ReadingLocale(u store.User) *string {
 
 func UserView(u store.User) UserDTO {
 	role := "customer"
-	if u.Role == RoleShopOwner {
+	switch u.Role {
+	case RoleShopOwner:
 		role = "shop_owner"
+	case RoleStaff:
+		role = "staff"
 	}
 	return UserDTO{
 		ID: u.ID, Name: u.Name, EmailAddress: u.EmailAddress, Phone: u.Phone, Role: role,

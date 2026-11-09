@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { flashNotice } from "@/lib/flash"
 import { useT } from "@/lib/i18n"
 import { balanceBadge, balanceWord } from "@/lib/ledger"
-import { useFeature } from "@/lib/me"
+import { useCan, useFeature } from "@/lib/me"
 import { usePage } from "@/lib/page"
 import { refreshAll } from "@/lib/query"
 import { timeAgoInWords } from "@/lib/time"
@@ -40,7 +40,10 @@ function Accounts() {
   const navigate = useNavigate({ from: Route.fullPath })
   const { data } = useQuery({ queryKey: ["accounts", q ?? "", filter ?? ""], queryFn: () => api.accounts({ q, filter }), placeholderData: (previous) => previous })
   const accounts = data?.accounts ?? []
-  const bulk = useFeature("bulk_reminders")
+  const bulkPlan = useFeature("bulk_reminders")
+  const canManage = useCan("manage")
+  const bulk = bulkPlan && canManage
+  const canRecord = useCan("record")
 
   return (
     <div className="grid gap-4">
@@ -57,9 +60,11 @@ function Accounts() {
             onChange={(event) => void navigate({ search: { q: event.target.value || undefined, filter }, replace: true })}
           />
         </form>
-        <Link to="/accounts/new" className={buttonVariants({ size: "lg", className: "max-md:hidden" })}>
-          <PlusIcon /> Add customer
-        </Link>
+        {canRecord && (
+          <Link to="/accounts/new" className={buttonVariants({ size: "lg", className: "max-md:hidden" })}>
+            <PlusIcon /> Add customer
+          </Link>
+        )}
       </div>
 
       <nav aria-label="Filter customers" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
@@ -158,13 +163,15 @@ function Accounts() {
         )}
       </Panel>
 
-      <Link
-        to="/accounts/new"
-        aria-label="Add customer"
-        className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95 md:hidden"
-      >
-        <PlusIcon className="size-6" />
-      </Link>
+      {canRecord && (
+        <Link
+          to="/accounts/new"
+          aria-label="Add customer"
+          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95 md:hidden"
+        >
+          <PlusIcon className="size-6" />
+        </Link>
+      )}
     </div>
   )
 }

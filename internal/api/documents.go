@@ -33,7 +33,7 @@ func (s *Server) addDocument(c *echo.Context) error {
 		if err := s.requireWritable(ctx, q, o.Shop.ID); err != nil {
 			return err
 		}
-		entry, err := domain.TransactionForOwner(ctx, q, o.User.ID, paramID(c))
+		entry, err := domain.TransactionForOwner(ctx, q, o.Shop.OwnerID, paramID(c))
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func (s *Server) removeDocument(c *echo.Context) error {
 	var key string
 	var accountID int64
 	err = s.tx(ctx, func(q *store.Queries) error {
-		entry, err := domain.TransactionForOwner(ctx, q, o.User.ID, paramID(c))
+		entry, err := domain.TransactionForOwner(ctx, q, o.Shop.OwnerID, paramID(c))
 		if err != nil {
 			return err
 		}

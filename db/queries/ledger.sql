@@ -73,10 +73,11 @@ UPDATE transactions SET crossed_out_at = now(), crossed_out_by_id = $2, updated_
 WHERE id = $1 AND crossed_out_at IS NULL;
 
 -- name: TransactionVisibleTo :one
--- The shop's owner and the account's customer.
+-- The shop's owner, its staff, and the account's customer.
 SELECT EXISTS(
   SELECT 1 FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN shops s ON s.id = a.shop_id
-  WHERE t.id = $1 AND (s.owner_id = sqlc.arg(user_id) OR a.customer_id = sqlc.arg(user_id))
+  WHERE t.id = $1 AND (s.owner_id = sqlc.arg(user_id) OR a.customer_id = sqlc.arg(user_id)
+    OR EXISTS(SELECT 1 FROM shop_members m WHERE m.shop_id = s.id AND m.user_id = sqlc.arg(user_id) AND m.revoked_at IS NULL))
 );
 
 -- name: MonthlyTotals :many

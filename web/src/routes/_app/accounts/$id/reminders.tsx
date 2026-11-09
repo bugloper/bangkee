@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { flashNotice } from "@/lib/flash"
-import { useMe } from "@/lib/me"
+import { useCan, useMe } from "@/lib/me"
 import { ngultrum } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { smsLink, whatsappLink } from "@/lib/phone"
@@ -28,6 +28,7 @@ function RemindersScreen() {
   const id = Number(Route.useParams().id)
   usePage("Reminders", `/accounts/${id}`, { narrow: true })
   const me = useMe()
+  const canManage = useCan("manage")
   const account = useQuery({ queryKey: ["account", id], queryFn: () => api.account(id) })
   const history = useQuery({ queryKey: ["reminders", id], queryFn: () => api.accountReminders(id) })
   const done = async (result: { notice?: string }) => {
@@ -72,13 +73,15 @@ function RemindersScreen() {
             </div>
           )}
         </div>
-        <label className="mt-5 flex items-center justify-between gap-4 border-t pt-4">
-          <span>
-            <span className="block text-sm font-medium">Pause reminders</span>
-            <span className="block text-[0.8125rem] text-muted-foreground">No automatic or bulk reminders to {a.customer_name} — for someone you have an arrangement with.</span>
-          </span>
-          <Switch checked={history.data.paused} onCheckedChange={(checked) => pause.mutate(checked)} />
-        </label>
+        {canManage && (
+          <label className="mt-5 flex items-center justify-between gap-4 border-t pt-4">
+            <span>
+              <span className="block text-sm font-medium">Pause reminders</span>
+              <span className="block text-[0.8125rem] text-muted-foreground">No automatic or bulk reminders to {a.customer_name} — for someone you have an arrangement with.</span>
+            </span>
+            <Switch checked={history.data.paused} onCheckedChange={(checked) => pause.mutate(checked)} />
+          </label>
+        )}
       </Panel>
 
       {a.overdue && <Note>A customer is only reminded once a day, and never about an entry they have flagged until you settle it.</Note>}

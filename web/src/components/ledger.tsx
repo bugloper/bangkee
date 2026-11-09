@@ -12,6 +12,7 @@ import { Thumb } from "@/components/viewer"
 import { confirm } from "@/lib/confirm"
 import { flashNotice } from "@/lib/flash"
 import { ngultrum, pluralize } from "@/lib/money"
+import { useCan } from "@/lib/me"
 import { refreshAll } from "@/lib/query"
 import { dateTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
@@ -41,6 +42,8 @@ function KindGlyph({ entry }: { entry: LedgerEntry }) {
 /** One entry in the book, as the account screen shows it. */
 export function LedgerRow({ entry, owner, locked, highlight = false, joined = true }: { entry: LedgerEntry; owner: boolean; locked: boolean; highlight?: boolean; joined?: boolean }) {
   const [itemsOpen, setItemsOpen] = useState(false)
+  const canRecord = useCan("record")
+  const canManage = useCan("manage")
   // The entry a notification was about: brought into view and marked.
   const row = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -130,7 +133,7 @@ export function LedgerRow({ entry, owner, locked, highlight = false, joined = tr
 
           <ConfirmationPanel entry={entry} owner={owner} joined={joined} />
 
-          {entry.kind === "payment" && (owner ? entry.crossed_out || locked : true) && (
+          {entry.kind === "payment" && (owner ? entry.crossed_out || locked || !(canRecord || canManage) : true) && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               <AppLink href={`/receipts/${entry.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <ReceiptTextIcon /> Receipt
@@ -138,20 +141,24 @@ export function LedgerRow({ entry, owner, locked, highlight = false, joined = tr
             </div>
           )}
 
-          {owner && !entry.crossed_out && !locked && (
+          {owner && !entry.crossed_out && !locked && (canRecord || canManage) && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
               {entry.kind === "payment" && (
                 <AppLink href={`/receipts/${entry.id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                   <ReceiptTextIcon /> Receipt
                 </AppLink>
               )}
-              <AttachButton entry={entry} />
-              <AppLink href={`/transactions/${entry.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                <PencilIcon /> Edit
-              </AppLink>
-              <button type="button" onClick={onCrossOut} disabled={crossOutEntry.isPending} className={buttonVariants({ variant: "destructive", size: "sm" })}>
-                <StrikethroughIcon /> Cross out
-              </button>
+              {canRecord && <AttachButton entry={entry} />}
+              {canManage && (
+                <>
+                  <AppLink href={`/transactions/${entry.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                    <PencilIcon /> Edit
+                  </AppLink>
+                  <button type="button" onClick={onCrossOut} disabled={crossOutEntry.isPending} className={buttonVariants({ variant: "destructive", size: "sm" })}>
+                    <StrikethroughIcon /> Cross out
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

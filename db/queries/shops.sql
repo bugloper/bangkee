@@ -63,3 +63,8 @@ WHERE EXISTS (SELECT 1 FROM menu_items m WHERE m.shop_id = s.id)
   AND (sqlc.narg(search)::varchar IS NULL OR s.name ILIKE '%' || sqlc.narg(search) || '%')
 ORDER BY s.name, s.id
 LIMIT 200;
+
+-- name: LockShop :one
+-- Holds the shop's row until the transaction ends: what is decided about the
+-- shop in it (a staff place) is decided one at a time.
+SELECT id FROM shops WHERE id = $1 FOR UPDATE;

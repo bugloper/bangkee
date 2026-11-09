@@ -141,6 +141,18 @@ func (q *Queries) ExtendSubscription(ctx context.Context, arg ExtendSubscription
 	return err
 }
 
+const lockShop = `-- name: LockShop :one
+SELECT id FROM shops WHERE id = $1 FOR UPDATE
+`
+
+// Holds the shop's row until the transaction ends: what is decided about the
+// shop in it (a staff place) is decided one at a time.
+func (q *Queries) LockShop(ctx context.Context, id int64) (int64, error) {
+	row := q.db.QueryRow(ctx, lockShop, id)
+	err := row.Scan(&id)
+	return id, err
+}
+
 const overdueAccounts = `-- name: OverdueAccounts :many
 SELECT id, shop_id, customer_id, customer_name, customer_phone, invite_token, pin_reset_until, balance_cents, last_activity_at, created_at, updated_at, reminders_paused FROM accounts
 WHERE shop_id = $1 AND balance_cents > 0

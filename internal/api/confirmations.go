@@ -96,7 +96,7 @@ func (s *Server) replyToDispute(c *echo.Context) error {
 	ctx := c.Request().Context()
 	var entry domain.Entry
 	err = s.tx(ctx, func(q *store.Queries) error {
-		entry, err = domain.TransactionForOwner(ctx, q, o.User.ID, paramID(c))
+		entry, err = domain.TransactionForOwner(ctx, q, o.Shop.OwnerID, paramID(c))
 		if err != nil {
 			return err
 		}

@@ -76,6 +76,7 @@ function Direction({ kind }: { kind: LedgerEntry["kind"] }) {
 function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
   usePage(data.shop.name)
   const subscription = me.subscription
+  const owns = me.permissions.includes("owner")
   return (
     <div className="grid gap-6">
       <section className="relative overflow-hidden rounded-[1.25rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-5 text-white shadow-lg shadow-primary/25 sm:p-7">
@@ -86,9 +87,11 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
             <div className="tabular mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">{ngultrum(data.total_outstanding_cents)}</div>
             <div className="mt-2 text-sm text-white/75">{pluralize(data.customers_count, "customer")} · updated just now</div>
           </div>
-          <AppLink href="/accounts/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90 max-sm:w-full" })}>
-            <PlusIcon /> Add customer
-          </AppLink>
+          {me.permissions.includes("record") && (
+            <AppLink href="/accounts/new" className={buttonVariants({ size: "lg", className: "bg-white text-primary shadow-sm hover:bg-white/90 max-sm:w-full" })}>
+              <PlusIcon /> Add customer
+            </AppLink>
+          )}
         </div>
       </section>
 
@@ -246,15 +249,17 @@ function Owner({ data, me }: { data: OwnerDashboard; me: Me }) {
         <Panel flush title="Shop">
           <Rows>
             <Row href="/menu_items" leading={<RowIcon icon={PackageIcon} />} title="Items" subtitle="What you sell, to pick from when recording credit" chevron />
-            <Row href="/bank_accounts" leading={<RowIcon icon={LandmarkIcon} />} title="Bank details" subtitle="What customers see when they pay you" chevron />
+            {owns && <Row href="/bank_accounts" leading={<RowIcon icon={LandmarkIcon} />} title="Bank details" subtitle="What customers see when they pay you" chevron />}
             <Row href="/suppliers" leading={<RowIcon icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
-            <Row
-              href="/subscription"
-              leading={<RowIcon icon={CreditCardIcon} />}
-              title="Billing"
-              subtitle={subscription ? `${subscription.status_label} · ${subscription.summary}` : "No subscription"}
-              chevron
-            />
+            {owns && (
+              <Row
+                href="/subscription"
+                leading={<RowIcon icon={CreditCardIcon} />}
+                title="Billing"
+                subtitle={subscription ? `${subscription.status_label} · ${subscription.summary}` : "No subscription"}
+                chevron
+              />
+            )}
           </Rows>
         </Panel>
         </div>

@@ -8,6 +8,7 @@ import { Loading } from "@/components/form"
 import { Empty, Initial, Money, Note, Panel, Row, Rows } from "@/components/kit"
 import { buttonVariants } from "@/components/ui/button"
 import { ngultrum } from "@/lib/money"
+import { useCan } from "@/lib/me"
 import { usePage } from "@/lib/page"
 import { timeAgoInWords } from "@/lib/time"
 
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_app/suppliers/")({ component: Suppliers 
 function Suppliers() {
   usePage("Suppliers", "/settings")
   const { data } = useQuery({ queryKey: ["suppliers"], queryFn: api.suppliers })
+  const canManage = useCan("manage")
   if (!data) return <Loading />
   return (
     <div className="grid gap-5">
@@ -28,7 +30,7 @@ function Suppliers() {
           <div className="tabular mt-1 text-4xl font-semibold tracking-tight">{ngultrum(data.total_payable_cents)}</div>
           <div className="mt-1 text-sm text-muted-foreground">Separate from what customers owe you.</div>
         </div>
-        {data.plan_allows && (
+        {data.plan_allows && canManage && (
           <AppLink href="/suppliers/new" className={buttonVariants({ size: "lg", className: "max-sm:w-full" })}>
             <PlusIcon /> Add supplier
           </AppLink>

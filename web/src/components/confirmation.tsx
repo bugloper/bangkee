@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { flashNotice } from "@/lib/flash"
+import { useCan } from "@/lib/me"
 import { refreshAll } from "@/lib/query"
 import { dateTime } from "@/lib/time"
 
@@ -44,6 +45,7 @@ export function ConfirmationBadge({ entry, owner }: { entry: LedgerEntry; owner:
 /** The actions and the history under an entry. `joined`: the account has a customer who can answer. */
 export function ConfirmationPanel({ entry, owner, joined }: { entry: LedgerEntry; owner: boolean; joined: boolean }) {
   const [writing, setWriting] = useState(false)
+  const canManage = useCan("manage")
   const [text, setText] = useState("")
   const [error, setError] = useState<string | null>(null)
   const done = async (result: { notice?: string }) => {
@@ -60,7 +62,7 @@ export function ConfirmationPanel({ entry, owner, joined }: { entry: LedgerEntry
   // The shop has nothing to do or read on an entry nobody has answered.
   if (owner && entry.confirmation !== "disputed" && entry.responses.length === 0) return null
 
-  const canAnswer = owner ? entry.confirmation === "disputed" : true
+  const canAnswer = owner ? entry.confirmation === "disputed" && canManage : true
   const lastDispute = [...entry.responses].reverse().find((r) => r.action === "disputed")
 
   return (

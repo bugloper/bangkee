@@ -51,7 +51,11 @@ func (s *Server) paymentReceipt(c *echo.Context) (domain.Receipt, error) {
 	if err != nil {
 		return domain.Receipt{}, err
 	}
-	if !ownerOf(cur.User, shop) && (account.CustomerID == nil || *account.CustomerID != cur.User.ID) {
+	side, err := s.shopSide(ctx, cur.User, shop)
+	if err != nil {
+		return domain.Receipt{}, err
+	}
+	if !side && (account.CustomerID == nil || *account.CustomerID != cur.User.ID) {
 		return domain.Receipt{}, apperr.ErrNotFound
 	}
 	return domain.ReceiptFor(ctx, s.Q, account, shop, shopLine(shop), entry.ID)

@@ -26,6 +26,7 @@ import { Route as AppRecordRouteImport } from './routes/_app/record'
 import { Route as AppRemindersRouteImport } from './routes/_app/reminders'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShop_profileRouteImport } from './routes/_app/shop_profile'
+import { Route as AppStaffRouteImport } from './routes/_app/staff'
 import { Route as AppSubscriptionRouteImport } from './routes/_app/subscription'
 import { Route as AppTestimonialRouteImport } from './routes/_app/testimonial'
 import { Route as ShopIdRouteImport } from './routes/shop.$id'
@@ -56,6 +57,7 @@ import { Route as AppSuppliersIdIndexRouteImport } from './routes/_app/suppliers
 import { Route as AppSuppliersIdStatementRouteImport } from './routes/_app/suppliers/$id/statement'
 import { Route as AppTransactionsIdEditRouteImport } from './routes/_app/transactions/$id/edit'
 import { Route as AuthPasswordsTokenEditRouteImport } from './routes/_auth/passwords/$token/edit'
+import { Route as AuthStaffJoinTokenRouteImport } from './routes/_auth/staff/join/$token'
 import { Route as AppAccountsIdCreditsNewRouteImport } from './routes/_app/accounts/$id/credits/new'
 import { Route as AppAccountsIdPaymentsNewRouteImport } from './routes/_app/accounts/$id/payments/new'
 
@@ -140,6 +142,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppShop_profileRoute = AppShop_profileRouteImport.update({
   id: '/shop_profile',
   path: '/shop_profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStaffRoute = AppStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSubscriptionRoute = AppSubscriptionRouteImport.update({
@@ -293,6 +300,11 @@ const AuthPasswordsTokenEditRoute = AuthPasswordsTokenEditRouteImport.update({
   path: '/passwords/$token/edit',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthStaffJoinTokenRoute = AuthStaffJoinTokenRouteImport.update({
+  id: '/staff/join/$token',
+  path: '/staff/join/$token',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AppAccountsIdCreditsNewRoute = AppAccountsIdCreditsNewRouteImport.update({
   id: '/accounts/$id/credits/new',
   path: '/accounts/$id/credits/new',
@@ -320,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/reminders': typeof AppRemindersRoute
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
+  '/staff': typeof AppStaffRoute
   '/subscription': typeof AppSubscriptionRoute
   '/testimonial': typeof AppTestimonialRoute
   '/shop/$id': typeof ShopIdRoute
@@ -348,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/suppliers/$id/statement': typeof AppSuppliersIdStatementRoute
   '/transactions/$id/edit': typeof AppTransactionsIdEditRoute
   '/passwords/$token/edit': typeof AuthPasswordsTokenEditRoute
+  '/staff/join/$token': typeof AuthStaffJoinTokenRoute
   '/accounts/$id/': typeof AppAccountsIdIndexRoute
   '/suppliers/$id/': typeof AppSuppliersIdIndexRoute
   '/accounts/$id/credits/new': typeof AppAccountsIdCreditsNewRoute
@@ -368,6 +382,7 @@ export interface FileRoutesByTo {
   '/reminders': typeof AppRemindersRoute
   '/settings': typeof AppSettingsRoute
   '/shop_profile': typeof AppShop_profileRoute
+  '/staff': typeof AppStaffRoute
   '/subscription': typeof AppSubscriptionRoute
   '/testimonial': typeof AppTestimonialRoute
   '/shop/$id': typeof ShopIdRoute
@@ -395,6 +410,7 @@ export interface FileRoutesByTo {
   '/suppliers/$id/statement': typeof AppSuppliersIdStatementRoute
   '/transactions/$id/edit': typeof AppTransactionsIdEditRoute
   '/passwords/$token/edit': typeof AuthPasswordsTokenEditRoute
+  '/staff/join/$token': typeof AuthStaffJoinTokenRoute
   '/accounts/$id': typeof AppAccountsIdIndexRoute
   '/suppliers/$id': typeof AppSuppliersIdIndexRoute
   '/accounts/$id/credits/new': typeof AppAccountsIdCreditsNewRoute
@@ -419,6 +435,7 @@ export interface FileRoutesById {
   '/_app/reminders': typeof AppRemindersRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shop_profile': typeof AppShop_profileRoute
+  '/_app/staff': typeof AppStaffRoute
   '/_app/subscription': typeof AppSubscriptionRoute
   '/_app/testimonial': typeof AppTestimonialRoute
   '/shop/$id': typeof ShopIdRoute
@@ -447,6 +464,7 @@ export interface FileRoutesById {
   '/_app/suppliers/$id/statement': typeof AppSuppliersIdStatementRoute
   '/_app/transactions/$id/edit': typeof AppTransactionsIdEditRoute
   '/_auth/passwords/$token/edit': typeof AuthPasswordsTokenEditRoute
+  '/_auth/staff/join/$token': typeof AuthStaffJoinTokenRoute
   '/_app/accounts/$id/': typeof AppAccountsIdIndexRoute
   '/_app/suppliers/$id/': typeof AppSuppliersIdIndexRoute
   '/_app/accounts/$id/credits/new': typeof AppAccountsIdCreditsNewRoute
@@ -469,6 +487,7 @@ export interface FileRouteTypes {
     | '/reminders'
     | '/settings'
     | '/shop_profile'
+    | '/staff'
     | '/subscription'
     | '/testimonial'
     | '/shop/$id'
@@ -497,6 +516,7 @@ export interface FileRouteTypes {
     | '/suppliers/$id/statement'
     | '/transactions/$id/edit'
     | '/passwords/$token/edit'
+    | '/staff/join/$token'
     | '/accounts/$id/'
     | '/suppliers/$id/'
     | '/accounts/$id/credits/new'
@@ -517,6 +537,7 @@ export interface FileRouteTypes {
     | '/reminders'
     | '/settings'
     | '/shop_profile'
+    | '/staff'
     | '/subscription'
     | '/testimonial'
     | '/shop/$id'
@@ -544,6 +565,7 @@ export interface FileRouteTypes {
     | '/suppliers/$id/statement'
     | '/transactions/$id/edit'
     | '/passwords/$token/edit'
+    | '/staff/join/$token'
     | '/accounts/$id'
     | '/suppliers/$id'
     | '/accounts/$id/credits/new'
@@ -567,6 +589,7 @@ export interface FileRouteTypes {
     | '/_app/reminders'
     | '/_app/settings'
     | '/_app/shop_profile'
+    | '/_app/staff'
     | '/_app/subscription'
     | '/_app/testimonial'
     | '/shop/$id'
@@ -595,6 +618,7 @@ export interface FileRouteTypes {
     | '/_app/suppliers/$id/statement'
     | '/_app/transactions/$id/edit'
     | '/_auth/passwords/$token/edit'
+    | '/_auth/staff/join/$token'
     | '/_app/accounts/$id/'
     | '/_app/suppliers/$id/'
     | '/_app/accounts/$id/credits/new'
@@ -729,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/shop_profile'
       fullPath: '/shop_profile'
       preLoaderRoute: typeof AppShop_profileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/staff': {
+      id: '/_app/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof AppStaffRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/subscription': {
@@ -941,6 +972,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPasswordsTokenEditRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/staff/join/$token': {
+      id: '/_auth/staff/join/$token'
+      path: '/staff/join/$token'
+      fullPath: '/staff/join/$token'
+      preLoaderRoute: typeof AuthStaffJoinTokenRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_app/accounts/$id/credits/new': {
       id: '/_app/accounts/$id/credits/new'
       path: '/accounts/$id/credits/new'
@@ -983,6 +1021,7 @@ interface AppRouteChildren {
   AppRemindersRoute: typeof AppRemindersRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppShop_profileRoute: typeof AppShop_profileRoute
+  AppStaffRoute: typeof AppStaffRoute
   AppSubscriptionRoute: typeof AppSubscriptionRoute
   AppTestimonialRoute: typeof AppTestimonialRoute
   AppAccountsNewRoute: typeof AppAccountsNewRoute
@@ -1020,6 +1059,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRemindersRoute: AppRemindersRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppShop_profileRoute: AppShop_profileRoute,
+  AppStaffRoute: AppStaffRoute,
   AppSubscriptionRoute: AppSubscriptionRoute,
   AppTestimonialRoute: AppTestimonialRoute,
   AppAccountsNewRoute: AppAccountsNewRoute,
@@ -1056,6 +1096,7 @@ interface AuthRouteChildren {
   AuthRegistrationNewRoute: typeof AuthRegistrationNewRoute
   AuthSessionNewRoute: typeof AuthSessionNewRoute
   AuthPasswordsTokenEditRoute: typeof AuthPasswordsTokenEditRoute
+  AuthStaffJoinTokenRoute: typeof AuthStaffJoinTokenRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -1064,6 +1105,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthRegistrationNewRoute: AuthRegistrationNewRoute,
   AuthSessionNewRoute: AuthSessionNewRoute,
   AuthPasswordsTokenEditRoute: AuthPasswordsTokenEditRoute,
+  AuthStaffJoinTokenRoute: AuthStaffJoinTokenRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

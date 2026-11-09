@@ -16,7 +16,7 @@ import { confirm } from "@/lib/confirm"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
-import { useFeature } from "@/lib/me"
+import { useCan, useFeature } from "@/lib/me"
 import { ngultrum } from "@/lib/money"
 import { newKey } from "@/lib/offline-queue"
 import { usePage } from "@/lib/page"
@@ -30,7 +30,9 @@ function SupplierScreen() {
   const id = Number(Route.useParams().id)
   const { data } = useQuery({ queryKey: ["supplier", id], queryFn: () => api.supplier(id) })
   usePage(data?.supplier.name ?? "Supplier", "/suppliers")
-  const allowed = useFeature("suppliers")
+  const planAllows = useFeature("suppliers")
+  const canManage = useCan("manage")
+  const allowed = planAllows && canManage
   const [form, setForm] = useState<"purchases" | "payments" | null>(null)
   const remove = useMutation({
     mutationFn: () => api.deleteSupplier(id),
@@ -91,7 +93,7 @@ function SupplierScreen() {
         )}
       </Panel>
 
-      {supplier.balance_cents === 0 && (
+      {supplier.balance_cents === 0 && allowed && (
         <div>
           <Button
             variant="ghost"

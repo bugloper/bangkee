@@ -16,6 +16,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { flashNotice } from "@/lib/flash"
 import { useT } from "@/lib/i18n"
 import { ngultrum, pluralize } from "@/lib/money"
+import { useCan } from "@/lib/me"
 import { usePage } from "@/lib/page"
 import { offerNotifications } from "@/lib/pwa"
 import { refreshAll } from "@/lib/query"
@@ -57,6 +58,8 @@ function Balance({ label, cents, overdue }: { label: string; cents: number; over
 function OwnerView({ data }: { data: OwnerData }) {
   const { account } = data
   const { entry: highlighted } = Route.useSearch()
+  const canRecord = useCan("record")
+  const canManage = useCan("manage")
   usePage(account.display_name, "/accounts")
   const locked = data.write_locked
   const rail = useQuery({ queryKey: ["accounts", "", ""], queryFn: () => api.accounts({}) })
@@ -95,13 +98,15 @@ function OwnerView({ data }: { data: OwnerData }) {
               </div>
             </div>
             <div className="flex gap-1.5">
-              <AppLink href={`/accounts/${account.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                <PencilIcon /> <span className="max-sm:sr-only">Edit</span>
-              </AppLink>
+              {canManage && (
+                <AppLink href={`/accounts/${account.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                  <PencilIcon /> <span className="max-sm:sr-only">Edit</span>
+                </AppLink>
+              )}
               <AppLink href={`/accounts/${account.id}/statement`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <PrinterIcon /> <span className="max-sm:sr-only">Statement</span>
               </AppLink>
-              {account.balance_cents > 0 && (
+              {account.balance_cents > 0 && canRecord && (
                 <AppLink href={`/accounts/${account.id}/reminders`} className={buttonVariants({ variant: "outline", size: "sm" })}>
                   <BellRingIcon /> <span className="max-sm:sr-only">Remind</span>
                 </AppLink>
@@ -127,7 +132,7 @@ function OwnerView({ data }: { data: OwnerData }) {
             </Note>
           )}
 
-          <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {canRecord && <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             <AppLink
               href={action(`/accounts/${account.id}/credits/new`)}
               className={buttonVariants({ variant: "credit", className: cn(big, locked && "opacity-50") })}
@@ -149,7 +154,7 @@ function OwnerView({ data }: { data: OwnerData }) {
             >
               <ShoppingBasketIcon /> Itemized purchase
             </AppLink>
-          </div>
+          </div>}
         </Panel>
 
         <QueuedWrites queueKey={`account:${account.id}`} />
@@ -203,7 +208,7 @@ function OwnerView({ data }: { data: OwnerData }) {
           </Rows>
         </Panel>
 
-        <Panel flush title={`Invite ${account.customer_name}`}>
+        {canRecord && <Panel flush title={`Invite ${account.customer_name}`}>
           <Rows>
             <Row
               href={`/accounts/${account.id}/invite`}
@@ -217,7 +222,7 @@ function OwnerView({ data }: { data: OwnerData }) {
               chevron
             />
           </Rows>
-        </Panel>
+        </Panel>}
 
         {data.audit_events.length > 0 && (
           <Panel flush title="Audit log" footer={<span className="text-xs text-muted-foreground">Append-only — the most recent events for this account.</span>}>

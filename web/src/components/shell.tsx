@@ -185,7 +185,7 @@ export function Shell({ me, children }: { me: Me; children: React.ReactNode }) {
   const page = pageStore.use()
   const active = navRoot(pathname, me)
   const [recording, setRecording] = useState(false)
-  const record = me.user.role === "shop_owner" && !isAdminHost() ? () => setRecording(true) : undefined
+  const record = me.permissions.includes("record") && !isAdminHost() ? () => setRecording(true) : undefined
   useLive(me.user.id)
 
   return (

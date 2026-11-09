@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { confirm } from "@/lib/confirm"
 import { flashNotice } from "@/lib/flash"
-import { useFeature, useMe } from "@/lib/me"
+import { onShopSide, useFeature, useMe } from "@/lib/me"
 import { ngultrum } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { refreshAll } from "@/lib/query"
@@ -40,7 +40,7 @@ function InstallmentsScreen() {
   const id = Number(Route.useParams().id)
   usePage("Installments", `/accounts/${id}`, { narrow: true })
   const me = useMe()
-  const owner = me?.user.role === "shop_owner"
+  const owner = onShopSide(me) && (me?.permissions.includes("manage") ?? false)
   const { data } = useQuery({ queryKey: ["installments", id], queryFn: () => api.installmentPlans(id) })
   if (!data) return <Loading />
   const current = data.plans.find((plan) => plan.status === "active")

@@ -32,7 +32,7 @@ export interface Notice {
 
 // ------------------------------------------------------------------ identity
 
-export type Role = "shop_owner" | "customer"
+export type Role = "shop_owner" | "customer" | "staff" // staff: works in someone else's shop
 export type Locale = "en" | "dz"
 
 export interface User {
@@ -80,7 +80,10 @@ export interface ShopRef {
 /** GET /api/me — the shell's one query. 401 when signed out. */
 export interface Me {
   user: User
-  shop: ShopRef | null
+  shop: ShopRef | null // the owner's shop, or the shop a staff member works in
+  shop_role: "" | "owner" | StaffRole // empty for a customer
+  permissions: Permission[] // what this person may do on the shop's side
+
   subscription: Subscription | null
   badges: {
     admin_payments: number // pending subscription payments (platform admins)
@@ -765,4 +768,34 @@ export interface SupplierEntryInput {
   payment_method?: string
   occurred_at?: string
   idempotency_key: string
+}
+
+// ------------------------------------------------------------------- staff
+
+export type StaffRole = "manager" | "cashier" | "viewer"
+/** view: read the book · record: customers, credits, payments · manage: change entries, plans, items, suppliers · owner: billing, bank details, settings, staff */
+export type Permission = "view" | "record" | "manage" | "owner"
+
+export interface StaffMember {
+  id: number
+  name: string
+  email_address: string
+  role: StaffRole
+  role_name: string
+  since: Timestamp
+}
+export interface StaffInvitation {
+  id: number
+  name: string
+  email_address: string
+  role: StaffRole
+  role_name: string
+  join_path: string // /staff/join/:token
+  expires_at: Timestamp
+}
+export interface StaffList {
+  members: StaffMember[]
+  invitations: StaffInvitation[]
+  max_staff: number
+  plan_allows: boolean
 }

@@ -188,6 +188,32 @@ type Shop struct {
 	ReminderHour      int32
 }
 
+type ShopMember struct {
+	ID          int64
+	ShopID      int64
+	UserID      int64
+	Role        string
+	InvitedByID *int64
+	RevokedAt   *time.Time
+	RevokedByID *int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type StaffInvitation struct {
+	ID           int64
+	ShopID       int64
+	Name         string
+	EmailAddress string
+	Role         string
+	Token        string
+	InvitedByID  int64
+	ExpiresAt    time.Time
+	AcceptedAt   *time.Time
+	RevokedAt    *time.Time
+	CreatedAt    time.Time
+}
+
 type Subscription struct {
 	ID               int64
 	ShopID           int64

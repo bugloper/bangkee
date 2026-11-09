@@ -54,13 +54,13 @@ func (s *Server) dashboard(c *echo.Context) error {
 	ctx, q, user := c.Request().Context(), s.Q, cur.User
 	monthStart := util.MonthStart(time.Now())
 
-	if user.Role == domain.RoleShopOwner {
-		shop, err := domain.ShopForOwner(ctx, q, user.ID)
+	if user.Role == domain.RoleShopOwner || user.Role == domain.RoleStaff {
+		shop, _, err := s.shopOf(ctx, user)
 		if err != nil {
 			return err
 		}
 		if shop == nil {
-			return apperr.NewRule("Your shop is missing.")
+			return apperr.NewForbidden("You are not working in a shop on Bangkee now.")
 		}
 		return s.ownerDashboard(c, *shop)
 	}
@@ -187,11 +187,6 @@ func (s *Server) createAccount(c *echo.Context) error {
 	return notice(c, created.CustomerName+" added.", M{"account_id": created.ID})
 }
 
-// ownerOf: an owner sees their own shop's accounts; a customer only their own.
-func ownerOf(user store.User, shop store.Shop) bool {
-	return user.Role == domain.RoleShopOwner && shop.OwnerID == user.ID
-}
-
 func (s *Server) visibleAccount(c *echo.Context) (store.Account, store.Shop, bool, error) {
 	cur, err := s.currentUser(c)
 	if err != nil {
@@ -206,7 +201,11 @@ func (s *Server) visibleAccount(c *echo.Context) (store.Account, store.Shop, boo
 	if err != nil {
 		return account, shop, false, err
 	}
-	isOwner := ownerOf(cur.User, shop)
+	// The shop's side (its owner and staff) sees every account; a customer only their own.
+	isOwner, err := s.shopSide(ctx, cur.User, shop)
+	if err != nil {
+		return account, shop, false, err
+	}
 	if !isOwner && (account.CustomerID == nil || *account.CustomerID != cur.User.ID) {
 		return account, shop, false, apperr.NewForbidden("That account is not yours to view.")
 	}

@@ -15,6 +15,7 @@ import {
   SmartphoneIcon,
   StoreIcon,
   TruckIcon,
+  UsersIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -38,6 +39,8 @@ import { signOut } from "@/lib/session"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_app/settings")({ component: Settings })
+
+const STAFF_TITLE: Record<string, string> = { manager: "manager", cashier: "cashier", viewer: "staff (read only)" }
 
 function Tile({ icon: Icon }: { icon: LucideIcon }) {
   return (
@@ -83,6 +86,8 @@ function Settings() {
 
   if (!me) return null
   const { user, shop, subscription, push } = me
+  // Billing, bank details, the shop's profile and settings, and the staff are the owner's alone.
+  const owns = me.permissions.includes("owner")
 
   const pushText = !push.configured
     ? "Not configured on this server yet."
@@ -98,10 +103,12 @@ function Settings() {
           <PhotoUpload current={user.photo_url} fallback={user.initial} label="a profile photo" className="size-24 text-base" onSave={api.setMyPhoto} onRemove={api.removeMyPhoto} />
           <div className="mt-3 text-xl font-semibold tracking-tight">{user.display_name}</div>
           <div className="mt-0.5 text-sm text-muted-foreground">{user.email_address ?? user.phone}</div>
-          <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">{user.platform_admin ? "Bangkee operator" : shop ? `${shop.name} · shop owner` : "Customer"}</div>
+          <div className="mt-0.5 text-[0.8125rem] text-muted-foreground">
+            {user.platform_admin ? "Bangkee operator" : shop ? `${shop.name} · ${me.shop_role === "owner" ? "shop owner" : (STAFF_TITLE[me.shop_role] ?? "staff")}` : "Customer"}
+          </div>
         </div>
 
-        {shop && !console && (
+        {shop && !console && owns && (
           <AppLink
             href="/subscription"
             className="relative flex items-center gap-3 overflow-hidden rounded-[1.25rem] bg-[linear-gradient(120deg,oklch(0.5_0.26_277),oklch(0.6_0.2_266))] p-4 text-white shadow-lg shadow-primary/25"
@@ -129,17 +136,22 @@ function Settings() {
           <Section title="Shop">
             <Panel flush>
               <Rows>
-                <Row
-                  href="/shop_profile"
-                  leading={<Tile icon={StoreIcon} />}
-                  title="Shop profile"
-                  subtitle={shop.kind ? "What customers read about your shop" : "Add your type, location and hours"}
-                  chevron
-                />
+                {owns && (
+                  <Row
+                    href="/shop_profile"
+                    leading={<Tile icon={StoreIcon} />}
+                    title="Shop profile"
+                    subtitle={shop.kind ? "What customers read about your shop" : "Add your type, location and hours"}
+                    chevron
+                  />
+                )}
                 <Row href="/menu_items" leading={<Tile icon={NotebookTextIcon} />} title="Items" subtitle={`${pluralize(info.data?.menu_items_count ?? 0, "item")} you sell`} chevron />
-                <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
+                {owns && (
+                  <Row href="/bank_accounts" leading={<Tile icon={LandmarkIcon} />} title="Bank details" subtitle={`${pluralize(info.data?.bank_accounts_count ?? 0, "account")} published`} chevron />
+                )}
                 <Row href="/suppliers" leading={<Tile icon={TruckIcon} />} title="Suppliers" subtitle="What you owe the people you buy from" chevron />
-                <Row href="/reminders" leading={<Tile icon={BellRingIcon} />} title="Reminders" subtitle="Reminding overdue customers, and when" chevron />
+                {owns && <Row href="/reminders" leading={<Tile icon={BellRingIcon} />} title="Reminders" subtitle="Reminding overdue customers, and when" chevron />}
+                {owns && <Row href="/staff" leading={<Tile icon={UsersIcon} />} title="Staff" subtitle="The people who record entries with you" chevron />}
               </Rows>
             </Panel>
           </Section>

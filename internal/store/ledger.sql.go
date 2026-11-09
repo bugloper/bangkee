@@ -589,7 +589,8 @@ func (q *Queries) TransactionForOwner(ctx context.Context, arg TransactionForOwn
 const transactionVisibleTo = `-- name: TransactionVisibleTo :one
 SELECT EXISTS(
   SELECT 1 FROM transactions t JOIN accounts a ON a.id = t.account_id JOIN shops s ON s.id = a.shop_id
-  WHERE t.id = $1 AND (s.owner_id = $2 OR a.customer_id = $2)
+  WHERE t.id = $1 AND (s.owner_id = $2 OR a.customer_id = $2
+    OR EXISTS(SELECT 1 FROM shop_members m WHERE m.shop_id = s.id AND m.user_id = $2 AND m.revoked_at IS NULL))
 )
 `
 
@@ -598,7 +599,7 @@ type TransactionVisibleToParams struct {
 	UserID int64
 }
 
-// The shop's owner and the account's customer.
+// The shop's owner, its staff, and the account's customer.
 func (q *Queries) TransactionVisibleTo(ctx context.Context, arg TransactionVisibleToParams) (bool, error) {
 	row := q.db.QueryRow(ctx, transactionVisibleTo, arg.ID, arg.UserID)
 	var exists bool

@@ -6,7 +6,7 @@ import { api } from "@/api/client"
 import { DocumentActions } from "@/components/document-actions"
 import { Loading } from "@/components/form"
 import { KV, Note, Panel } from "@/components/kit"
-import { useMe } from "@/lib/me"
+import { onShopSide, useMe } from "@/lib/me"
 import { ngultrum } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { longDate, longDateTime } from "@/lib/time"
@@ -23,7 +23,7 @@ function ReceiptScreen() {
   usePage("Receipt", data ? `/accounts/${data.receipt.account_id}/receipts` : "/dashboard", { narrow: true })
   if (!data) return <Loading />
   const r = data.receipt
-  const owner = me?.user.role === "shop_owner"
+  const owner = onShopSide(me)
   const text =
     `${r.shop_name} — receipt ${r.number}: ${ngultrum(r.amount_cents)} received from ${r.customer_name} on ${longDate(r.paid_at)}.` +
     (r.balance_after_cents != null ? ` Balance after this payment: ${ngultrum(r.balance_after_cents)}.` : "")
