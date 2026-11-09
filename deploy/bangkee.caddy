@@ -12,9 +12,10 @@
 	reverse_proxy bangkee:3000
 }
 
-# www goes to the bare domain. (The operator console is part of the app, at
-# the bare domain; admin.<domain> is no longer in DNS.)
-www.{$BANGKEE_DOMAIN} {
+# www goes to the bare domain, and so does admin, where the operator console
+# lived before it moved into the app: old links, bookmarks and installed apps
+# land on the same page there. It needs the admin DNS record (Proxied).
+www.{$BANGKEE_DOMAIN}, admin.{$BANGKEE_DOMAIN} {
 	redir https://{$BANGKEE_DOMAIN}{uri} permanent
 }
 
