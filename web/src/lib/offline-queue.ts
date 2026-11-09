@@ -5,10 +5,10 @@
 // localStorage, because they must survive a crash mid-write and hold more
 // than a page's worth — and replayed when the browser says it is online.
 //
-// Credits and payments are queued: each is small, has no file attachment, and
-// carries an idempotency key so a replay cannot enter the same thing twice.
-// A payment with a photo of the payment screen is not queued: it needs the
-// connection.
+// Credits, payments (with or without a photo of the payment screen) and
+// supplier entries are queued, each with an idempotency key so a replay cannot
+// enter the same thing twice. A photo is kept as a Blob in the same record and
+// sent as a multipart form when the entry replays.
 //
 // The service worker (src/service-worker.ts) drains the same store on a
 // Background Sync event; keep the names in step.
@@ -23,14 +23,23 @@ export const STORE = "queued_writes"
 export const SYNC_TAG = "bangkee-queued-writes"
 export const QUEUE_CHANGED = "bangkee:queue-changed"
 
+/** A file sent with the entry, as a form field. */
+export interface QueuedFile {
+  field: string
+  blob: Blob
+  name: string
+}
+
 export interface QueuedWrite {
   key: string
   method: "POST"
   url: string
   body: Record<string, unknown>
-  /** Which screen shows it while it waits: "account:12". */
+  /** Present when the entry carries a file: it replays as a multipart form. */
+  files?: QueuedFile[]
+  /** Which screen shows it while it waits: "account:12", "supplier:3". */
   queueKey: string
-  label: "credit" | "payment"
+  label: "credit" | "payment" | "purchase" | "supplier payment"
   amount: string
   description: string
   queuedAt: number
@@ -87,9 +96,11 @@ async function put(entry: QueuedWrite) {
 export async function requestBackgroundSync() {
   if (!("serviceWorker" in navigator) || !("SyncManager" in globalThis)) return false
   try {
-    const registration = (await navigator.serviceWorker.ready) as ServiceWorkerRegistration & {
-      sync: { register(tag: string): Promise<void> }
-    }
+    // ready never settles where no worker can run (a private window, a blocked
+    // worker); the entry is already saved, so give up rather than hang the form.
+    const ready = await Promise.race([navigator.serviceWorker.ready, new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))])
+    if (!ready) return false
+    const registration = ready as ServiceWorkerRegistration & { sync: { register(tag: string): Promise<void> } }
     await registration.sync.register(SYNC_TAG)
     return true
   } catch {
@@ -100,6 +111,15 @@ export async function requestBackgroundSync() {
 export async function enqueue(entry: Omit<QueuedWrite, "method" | "queuedAt">) {
   await put({ ...entry, method: "POST", queuedAt: Date.now() })
   await requestBackgroundSync()
+}
+
+/** The request body for an entry: JSON, or a form when it carries files. */
+export function requestInit(entry: Pick<QueuedWrite, "body" | "files">): { body: BodyInit; headers: Record<string, string> } {
+  if (!entry.files?.length) return { body: JSON.stringify(entry.body), headers: { "Content-Type": "application/json" } }
+  const form = new FormData()
+  for (const [name, value] of Object.entries(entry.body)) if (value !== undefined && value !== null) form.set(name, String(value))
+  for (const file of entry.files) form.set(file.field, file.blob, file.name)
+  return { body: form, headers: {} }
 }
 
 let flushing: Promise<{ sent: number; failed: number }> | null = null
@@ -117,12 +137,8 @@ export function flush(): Promise<{ sent: number; failed: number }> {
       if (entry.rejected) continue
       let response: Response
       try {
-        response = await fetch(entry.url, {
-          method: entry.method,
-          credentials: "same-origin",
-          headers: { ...API_HEADERS, "Content-Type": "application/json" },
-          body: JSON.stringify(entry.body),
-        })
+        const { body, headers } = requestInit(entry)
+        response = await fetch(entry.url, { method: entry.method, credentials: "same-origin", headers: { ...API_HEADERS, ...headers }, body })
       } catch {
         break // still offline, or the request never left — try again later
       }

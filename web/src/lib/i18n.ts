@@ -33,8 +33,7 @@ const en = {
   "nav.notifications": "Notifications",
   "nav.your_account": "Your account",
   "nav.sign_out": "Sign out",
-  "offline.banner":
-    "You are offline — showing the last data this device loaded. Credits and payments you record are kept on this phone and sent when the signal is back.",
+  "offline.banner": "You are offline — showing the last data this device loaded. Credits, payments and supplier entries you record are kept on this phone and sent when the signal is back.",
   "customer_home.title": "My credit",
   "customer_home.total_label": "Your total balance",
   "customer_home.outstanding_across": "Outstanding across %{count} shop",
@@ -69,9 +68,7 @@ const en = {
 export type TKey = keyof typeof en
 
 // Translations have to come from a Dzongkha speaker, not from a guess.
-const dz: Partial<Record<TKey, string>> = {
-  "language.name": "རྫོང་ཁ",
-}
+const dz: Partial<Record<TKey, string>> = { "language.name": "རྫོང་ཁ" }
 
 export const LOCALES: Locale[] = ["en", "dz"]
 const STORAGE_KEY = "bangkee.locale"

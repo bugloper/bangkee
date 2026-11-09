@@ -9,14 +9,13 @@ import { AmountField } from "@/components/amount"
 import { AppLink } from "@/components/app-link"
 import { ErrorBox, Field, FormActions, Loading, Segmented } from "@/components/form"
 import { DateTimeField } from "@/components/date-time-field"
-import { Money, Note, Panel } from "@/components/kit"
+import { Money, Panel } from "@/components/kit"
 import { PaymentScanner } from "@/components/payment-scanner"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
-import { useOnline } from "@/lib/online"
 import { usePage } from "@/lib/page"
 import { offerNotifications } from "@/lib/pwa"
 import { refreshAll } from "@/lib/query"
@@ -37,7 +36,6 @@ function NewPayment() {
   const [method, setMethod] = useState<string>("Mobile transfer")
   const [notes, setNotes] = useState("")
   const [occurredAt, setOccurredAt] = useState("")
-  const online = useOnline()
 
   // The photo: the camera's shot while its corners are lined up, then the
   // straightened picture that is sent.
@@ -51,19 +49,10 @@ function NewPayment() {
 
   const save = useMutation({
     mutationFn: () => {
-      if (photo) {
-        const form = new FormData()
-        form.set("amount", amount)
-        form.set("payment_method", method)
-        form.set("notes", notes)
-        const when = fromDatetimeLocal(occurredAt)
-        if (when) form.set("occurred_at", when)
-        form.set("screenshot", photo.blob, "payment.jpg")
-        return api.createPaymentWithPhoto(id, form)
-      }
       return writeOrQueue<RecordedEntry>({
         url: `/api/accounts/${id}/payments`,
         body: { amount, payment_method: method, notes, occurred_at: fromDatetimeLocal(occurredAt) },
+        files: photo ? [{ field: "screenshot", blob: photo.blob, name: "payment.jpg" }] : undefined,
         queueKey: `account:${id}`,
         label: "payment",
         amount,
@@ -101,7 +90,6 @@ function NewPayment() {
           </div>
         </AmountField>
 
-
         <Field label="How did they pay?">
           <Segmented label="How did they pay?" name="payment_method" options={PAYMENT_METHODS} value={method as (typeof PAYMENT_METHODS)[number]} onChange={setMethod} />
         </Field>
@@ -138,7 +126,6 @@ function NewPayment() {
                 if (file) setShot(file)
               }}
             />
-            {photo && !online && <Note tone="warn">The photo needs a connection. Remove it to save the payment on this phone for now.</Note>}
           </Field>
         )}
 
@@ -154,7 +141,7 @@ function NewPayment() {
           <AppLink href={`/accounts/${id}`} className={buttonVariants({ variant: "ghost", size: "xl" })}>
             Cancel
           </AppLink>
-          <Button type="submit" variant="payment" size="xl" disabled={save.isPending || (!!photo && !online)}>
+          <Button type="submit" variant="payment" size="xl" disabled={save.isPending}>
             Save payment
           </Button>
         </FormActions>

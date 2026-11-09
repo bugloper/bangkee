@@ -62,7 +62,9 @@ export function QueuedWrites({ queueKey, caption }: { queueKey: string; caption?
           const money = Number.isNaN(amount) ? entry.amount : majorAmount(amount)
           return (
             <div key={entry.key} className="flex items-center gap-3 px-4 py-3 sm:px-5">
-              <span className={cn("rounded px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase", entry.label === "payment" ? "bg-paid/10 text-paid" : "bg-owed/10 text-owed")}>{entry.label}</span>
+              <span className={cn("rounded px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase", entry.label.includes("payment") ? "bg-paid/10 text-paid" : "bg-owed/10 text-owed")}>
+                {entry.label}
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="tabular truncate text-sm font-medium">
                   {money}
@@ -95,18 +97,23 @@ export function QueueSummary() {
   if (entries.length === 0) return null
   const refused = entries.filter((entry) => entry.rejected)
   const waiting = entries.length - refused.length
-  const accounts = [...new Set(refused.map((entry) => entry.queueKey))].filter((key) => key.startsWith("account:"))
+  const screens = [...new Set(refused.map((entry) => entry.queueKey))].filter((key) => key.startsWith("account:") || key.startsWith("supplier:"))
   return (
-    <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[1.25rem] border px-4 py-3 text-sm sm:px-5", refused.length > 0 ? "border-owed/40 bg-owed/5" : "border-warn/40 bg-warn/5")}>
+    <div
+      className={cn("flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[1.25rem] border px-4 py-3 text-sm sm:px-5", refused.length > 0 ? "border-owed/40 bg-owed/5" : "border-warn/40 bg-warn/5")}
+    >
       <CloudOffIcon className={cn("size-4 shrink-0", refused.length > 0 ? "text-owed" : "text-warn")} />
       <span className="min-w-0 flex-1">
         {waiting > 0 && `${waiting} ${waiting === 1 ? "entry is" : "entries are"} on this phone, waiting to send. `}
         {refused.length > 0 && `${refused.length} ${refused.length === 1 ? "was" : "were"} refused and need re-entering: `}
-        {accounts.map((key, i) => (
+        {screens.map((key, i) => (
           <span key={key}>
             {i > 0 && ", "}
-            <AppLink href={`/accounts/${key.slice("account:".length)}`} className="font-medium text-primary hover:underline">
-              open customer
+            <AppLink
+              href={key.startsWith("supplier:") ? `/suppliers/${key.slice("supplier:".length)}` : `/accounts/${key.slice("account:".length)}`}
+              className="font-medium text-primary hover:underline"
+            >
+              {key.startsWith("supplier:") ? "open supplier" : "open customer"}
             </AppLink>
           </span>
         ))}

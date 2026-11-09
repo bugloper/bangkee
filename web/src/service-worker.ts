@@ -40,8 +40,7 @@ registerRoute(
 // Screenshots are left to the browser's own cache; writes always go to the
 // network (and, when they cannot, to the queue below).
 registerRoute(
-  ({ url, request }) =>
-    request.method === "GET" && url.origin === sw.location.origin && url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/attachments/"),
+  ({ url, request }) => request.method === "GET" && url.origin === sw.location.origin && url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/attachments/"),
   new NetworkFirst({ cacheName: "bangkee-api", networkTimeoutSeconds: 6 }),
 )
 
@@ -61,9 +60,19 @@ interface QueuedWrite {
   key: string
   method: string
   url: string
-  body: unknown
+  body: Record<string, unknown>
+  files?: { field: string; blob: Blob; name: string }[]
   queuedAt: number
   rejected?: number
+}
+
+// As requestInit in src/lib/offline-queue.ts: JSON, or a form when the entry carries a photo.
+function requestBody(entry: QueuedWrite): { body: BodyInit; headers: Record<string, string> } {
+  if (!entry.files?.length) return { body: JSON.stringify(entry.body), headers: { "Content-Type": "application/json" } }
+  const form = new FormData()
+  for (const [name, value] of Object.entries(entry.body)) if (value !== undefined && value !== null) form.set(name, String(value))
+  for (const file of entry.files) form.set(file.field, file.blob, file.name)
+  return { body: form, headers: {} }
 }
 
 function queueDatabase(): Promise<IDBDatabase> {
@@ -103,12 +112,8 @@ async function drainQueue() {
     if (entry.rejected) continue // already refused; the owner has to look at it
 
     // A network error rejects, so the browser retries the sync later.
-    const response = await fetch(entry.url, {
-      method: entry.method,
-      credentials: "same-origin",
-      headers: { "X-Requested-With": "bangkee", Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify(entry.body),
-    })
+    const { body, headers } = requestBody(entry)
+    const response = await fetch(entry.url, { method: entry.method, credentials: "same-origin", headers: { "X-Requested-With": "bangkee", Accept: "application/json", ...headers }, body })
 
     if (response.ok) {
       await writeEntry(db, (store) => store.delete(entry.key))
@@ -182,9 +187,7 @@ sw.addEventListener("push", (event) => {
 sw.addEventListener("notificationclick", (event) => {
   event.notification.close()
   const { id, path = "/" } = (event.notification.data ?? {}) as { id?: number; path?: string }
-  const read = id
-    ? fetch(`/api/notifications/${id}/read`, { method: "POST", credentials: "same-origin", headers: { "X-Requested-With": "bangkee" } }).catch(() => undefined)
-    : Promise.resolve()
+  const read = id ? fetch(`/api/notifications/${id}/read`, { method: "POST", credentials: "same-origin", headers: { "X-Requested-With": "bangkee" } }).catch(() => undefined) : Promise.resolve()
   event.waitUntil(
     read.then(async () => {
       const open = (await windows()).find((client) => new URL(client.url).origin === sw.location.origin)

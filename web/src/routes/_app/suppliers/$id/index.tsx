@@ -4,12 +4,13 @@ import { ArrowDownLeftIcon, PackagePlusIcon, PrinterIcon, ScrollTextIcon, Strike
 import { useState } from "react"
 
 import { api } from "@/api/client"
-import type { SupplierEntry } from "@/api/types"
+import type { Notice, SupplierEntry } from "@/api/types"
 import { AppLink } from "@/components/app-link"
 import { ChoiceField } from "@/components/choice-field"
 import { DateTimeField } from "@/components/date-time-field"
 import { ErrorBox, Field, FormActions, Loading } from "@/components/form"
 import { Empty, Initial, Money, Panel } from "@/components/kit"
+import { QueuedWrites } from "@/components/queued-writes"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { confirm } from "@/lib/confirm"
@@ -23,6 +24,7 @@ import { usePage } from "@/lib/page"
 import { refreshAll } from "@/lib/query"
 import { dateTime, fromDatetimeLocal } from "@/lib/time"
 import { cn } from "@/lib/utils"
+import { writeOrQueue } from "@/lib/write"
 
 export const Route = createFileRoute("/_app/suppliers/$id/")({ component: SupplierScreen })
 
@@ -79,6 +81,8 @@ function SupplierScreen() {
         {form && <EntryForm supplierId={id} kind={form} onDone={() => setForm(null)} />}
       </Panel>
 
+      <QueuedWrites queueKey={`supplier:${id}`} caption="These are on this phone only — they reach the supplier book once you are back online." />
+
       <Panel flush title="History">
         {ledger.length > 0 ? (
           <div className="divide-y">
@@ -120,10 +124,22 @@ function EntryForm({ supplierId, kind, onDone }: { supplierId: number; kind: "pu
   // One key per form: a double tap, or a retry after a dropped connection, records it once.
   const [key] = useState(newKey)
   const record = useMutation({
-    mutationFn: () => api.recordSupplierEntry(supplierId, kind, { amount, description, payment_method: method, occurred_at: fromDatetimeLocal(when), idempotency_key: key }),
+    // With no signal it is kept on this phone and sent later, like a customer's credit.
+    mutationFn: () =>
+      writeOrQueue<Notice & { duplicate: boolean }>({
+        url: `/api/suppliers/${supplierId}/${kind}`,
+        body: { amount, description, payment_method: method, occurred_at: fromDatetimeLocal(when), idempotency_key: key },
+        queueKey: `supplier:${supplierId}`,
+        label: purchase ? "purchase" : "supplier payment",
+        amount,
+        description: purchase ? description : method,
+        dated: true,
+      }),
     onSuccess: async (result) => {
-      flashNotice(result.notice)
-      await refreshAll()
+      if (result) {
+        flashNotice(result.notice)
+        await refreshAll()
+      }
       onDone()
     },
   })
