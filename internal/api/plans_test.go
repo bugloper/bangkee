@@ -22,8 +22,8 @@ func TestPayingForAPlanMovesTheShopOntoIt(t *testing.T) {
 	pricing := owner.get("/api/public/pricing")
 	equal(t, pricing.len("plans"), 3, "three plans")
 	equal(t, pricing.str("plans.1.key"), "pro", "Pro")
-	equal(t, pricing.num("plans.1.annual_price_cents"), int64(240_000), "Pro: Nu 200 a month, billed for a year")
-	equal(t, pricing.num("plans.2.annual_price_cents"), int64(360_000), "Business: Nu 300 a month, billed for a year")
+	equal(t, pricing.num("plans.1.annual_price_cents"), int64(238_800), "Pro: Nu 199 a month, billed for a year")
+	equal(t, pricing.num("plans.2.annual_price_cents"), int64(358_800), "Business: Nu 299 a month, billed for a year")
 
 	// End the trial on Basic: Pro features are refused.
 	_, _ = a.DB.Exec(ctx, "UPDATE subscriptions SET status = 1, plan = 'basic', current_period_end = now() + interval '10 days' WHERE shop_id = (SELECT id FROM shops WHERE name = 'Karma''s Shop')")
@@ -41,7 +41,7 @@ func TestPayingForAPlanMovesTheShopOntoIt(t *testing.T) {
 	equal(t, console.post(fmt.Sprintf("/api/admin/subscription_payments/%d/approve", id), nil).Status, 200, "approved")
 	me := owner.get("/api/me")
 	equal(t, me.str("subscription.plan"), "pro", "now on Pro")
-	equal(t, me.num("subscription.price_cents"), int64(20_000), "at Pro's price")
+	equal(t, me.num("subscription.price_cents"), int64(19_900), "at Pro's price")
 	equal(t, me.len("subscription.features"), 5, "Pro's features")
 
 	// Renewing without naming a plan keeps Pro.

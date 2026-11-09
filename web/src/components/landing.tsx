@@ -159,7 +159,7 @@ function Bento() {
             <div className="text-sm font-medium text-white/75">Free for {pricing?.trial_months ?? 3} months</div>
             <div className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">Every feature, from day one</div>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-white/80">
-              Then from {pricing ? ngultrum(pricing.monthly_price_cents) : "Nu. 150"} a month, paid once a year. Your customers never pay.
+              Then from {pricing ? ngultrum(pricing.monthly_price_cents) : "Nu. 149"} a month, paid once a year. Your customers never pay.
             </p>
           </div>
           <div className="mt-8 flex flex-wrap items-center gap-3">

@@ -4,8 +4,9 @@ The shared credit book for shops in Bhutan. The owner records
 credits and payments, the customer sees their own balance. A credit can be
 picked from the shop's items; a payment made by mBoB or mPay can carry a photo
 of the customer's payment screen, straightened like a scanned document.
-Customers browse shops and their items. One subscription plan (Nu. 150 a
-month, billed annually) is reviewed by the Bangkee operator.
+Customers browse shops and their items. Three plans — Basic, Pro and Business
+at Nu. 149, 199 and 299 a month, billed annually — are paid by bank transfer
+and reviewed by the Bangkee operator.
 
 | | |
 |---|---|
@@ -128,8 +129,8 @@ After changing a query in `db/queries/`, run `sqlc generate`. A new migration:
 Uploads go to `storage/` on disk, or to S3 with `ACTIVE_STORAGE_SERVICE=s3`
 and `S3_*`. Optional: `VAPID_*` for Web Push (a key pair:
 `npx web-push generate-vapid-keys`), `SMTP_*` and `BANGKEE_MAIL_FROM` for email,
-`BANGKEE_HOST` for links in email, `BANGKEE_PRICE_CENTS` for the monthly
-price (Nu. 300 by default), and `BANGKEE_BANK_NAME`, `BANGKEE_ACCOUNT_NAME`,
+`BANGKEE_HOST` for links in email, `BANGKEE_PRICE_CENTS` for Basic's monthly
+price (Nu. 149 by default), and `BANGKEE_BANK_NAME`, `BANGKEE_ACCOUNT_NAME`,
 `BANGKEE_ACCOUNT_NUMBER`, `BANGKEE_BRANCH` for where shops
 pay Bangkee. `SECRET_KEY_BASE` signs the short-lived invite cookie
 and password reset links.

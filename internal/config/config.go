@@ -79,8 +79,8 @@ func (o OperatorBilling) AnnualPriceCents() int64 { return 12 * o.PriceCents }
 
 // The higher plans' monthly prices. Basic is PriceCents.
 const (
-	ProPriceCents      = 20_000 // Nu. 200 a month
-	BusinessPriceCents = 30_000 // Nu. 300 a month
+	ProPriceCents      = 19_900 // Nu. 199 a month
+	BusinessPriceCents = 29_900 // Nu. 299 a month
 )
 
 // PlanPriceCents is a plan's monthly price for a shop choosing it now.
@@ -134,7 +134,7 @@ func FromEnv() (Config, error) {
 			AccountName:   or("BANGKEE_ACCOUNT_NAME", "Bangkee"),
 			AccountNumber: or("BANGKEE_ACCOUNT_NUMBER", "1010 2030 4050"),
 			Branch:        or("BANGKEE_BRANCH", "Thimphu Main"),
-			PriceCents:    15_000, // Nu. 150 a month
+			PriceCents:    14_900, // Nu. 149 a month
 		},
 	}
 	if cfg.DatabaseURL == "" {
