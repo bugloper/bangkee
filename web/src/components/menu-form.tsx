@@ -13,6 +13,7 @@ import { groupByCategory, UNGROUPED } from "@/lib/catalog"
 import { validationErrors } from "@/lib/errors"
 import { flashAlert, flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
+import { majorAmount } from "@/lib/money"
 import { refreshAll } from "@/lib/query"
 
 /** One of the shop's items: picked from when recording a credit, listed for customers. */
@@ -26,13 +27,19 @@ export function MenuForm({ item, defaultCategory }: { item?: MenuItem; defaultCa
     .filter((c) => c !== UNGROUPED)
   const [price, setPrice] = useState(item?.price ?? "")
   const [available, setAvailable] = useState(item?.available ?? true)
+  const [cost, setCost] = useState(item?.cost ?? "")
+  // Counting stock: once counted, the count moves by restocking and recounting, not here.
+  const [count, setCount] = useState(item ? item.stock !== null : false)
+  const [stock, setStock] = useState("")
+  const [lowAt, setLowAt] = useState(item?.low_stock_at != null ? String(item.low_stock_at) : "")
+  const counting = item?.stock != null
   // A photo is optional: a new one chosen, or the current one taken off.
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [photoRemoved, setPhotoRemoved] = useState(false)
 
   const save = useMutation({
     mutationFn: async () => {
-      const input = { name, category, price, available, position: item?.position }
+      const input = { name, category, price, available, position: item?.position, counting: { count, stock, low_stock_at: lowAt, cost } }
       const result = item ? await api.updateMenuItem(item.id, input) : await api.createMenuItem(input)
       if (photo) {
         const form = new FormData()
@@ -62,6 +69,8 @@ export function MenuForm({ item, defaultCategory }: { item?: MenuItem; defaultCa
         setName("")
         setPrice("")
         setAvailable(true)
+        setCost("")
+        setStock("")
         setPhoto(null)
         setPhotoRemoved(false)
       }
@@ -101,6 +110,9 @@ export function MenuForm({ item, defaultCategory }: { item?: MenuItem; defaultCa
           <CategoryPicker id="item_category" value={category} onChange={setCategory} yours={categories} />
         </Field>
       </div>
+      <Field label="Buying price (Nu.)" hint={<Margin price={price} cost={cost} />} htmlFor="item_cost">
+        <Input id="item_cost" inputMode="decimal" placeholder="Optional — what you pay for one" className="tabular" value={cost} onChange={(e) => setCost(e.target.value)} />
+      </Field>
       <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-3.5 py-3">
         <span className="grid gap-0.5">
           <span className="text-sm font-medium">In stock</span>
@@ -108,9 +120,48 @@ export function MenuForm({ item, defaultCategory }: { item?: MenuItem; defaultCa
         </span>
         <Switch checked={available} onCheckedChange={setAvailable} />
       </label>
+      <div className="grid gap-3 rounded-xl border px-3.5 py-3">
+        <label className="flex cursor-pointer items-center justify-between gap-3">
+          <span className="grid gap-0.5">
+            <span className="text-sm font-medium">Count stock</span>
+            <span className="text-xs text-muted-foreground">Credits and sales take from the count, and you hear when it runs low. Counted in whole units.</span>
+          </span>
+          <Switch checked={count} onCheckedChange={setCount} />
+        </label>
+        {count && (
+          <div className="grid grid-cols-2 gap-3">
+            {counting ? (
+              <div className="grid gap-1 text-sm">
+                <span className="font-medium">On the shelf</span>
+                <span className="tabular text-muted-foreground">{item?.stock} · add stock or correct it below</span>
+              </div>
+            ) : (
+              <Field label="In stock now" htmlFor="item_stock">
+                <Input id="item_stock" required inputMode="numeric" placeholder="0" className="tabular" value={stock} onChange={(e) => setStock(e.target.value)} />
+              </Field>
+            )}
+            <Field label="Warn me at" hint="Optional" htmlFor="item_low">
+              <Input id="item_low" inputMode="numeric" placeholder="e.g. 5" className="tabular" value={lowAt} onChange={(e) => setLowAt(e.target.value)} />
+            </Field>
+          </div>
+        )}
+      </div>
       <Button type="submit" size="lg" disabled={save.isPending}>
         {item ? "Save changes" : "Add item"}
       </Button>
     </form>
+  )
+}
+
+/** What one sells for over what it costs, once both are known. */
+function Margin({ price, cost }: { price: string; cost: string }) {
+  const sell = parseFloat(price)
+  const buy = parseFloat(cost)
+  if (!cost.trim() || !(sell > 0) || !(buy >= 0)) return "Optional"
+  const margin = sell - buy
+  return (
+    <span className={margin < 0 ? "text-owed" : undefined}>
+      Margin {majorAmount(margin)} ({Math.round((margin / sell) * 100)}%)
+    </span>
   )
 }

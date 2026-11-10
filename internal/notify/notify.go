@@ -249,6 +249,20 @@ func (n *Notifier) RemindersDigest(ctx context.Context, shopID, ownerID int64, s
 	n.toTeam(ctx, shopID, ownerID, domain.PermManage, note{kind: "overdue", title: title, body: body, path: "/accounts?filter=overdue"})
 }
 
+// LowStock tells the owner and its managers that items are running low or
+// have run out, after a credit, sale or recount took them there.
+func (n *Notifier) LowStock(ctx context.Context, shopID, ownerID int64, items []domain.LowStock) {
+	for _, item := range items {
+		title := item.Name + " is running low"
+		body := fmt.Sprintf("Only %d left. Add stock when it comes in.", item.Left)
+		if item.Left <= 0 {
+			title = item.Name + " is out of stock"
+			body = "Customers now see it as out of stock. Add stock when it comes in."
+		}
+		n.toTeam(ctx, shopID, ownerID, domain.PermManage, note{kind: "stock", title: title, body: body, path: fmt.Sprintf("/menu_items/%d/edit", item.ItemID)})
+	}
+}
+
 // SubscriptionPaymentSubmitted is §17: every platform admin hears about it.
 func (n *Notifier) SubscriptionPaymentSubmitted(ctx context.Context, shopName string, amountCents int64, months int32) {
 	admins, err := n.q.PlatformAdminIDs(ctx)

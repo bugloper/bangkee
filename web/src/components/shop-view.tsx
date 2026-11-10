@@ -141,6 +141,7 @@ function Group({ group }: { group: MenuGroup }) {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="tabular text-sm font-semibold">{ngultrum(item.price_cents)}</span>
                   {!item.available && <Badge variant="muted">Out of stock</Badge>}
+                  {item.available && item.left !== null && <Badge variant="owed">Only {item.left} left</Badge>}
                 </div>
               </div>
             </div>
@@ -153,6 +154,7 @@ function Group({ group }: { group: MenuGroup }) {
               <div key={item.id} className="flex items-center gap-3 px-4 py-3 sm:px-5">
                 <div className={cn("min-w-0 flex-1 text-sm font-medium", !item.available && "text-muted-foreground")}>{item.name}</div>
                 {!item.available && <Badge variant="muted">Out of stock</Badge>}
+                {item.available && item.left !== null && <Badge variant="owed">Only {item.left} left</Badge>}
                 <div className={cn("tabular shrink-0 text-sm font-semibold", !item.available && "text-muted-foreground")}>{ngultrum(item.price_cents)}</div>
               </div>
             ))}

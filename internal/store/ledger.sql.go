@@ -129,7 +129,7 @@ func (q *Queries) DailyTotals(ctx context.Context, arg DailyTotalsParams) ([]Dai
 }
 
 const insertLineItem = `-- name: InsertLineItem :exec
-INSERT INTO line_items (transaction_id, name, quantity, unit_price_cents) VALUES ($1, $2, $3, $4)
+INSERT INTO line_items (transaction_id, name, quantity, unit_price_cents, menu_item_id) VALUES ($1, $2, $3, $4, $5)
 `
 
 type InsertLineItemParams struct {
@@ -137,6 +137,7 @@ type InsertLineItemParams struct {
 	Name           string
 	Quantity       decimal.Decimal
 	UnitPriceCents int64
+	MenuItemID     *int64
 }
 
 func (q *Queries) InsertLineItem(ctx context.Context, arg InsertLineItemParams) error {
@@ -145,6 +146,7 @@ func (q *Queries) InsertLineItem(ctx context.Context, arg InsertLineItemParams) 
 		arg.Name,
 		arg.Quantity,
 		arg.UnitPriceCents,
+		arg.MenuItemID,
 	)
 	return err
 }
@@ -190,7 +192,7 @@ func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionPa
 }
 
 const lineItemsFor = `-- name: LineItemsFor :many
-SELECT id, transaction_id, name, quantity, unit_price_cents, created_at, updated_at FROM line_items
+SELECT id, transaction_id, name, quantity, unit_price_cents, created_at, updated_at, menu_item_id FROM line_items
 WHERE transaction_id = ANY($1::bigint[]) ORDER BY id
 `
 
@@ -211,6 +213,7 @@ func (q *Queries) LineItemsFor(ctx context.Context, ids []int64) ([]LineItem, er
 			&i.UnitPriceCents,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.MenuItemID,
 		); err != nil {
 			return nil, err
 		}

@@ -165,6 +165,16 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 		return out
 	}
 
+	// Counted items at their warning level or out, for the shop to restock.
+	lowRows, err := q.LowStockItems(ctx, shop.ID)
+	if err != nil {
+		return err
+	}
+	low := make([]M, 0, len(lowRows))
+	for _, item := range lowRows {
+		low = append(low, M{"id": item.ID, "name": item.Name, "stock": item.Stock, "low_stock_at": item.LowStockAt})
+	}
+
 	return c.JSON(http.StatusOK, M{
 		"kind": "owner", "shop": domain.ShopView(shop),
 		"total_outstanding_cents": totals.outstanding, "owing_count": totals.owingCount,
@@ -174,6 +184,6 @@ func (s *Server) ownerDashboard(c *echo.Context, shop store.Shop) error {
 		"credit_today_cents": todayRow.CreditCents, "payments_today_cents": todayRow.PaymentCents,
 		"sales_today_cents": salesByDay[today.Format("2006-01-02")], "sales_month_cents": salesMonthCents,
 		"repaid_month_cents": repaid, "trend": trend, "recent_transactions": recent, "disputed": disputed,
-		"late_installments": late,
+		"late_installments": late, "low_stock": low,
 	})
 }

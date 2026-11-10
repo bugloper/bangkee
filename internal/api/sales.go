@@ -40,11 +40,12 @@ func (s *Server) recordSale(c *echo.Context) error {
 	ctx := c.Request().Context()
 	var id, amount int64
 	var duplicate bool
+	var low []domain.LowStock
 	err = s.tx(ctx, func(q *store.Queries) error {
 		if err := s.requireWritable(ctx, q, o.Shop.ID); err != nil {
 			return err
 		}
-		id, amount, duplicate, err = domain.RecordSale(ctx, q, o.Shop.ID, o.User.ID, in, time.Now())
+		id, amount, duplicate, low, err = domain.RecordSale(ctx, q, o.Shop.ID, o.User.ID, in, time.Now())
 		return err
 	})
 	if err != nil {
@@ -53,6 +54,7 @@ func (s *Server) recordSale(c *echo.Context) error {
 	if duplicate {
 		return notice(c, "That sale was already recorded.", M{"duplicate": true})
 	}
+	s.Notify.LowStock(ctx, o.Shop.ID, o.Shop.OwnerID, low)
 	return notice(c, "Sale of "+money.Ngultrum(amount, false)+" recorded.", M{"sale_id": id, "duplicate": false})
 }
 

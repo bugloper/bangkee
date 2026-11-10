@@ -7,6 +7,7 @@ package store
 
 import (
 	"context"
+	"time"
 )
 
 const createMenuItem = `-- name: CreateMenuItem :one
@@ -45,8 +46,110 @@ func (q *Queries) DeleteMenuItem(ctx context.Context, id int64) error {
 	return err
 }
 
+const insertStockMovement = `-- name: InsertStockMovement :exec
+INSERT INTO stock_movements (menu_item_id, change, stock_after, reason, unit_cost_cents, transaction_id, sale_id, notes, created_by_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type InsertStockMovementParams struct {
+	MenuItemID    int64
+	Change        int32
+	StockAfter    int32
+	Reason        string
+	UnitCostCents *int64
+	TransactionID *int64
+	SaleID        *int64
+	Notes         *string
+	CreatedByID   int64
+}
+
+func (q *Queries) InsertStockMovement(ctx context.Context, arg InsertStockMovementParams) error {
+	_, err := q.db.Exec(ctx, insertStockMovement,
+		arg.MenuItemID,
+		arg.Change,
+		arg.StockAfter,
+		arg.Reason,
+		arg.UnitCostCents,
+		arg.TransactionID,
+		arg.SaleID,
+		arg.Notes,
+		arg.CreatedByID,
+	)
+	return err
+}
+
+const lowStockItems = `-- name: LowStockItems :many
+SELECT id, shop_id, name, category, price_cents, available, position, created_at, updated_at, stock, low_stock_at, cost_cents FROM menu_items
+WHERE shop_id = $1 AND stock IS NOT NULL AND stock <= COALESCE(low_stock_at, 0)
+ORDER BY stock, name
+`
+
+// Counted items at or under their warning level, or out.
+func (q *Queries) LowStockItems(ctx context.Context, shopID int64) ([]MenuItem, error) {
+	rows, err := q.db.Query(ctx, lowStockItems, shopID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MenuItem
+	for rows.Next() {
+		var i MenuItem
+		if err := rows.Scan(
+			&i.ID,
+			&i.ShopID,
+			&i.Name,
+			&i.Category,
+			&i.PriceCents,
+			&i.Available,
+			&i.Position,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Stock,
+			&i.LowStockAt,
+			&i.CostCents,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const menuItemForUpdate = `-- name: MenuItemForUpdate :one
+SELECT id, shop_id, name, category, price_cents, available, position, created_at, updated_at, stock, low_stock_at, cost_cents FROM menu_items WHERE shop_id = $1 AND id = $2 FOR UPDATE
+`
+
+type MenuItemForUpdateParams struct {
+	ShopID int64
+	ID     int64
+}
+
+// An item locked while its count changes, so two changes at once both land.
+func (q *Queries) MenuItemForUpdate(ctx context.Context, arg MenuItemForUpdateParams) (MenuItem, error) {
+	row := q.db.QueryRow(ctx, menuItemForUpdate, arg.ShopID, arg.ID)
+	var i MenuItem
+	err := row.Scan(
+		&i.ID,
+		&i.ShopID,
+		&i.Name,
+		&i.Category,
+		&i.PriceCents,
+		&i.Available,
+		&i.Position,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Stock,
+		&i.LowStockAt,
+		&i.CostCents,
+	)
+	return i, err
+}
+
 const menuItemInShop = `-- name: MenuItemInShop :one
-SELECT id, shop_id, name, category, price_cents, available, position, created_at, updated_at FROM menu_items WHERE shop_id = $1 AND id = $2
+SELECT id, shop_id, name, category, price_cents, available, position, created_at, updated_at, stock, low_stock_at, cost_cents FROM menu_items WHERE shop_id = $1 AND id = $2
 `
 
 type MenuItemInShopParams struct {
@@ -67,6 +170,9 @@ func (q *Queries) MenuItemInShop(ctx context.Context, arg MenuItemInShopParams) 
 		&i.Position,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Stock,
+		&i.LowStockAt,
+		&i.CostCents,
 	)
 	return i, err
 }
@@ -92,7 +198,7 @@ func (q *Queries) MenuItemNameTaken(ctx context.Context, arg MenuItemNameTakenPa
 }
 
 const menuItemsOrdered = `-- name: MenuItemsOrdered :many
-SELECT id, shop_id, name, category, price_cents, available, position, created_at, updated_at FROM menu_items WHERE shop_id = $1 AND (available OR NOT $2::boolean)
+SELECT id, shop_id, name, category, price_cents, available, position, created_at, updated_at, stock, low_stock_at, cost_cents FROM menu_items WHERE shop_id = $1 AND (available OR NOT $2::boolean)
 ORDER BY position, name
 `
 
@@ -120,6 +226,9 @@ func (q *Queries) MenuItemsOrdered(ctx context.Context, arg MenuItemsOrderedPara
 			&i.Position,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Stock,
+			&i.LowStockAt,
+			&i.CostCents,
 		); err != nil {
 			return nil, err
 		}
@@ -129,6 +238,37 @@ func (q *Queries) MenuItemsOrdered(ctx context.Context, arg MenuItemsOrderedPara
 		return nil, err
 	}
 	return items, nil
+}
+
+const moveStock = `-- name: MoveStock :one
+UPDATE menu_items SET stock = stock + $2::integer, updated_at = now()
+WHERE id = $1 AND stock IS NOT NULL
+RETURNING id, name, stock::integer AS stock, low_stock_at
+`
+
+type MoveStockParams struct {
+	ID     int64
+	Change int32
+}
+
+type MoveStockRow struct {
+	ID         int64
+	Name       string
+	Stock      int32
+	LowStockAt *int32
+}
+
+// Changes a counted item's count. No row when the item is not counted.
+func (q *Queries) MoveStock(ctx context.Context, arg MoveStockParams) (MoveStockRow, error) {
+	row := q.db.QueryRow(ctx, moveStock, arg.ID, arg.Change)
+	var i MoveStockRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Stock,
+		&i.LowStockAt,
+	)
+	return i, err
 }
 
 const nextMenuPosition = `-- name: NextMenuPosition :one
@@ -141,6 +281,158 @@ func (q *Queries) NextMenuPosition(ctx context.Context, shopID int64) (int32, er
 	var column_1 int32
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const setItemCost = `-- name: SetItemCost :exec
+UPDATE menu_items SET cost_cents = $2, updated_at = now() WHERE id = $1
+`
+
+type SetItemCostParams struct {
+	ID        int64
+	CostCents *int64
+}
+
+func (q *Queries) SetItemCost(ctx context.Context, arg SetItemCostParams) error {
+	_, err := q.db.Exec(ctx, setItemCost, arg.ID, arg.CostCents)
+	return err
+}
+
+const setStockSettings = `-- name: SetStockSettings :exec
+UPDATE menu_items SET stock = $2, low_stock_at = $3, cost_cents = $4, updated_at = now() WHERE id = $1
+`
+
+type SetStockSettingsParams struct {
+	ID         int64
+	Stock      *int32
+	LowStockAt *int32
+	CostCents  *int64
+}
+
+// Whether the item is counted and how: stock NULL stops counting it.
+func (q *Queries) SetStockSettings(ctx context.Context, arg SetStockSettingsParams) error {
+	_, err := q.db.Exec(ctx, setStockSettings,
+		arg.ID,
+		arg.Stock,
+		arg.LowStockAt,
+		arg.CostCents,
+	)
+	return err
+}
+
+const stockMovements = `-- name: StockMovements :many
+SELECT m.id, m.menu_item_id, m.change, m.stock_after, m.reason, m.unit_cost_cents, m.transaction_id, m.sale_id, m.notes, m.created_by_id, m.created_at, u.name AS by_name FROM stock_movements m JOIN users u ON u.id = m.created_by_id
+WHERE m.menu_item_id = $1 ORDER BY m.created_at DESC, m.id DESC LIMIT 100
+`
+
+type StockMovementsRow struct {
+	ID            int64
+	MenuItemID    int64
+	Change        int32
+	StockAfter    int32
+	Reason        string
+	UnitCostCents *int64
+	TransactionID *int64
+	SaleID        *int64
+	Notes         *string
+	CreatedByID   int64
+	CreatedAt     time.Time
+	ByName        string
+}
+
+// An item's history, newest first.
+func (q *Queries) StockMovements(ctx context.Context, menuItemID int64) ([]StockMovementsRow, error) {
+	rows, err := q.db.Query(ctx, stockMovements, menuItemID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StockMovementsRow
+	for rows.Next() {
+		var i StockMovementsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.MenuItemID,
+			&i.Change,
+			&i.StockAfter,
+			&i.Reason,
+			&i.UnitCostCents,
+			&i.TransactionID,
+			&i.SaleID,
+			&i.Notes,
+			&i.CreatedByID,
+			&i.CreatedAt,
+			&i.ByName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const stockTakenByEntry = `-- name: StockTakenByEntry :many
+SELECT menu_item_id, (-SUM(change))::integer AS taken FROM stock_movements
+WHERE transaction_id = $1 AND reason = 'credit' GROUP BY menu_item_id
+`
+
+type StockTakenByEntryRow struct {
+	MenuItemID int64
+	Taken      int32
+}
+
+// What recording a credit took off each item's count, to put back when it is crossed out.
+func (q *Queries) StockTakenByEntry(ctx context.Context, transactionID *int64) ([]StockTakenByEntryRow, error) {
+	rows, err := q.db.Query(ctx, stockTakenByEntry, transactionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StockTakenByEntryRow
+	for rows.Next() {
+		var i StockTakenByEntryRow
+		if err := rows.Scan(&i.MenuItemID, &i.Taken); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const stockTakenBySale = `-- name: StockTakenBySale :many
+SELECT menu_item_id, (-SUM(change))::integer AS taken FROM stock_movements
+WHERE sale_id = $1 AND reason = 'sale' GROUP BY menu_item_id
+`
+
+type StockTakenBySaleRow struct {
+	MenuItemID int64
+	Taken      int32
+}
+
+// What recording a sale took off each item's count, to put back when it is crossed out.
+func (q *Queries) StockTakenBySale(ctx context.Context, saleID *int64) ([]StockTakenBySaleRow, error) {
+	rows, err := q.db.Query(ctx, stockTakenBySale, saleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StockTakenBySaleRow
+	for rows.Next() {
+		var i StockTakenBySaleRow
+		if err := rows.Scan(&i.MenuItemID, &i.Taken); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateMenuItem = `-- name: UpdateMenuItem :exec

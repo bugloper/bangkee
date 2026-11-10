@@ -108,6 +108,7 @@ type LineItem struct {
 	UnitPriceCents int64
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+	MenuItemID     *int64
 }
 
 type MenuItem struct {
@@ -120,6 +121,9 @@ type MenuItem struct {
 	Position   int32
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
+	Stock      *int32
+	LowStockAt *int32
+	CostCents  *int64
 }
 
 type Notification struct {
@@ -191,6 +195,7 @@ type SaleItem struct {
 	Name           string
 	Quantity       decimal.Decimal
 	UnitPriceCents int64
+	MenuItemID     *int64
 }
 
 type Session struct {
@@ -246,6 +251,20 @@ type StaffInvitation struct {
 	AcceptedAt   *time.Time
 	RevokedAt    *time.Time
 	CreatedAt    time.Time
+}
+
+type StockMovement struct {
+	ID            int64
+	MenuItemID    int64
+	Change        int32
+	StockAfter    int32
+	Reason        string
+	UnitCostCents *int64
+	TransactionID *int64
+	SaleID        *int64
+	Notes         *string
+	CreatedByID   int64
+	CreatedAt     time.Time
 }
 
 type Subscription struct {

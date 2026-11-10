@@ -38,7 +38,7 @@ func (s *Server) menuItems(c *echo.Context) error {
 	for _, item := range items {
 		views = append(views, domain.MenuItemView(item, images))
 	}
-	return c.JSON(http.StatusOK, M{"items": views})
+	return c.JSON(http.StatusOK, M{"items": views, "stock_value_cents": domain.StockValueCents(items)})
 }
 
 func (s *Server) menuItem(c *echo.Context) error {
@@ -70,6 +70,7 @@ func (s *Server) saveMenuItem(c *echo.Context, id int64, suffix string) error {
 	if err := decode(c, &in); err != nil {
 		return err
 	}
+	in.By = o.User.ID
 	ctx := c.Request().Context()
 	var name string
 	var savedID int64
@@ -127,6 +128,80 @@ func (s *Server) destroyMenuItem(c *echo.Context) error {
 	}
 	s.deleteFiles(ctx, gone)
 	return notice(c, name+" removed from your items.", nil)
+}
+
+// ----------------------------------------------------------------- stock
+
+// itemStock is an item's stock history, newest first.
+func (s *Server) itemStock(c *echo.Context) error {
+	o, err := s.owner(c)
+	if err != nil {
+		return err
+	}
+	ctx := c.Request().Context()
+	item, err := s.Q.MenuItemInShop(ctx, store.MenuItemInShopParams{ShopID: o.Shop.ID, ID: paramID(c)})
+	if err != nil {
+		return err
+	}
+	history, err := domain.StockHistory(ctx, s.Q, item.ID)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, M{"history": history})
+}
+
+// restockItem adds what came in, at its buying price.
+func (s *Server) restockItem(c *echo.Context) error {
+	o, err := s.owner(c)
+	if err != nil {
+		return err
+	}
+	var in domain.RestockInput
+	if err := decode(c, &in); err != nil {
+		return err
+	}
+	ctx := c.Request().Context()
+	var item store.MenuItem
+	err = s.tx(ctx, func(q *store.Queries) error {
+		if err := s.requireWritable(ctx, q, o.Shop.ID); err != nil {
+			return err
+		}
+		item, err = domain.Restock(ctx, q, o.Shop.ID, paramID(c), o.User.ID, in)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	return notice(c, "Stock added to "+item.Name+".", nil)
+}
+
+// recountItem sets an item's count to what is on the shelf.
+func (s *Server) recountItem(c *echo.Context) error {
+	o, err := s.owner(c)
+	if err != nil {
+		return err
+	}
+	var in domain.RecountInput
+	if err := decode(c, &in); err != nil {
+		return err
+	}
+	ctx := c.Request().Context()
+	var item store.MenuItem
+	var low *domain.LowStock
+	err = s.tx(ctx, func(q *store.Queries) error {
+		if err := s.requireWritable(ctx, q, o.Shop.ID); err != nil {
+			return err
+		}
+		item, low, err = domain.Recount(ctx, q, o.Shop.ID, paramID(c), o.User.ID, in)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	if low != nil {
+		s.Notify.LowStock(ctx, o.Shop.ID, o.Shop.OwnerID, []domain.LowStock{*low})
+	}
+	return notice(c, item.Name+"'s count corrected.", nil)
 }
 
 // ------------------------------------------------------------ item photos

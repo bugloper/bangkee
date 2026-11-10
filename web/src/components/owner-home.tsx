@@ -7,6 +7,7 @@ import {
   BarChart3Icon,
   CircleAlertIcon,
   FlagIcon,
+  PackageIcon,
   SearchIcon,
   ShoppingBagIcon,
   UserPlusIcon,
@@ -213,6 +214,17 @@ export function OwnerHome({ data, me }: { data: OwnerDashboard; me: Me }) {
       tone: "bg-warn/10 text-warn",
       title: `${pluralize(data.late_installments.length, "installment plan")} with a late payment`,
       href: `/accounts/${data.late_installments[0].account_id}/installments`,
+    },
+    data.low_stock.length > 0 && {
+      icon: PackageIcon,
+      tone: "bg-warn/10 text-warn",
+      title:
+        data.low_stock.length === 1
+          ? data.low_stock[0].stock > 0
+            ? `${data.low_stock[0].name} is running low · ${data.low_stock[0].stock} left`
+            : `${data.low_stock[0].name} is out of stock`
+          : `${pluralize(data.low_stock.length, "item")} running low or out`,
+      href: data.low_stock.length === 1 ? `/menu_items/${data.low_stock[0].id}/edit` : "/menu_items?show=low",
     },
     data.overdue_count > 0 && {
       icon: CircleAlertIcon,

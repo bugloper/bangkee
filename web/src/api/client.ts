@@ -164,6 +164,9 @@ export const api = {
   /** The photo goes up as form data, field "image". */
   setItemImage: (id: number, form: FormData) => post<T.Notice>(`/api/menu_items/${id}/image`, form),
   removeItemImage: (id: number) => del<T.Notice>(`/api/menu_items/${id}/image`),
+  itemStock: (id: number) => get<{ history: T.StockMovement[] }>(`/api/menu_items/${id}/stock`),
+  restockItem: (id: number, input: { quantity: string; cost?: string; notes?: string }) => post<T.Notice>(`/api/menu_items/${id}/restock`, input),
+  recountItem: (id: number, input: { counted: string; notes?: string }) => post<T.Notice>(`/api/menu_items/${id}/recount`, input),
   setShopPhoto: (form: FormData) => post<T.Notice>("/api/shop/photo", form),
   removeShopPhoto: () => del<T.Notice>("/api/shop/photo"),
   setMyPhoto: (form: FormData) => post<T.Notice>("/api/me/photo", form),

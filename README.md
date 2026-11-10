@@ -4,6 +4,8 @@ The shared credit book for shops in Bhutan. The owner records
 credits and payments, the customer sees their own balance. A credit can be
 picked from the shop's items; a payment made by mBoB or mPay can carry a photo
 of the customer's payment screen, straightened like a scanned document.
+An item can keep a count of its stock: credits and cash sales picked from it
+take from the count, and the shop hears when it runs low.
 Customers browse shops and their items. Three plans — Basic, Pro and Business
 at Nu. 149, 199 and 299 a month, billed annually — are paid by bank transfer
 and reviewed by the Bangkee operator.

@@ -16,7 +16,8 @@ import (
 // one's items and prices. Ordering happens at the counter, not here.
 
 // menuFor is a shop's items, grouped as the customer reads them. Items the
-// shop has marked out of stock stay listed, so a customer can see that.
+// shop has marked out of stock, or has none left of, stay listed, so a
+// customer can see that.
 func (s *Server) menuFor(ctx context.Context, shopID int64) ([]M, error) {
 	items, err := s.Q.MenuItemsOrdered(ctx, store.MenuItemsOrderedParams{ShopID: shopID, AvailableOnly: false})
 	if err != nil {
@@ -34,7 +35,13 @@ func (s *Server) menuFor(ctx context.Context, shopID int64) ([]M, error) {
 			if url, ok := images[item.ID]; ok {
 				image = &url
 			}
-			lines = append(lines, M{"id": item.ID, "name": item.Name, "price_cents": item.PriceCents, "available": item.Available, "image_url": image})
+			// A counted item reads "Only 3 left" when running low and is out of
+			// stock at 0; the count itself, and anything else about stock, stays the shop's.
+			var left *int32
+			if item.Stock != nil && *item.Stock > 0 && *item.Stock <= domain.LowLevel(item.LowStockAt) {
+				left = item.Stock
+			}
+			lines = append(lines, M{"id": item.ID, "name": item.Name, "price_cents": item.PriceCents, "available": item.Available && !domain.SoldOut(item), "left": left, "image_url": image})
 		}
 		menu = append(menu, M{"category": group.Category, "items": lines})
 	}

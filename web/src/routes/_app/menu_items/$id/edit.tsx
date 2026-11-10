@@ -6,6 +6,7 @@ import { api } from "@/api/client"
 import { Loading } from "@/components/form"
 import { Panel } from "@/components/kit"
 import { MenuForm } from "@/components/menu-form"
+import { StockPanel } from "@/components/stock-panel"
 import { Button } from "@/components/ui/button"
 import { confirm } from "@/lib/confirm"
 import { flashNotice } from "@/lib/flash"
@@ -31,6 +32,7 @@ function EditMenuItem() {
 
   return (
     <div className="grid gap-5">
+      <StockPanel item={data} />
       <Panel>
         <MenuForm item={data} />
       </Panel>

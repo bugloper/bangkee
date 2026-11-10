@@ -24,6 +24,7 @@ const DOT: Record<NotificationKind, string> = {
   overdue: "bg-owed",
   sub: "bg-paid",
   feedback: "bg-primary",
+  stock: "bg-owed",
 }
 
 // The bell. Every push notification has a row here too, so the in-app

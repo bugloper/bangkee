@@ -130,7 +130,7 @@ func (q *Queries) InsertSale(ctx context.Context, arg InsertSaleParams) (int64, 
 }
 
 const insertSaleItem = `-- name: InsertSaleItem :exec
-INSERT INTO sale_items (sale_id, name, quantity, unit_price_cents) VALUES ($1, $2, $3, $4)
+INSERT INTO sale_items (sale_id, name, quantity, unit_price_cents, menu_item_id) VALUES ($1, $2, $3, $4, $5)
 `
 
 type InsertSaleItemParams struct {
@@ -138,6 +138,7 @@ type InsertSaleItemParams struct {
 	Name           string
 	Quantity       decimal.Decimal
 	UnitPriceCents int64
+	MenuItemID     *int64
 }
 
 func (q *Queries) InsertSaleItem(ctx context.Context, arg InsertSaleItemParams) error {
@@ -146,6 +147,7 @@ func (q *Queries) InsertSaleItem(ctx context.Context, arg InsertSaleItemParams) 
 		arg.Name,
 		arg.Quantity,
 		arg.UnitPriceCents,
+		arg.MenuItemID,
 	)
 	return err
 }
@@ -220,7 +222,7 @@ func (q *Queries) SaleInShop(ctx context.Context, arg SaleInShopParams) (Sale, e
 }
 
 const saleItemsFor = `-- name: SaleItemsFor :many
-SELECT id, sale_id, name, quantity, unit_price_cents FROM sale_items WHERE sale_id = ANY($1::bigint[]) ORDER BY sale_id, id
+SELECT id, sale_id, name, quantity, unit_price_cents, menu_item_id FROM sale_items WHERE sale_id = ANY($1::bigint[]) ORDER BY sale_id, id
 `
 
 func (q *Queries) SaleItemsFor(ctx context.Context, saleIds []int64) ([]SaleItem, error) {
@@ -238,6 +240,7 @@ func (q *Queries) SaleItemsFor(ctx context.Context, saleIds []int64) ([]SaleItem
 			&i.Name,
 			&i.Quantity,
 			&i.UnitPriceCents,
+			&i.MenuItemID,
 		); err != nil {
 			return nil, err
 		}

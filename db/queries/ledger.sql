@@ -61,7 +61,7 @@ ON CONFLICT (idempotency_key) DO NOTHING
 RETURNING id;
 
 -- name: InsertLineItem :exec
-INSERT INTO line_items (transaction_id, name, quantity, unit_price_cents) VALUES ($1, $2, $3, $4);
+INSERT INTO line_items (transaction_id, name, quantity, unit_price_cents, menu_item_id) VALUES ($1, $2, $3, $4, $5);
 
 -- name: UpdateTransaction :exec
 UPDATE transactions SET amount_cents = $2, description = $3, notes = $4, payment_method = $5,

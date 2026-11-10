@@ -340,6 +340,7 @@ func (s *Server) record(c *echo.Context, kind int32) error {
 		return err
 	}
 	in.Kind = kind
+	in.ShopID = o.Shop.ID
 	ctx := c.Request().Context()
 	var recorded domain.Recorded
 	var accountID int64
@@ -376,6 +377,7 @@ func (s *Server) record(c *echo.Context, kind int32) error {
 	if credit {
 		noun = "Credit"
 		s.Notify.CreditRecorded(ctx, accountID, entry.ID, entry.AmountCents, entry.Description)
+		s.Notify.LowStock(ctx, o.Shop.ID, o.Shop.OwnerID, recorded.Low)
 	} else {
 		s.Notify.PaymentRecorded(ctx, accountID, entry.ID, entry.AmountCents)
 	}

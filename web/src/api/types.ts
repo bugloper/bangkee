@@ -263,6 +263,7 @@ export interface LineItemInput {
   name: string
   quantity: string
   unit_price: string
+  menu_item_id?: number // picked from the shop's items: its stock follows
 }
 
 /** POST /api/accounts/:id/credits */
@@ -381,6 +382,7 @@ export interface OwnerDashboard {
   sales_month_cents: Cents
   disputed: (LedgerEntry & { account: { id: number; display_name: string } })[] // entries customers flagged, oldest first
   late_installments: (InstallmentPlan & { customer_name: string })[] // running plans with an installment overdue
+  low_stock: { id: number; name: string; stock: number; low_stock_at: number | null }[] // counted items at their warning level or out
   recent_transactions: (LedgerEntry & { account: { id: number; display_name: string } })[]
 }
 
@@ -416,6 +418,19 @@ export interface MenuItem {
   available: boolean
   position: number
   image_url: string | null // optional photo; anyone can load it
+  // Inventory, the shop's own: customers never get these.
+  stock: number | null // on the shelf; null when not counted
+  low_stock_at: number | null // warn at this many or fewer
+  low: boolean // counted, and at the warning level or out
+  sold_out: boolean // counted, and none left
+  cost_cents: Cents | null // latest buying price of one
+  cost: string | null
+}
+export interface StockSettings {
+  count: boolean
+  stock?: string // the count to start from, when counting begins
+  low_stock_at?: string
+  cost?: string
 }
 export interface MenuItemInput {
   name: string
@@ -423,17 +438,33 @@ export interface MenuItemInput {
   price: string
   available: boolean
   position?: number
+  counting?: StockSettings // absent leaves counting as it is
 }
 /** GET /api/menu_items */
 export interface MenuBoard {
   items: MenuItem[]
+  stock_value_cents: Cents // counted stock at its buying price
+}
+export type StockReason = "started" | "restock" | "correction" | "credit" | "sale" | "credit_crossed_out" | "sale_crossed_out"
+/** GET /api/menu_items/:id/stock: newest first */
+export interface StockMovement {
+  id: number
+  change: number
+  stock_after: number
+  reason: StockReason
+  unit_cost_cents: Cents | null
+  transaction_id: number | null
+  sale_id: number | null
+  notes: string | null
+  by: string
+  at: string
 }
 
 // ------------------------------------------------------- the shops catalog
 
 export interface MenuGroup {
   category: string
-  items: { id: number; name: string; price_cents: Cents; available: boolean; image_url: string | null }[]
+  items: { id: number; name: string; price_cents: Cents; available: boolean; left: number | null; image_url: string | null }[] // left: "Only 3 left" when running low
 }
 
 /** A sort of business customers browse by. */
@@ -614,7 +645,7 @@ export interface AdminShops {
 
 // ------------------------------------------------------------ notifications
 
-export type NotificationKind = "credit" | "payment" | "cross_out" | "overdue" | "sub" | "feedback"
+export type NotificationKind = "credit" | "payment" | "cross_out" | "overdue" | "sub" | "feedback" | "stock"
 
 export interface AppNotification {
   id: number

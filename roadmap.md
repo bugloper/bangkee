@@ -5,6 +5,8 @@ that have to be made before work starts.
 
 ## Inventory: stock counts for a shop's items
 
+**Status: built.** Kept here for the decisions behind it.
+
 Shops already keep items with a price, a category and an in-stock switch,
 and itemized credit lets the owner pick items when recording what was taken.
 Inventory adds a count to each item and keeps it right.

@@ -10,7 +10,7 @@ WITH row AS (
 SELECT COALESCE((SELECT id FROM row), 0)::bigint AS id;
 
 -- name: InsertSaleItem :exec
-INSERT INTO sale_items (sale_id, name, quantity, unit_price_cents) VALUES ($1, $2, $3, $4);
+INSERT INTO sale_items (sale_id, name, quantity, unit_price_cents, menu_item_id) VALUES ($1, $2, $3, $4, $5);
 
 -- name: SaleInShop :one
 SELECT * FROM sales WHERE id = $1 AND shop_id = $2;

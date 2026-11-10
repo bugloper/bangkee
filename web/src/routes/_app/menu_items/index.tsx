@@ -15,15 +15,21 @@ import { Switch } from "@/components/ui/switch"
 import { groupByCategory, matches } from "@/lib/catalog"
 import { flashNotice } from "@/lib/flash"
 import { useMe } from "@/lib/me"
-import { ngultrum } from "@/lib/money"
+import { ngultrum, pluralize } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { refreshAll } from "@/lib/query"
 import { cn } from "@/lib/utils"
 
-export const Route = createFileRoute("/_app/menu_items/")({ component: Catalog })
+type Search = { show?: "low" }
+
+export const Route = createFileRoute("/_app/menu_items/")({ validateSearch: (search: Record<string, unknown>): Search => ({ show: search.show === "low" ? "low" : undefined }), component: Catalog })
 
 const ALL = ""
 const OUT = "\u0000out" // the "Out of stock" chip; no category can be named this
+const LOW = "\u0000low" // the "Running low" chip
+
+/** Out of stock: switched off, or counted with none left. */
+const isOut = (item: MenuItem) => !item.available || item.sold_out
 
 // The shop's catalog: what it sells, by category, with prices and whether it
 // is in stock. Picked from when recording a credit; customers browse it.
@@ -32,22 +38,26 @@ function Catalog() {
   const me = useMe()
   const { data } = useQuery({ queryKey: ["menu_items"], queryFn: api.menuItems })
   const [q, setQ] = useState("")
-  const [chip, setChip] = useState(ALL)
+  const [chip, setChip] = useState(Route.useSearch().show === "low" ? LOW : ALL)
   if (!data) return <Loading />
 
   const items = data.items
   const groups = groupByCategory(items)
-  const outCount = items.filter((item) => !item.available).length
+  const outCount = items.filter(isOut).length
+  const lowCount = items.filter((item) => item.low && !item.sold_out).length
   const chips = [
     { key: ALL, label: "All", count: items.length },
     ...groups.map((g) => ({ key: g.category, label: g.category, count: g.items.length })),
+    ...(lowCount > 0 ? [{ key: LOW, label: "Running low", count: lowCount }] : []),
     ...(outCount > 0 ? [{ key: OUT, label: "Out of stock", count: outCount }] : []),
   ]
+  const keep = (item: MenuItem) => (chip === OUT ? isOut(item) : chip === LOW ? item.low && !item.sold_out : true)
   const shown = groups
-    .filter((g) => chip === ALL || chip === OUT || g.category === chip)
-    .map((g) => ({ ...g, items: g.items.filter((item) => (chip !== OUT || !item.available) && matches(q, item.name, item.category)) }))
+    .filter((g) => chip === ALL || chip === OUT || chip === LOW || g.category === chip)
+    .map((g) => ({ ...g, items: g.items.filter((item) => keep(item) && matches(q, item.name, item.category)) }))
     .filter((g) => g.items.length > 0)
-  const category = chip !== ALL && chip !== OUT ? chip : undefined
+  const category = chip !== ALL && chip !== OUT && chip !== LOW ? chip : undefined
+  const counted = items.filter((item) => item.stock !== null).length
   const addHref = category ? `/menu_items/new?category=${encodeURIComponent(category)}` : "/menu_items/new"
 
   if (items.length === 0) {
@@ -80,7 +90,18 @@ function Catalog() {
         </AppLink>
       </div>
 
-      {groups.length > 1 || outCount > 0 ? <Chips label="Category" chips={chips} value={chip} onChange={setChip} /> : null}
+      {groups.length > 1 || outCount > 0 || lowCount > 0 ? <Chips label="Category" chips={chips} value={chip} onChange={setChip} /> : null}
+
+      {counted > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Counting stock for {pluralize(counted, "item")}
+          {data.stock_value_cents > 0 && (
+            <>
+              {" · "}on the shelf, worth <span className="tabular font-medium text-foreground">{ngultrum(data.stock_value_cents)}</span> at buying price
+            </>
+          )}
+        </p>
+      )}
 
       {shown.length > 0 ? (
         shown.map((group) => (
@@ -134,7 +155,13 @@ function ItemRow({ item }: { item: MenuItem }) {
           <span className="block truncate text-sm font-medium">{item.name}</span>
           <span className="tabular block text-[0.8125rem] text-muted-foreground">
             {ngultrum(item.price_cents)}
-            {!available && " · Out of stock"}
+            {!available ? (
+              " · Out of stock"
+            ) : item.sold_out ? (
+              <span className="text-owed"> · None left</span>
+            ) : (
+              item.stock !== null && <span className={cn(item.low && "font-medium text-owed")}> · {item.stock} left</span>
+            )}
           </span>
         </span>
       </AppLink>

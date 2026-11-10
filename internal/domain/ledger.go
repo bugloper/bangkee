@@ -213,10 +213,12 @@ type LineInput struct {
 	Name      string `json:"name"`
 	Quantity  string `json:"quantity"`
 	UnitPrice string `json:"unit_price"`
+	ItemID    *int64 `json:"menu_item_id"` // picked from the shop's items
 }
 
 type EntryInput struct {
 	Kind           int32       `json:"-"`
+	ShopID         int64       `json:"-"` // whose items the lines may name
 	Itemized       bool        `json:"itemized"`
 	Amount         string      `json:"amount"`
 	Description    string      `json:"description"`
@@ -231,6 +233,8 @@ type line struct {
 	name      string
 	quantity  decimal.Decimal
 	unitPrice int64
+	itemID    *int64 // the shop's item, when picked from its list
+	pick      *int64 // the item the form named, before linkItems checks it
 }
 
 // linesFrom skips a blank row on the itemized form rather than reporting it
@@ -254,9 +258,21 @@ func linesFrom(inputs []LineInput, errs *apperr.Errors) []line {
 		if !quantityOK {
 			quantity = decimal.NewFromInt(1)
 		}
-		lines = append(lines, line{name: util.Deref(util.Presence(in.Name)), quantity: quantity, unitPrice: price})
+		lines = append(lines, line{name: util.Deref(util.Presence(in.Name)), quantity: quantity, unitPrice: price, pick: in.ItemID})
 	}
 	return lines
+}
+
+// linkItems ties each picked line to the shop's item (itemLink).
+func linkItems(ctx context.Context, q *store.Queries, shopID int64, lines []line, errs *apperr.Errors) error {
+	for i := range lines {
+		id, err := itemLink(ctx, q, shopID, lines[i].pick, lines[i].name, lines[i].quantity, errs)
+		if err != nil {
+			return err
+		}
+		lines[i].itemID = id
+	}
+	return nil
 }
 
 // Recorded is what RecordEntry did. Duplicate: the offline queue replayed an
@@ -264,6 +280,7 @@ func linesFrom(inputs []LineInput, errs *apperr.Errors) []line {
 type Recorded struct {
 	Entry     Entry
 	Duplicate bool
+	Low       []LowStock // items the credit took to their warning level
 }
 
 // RecordEntry records a credit or a payment. BR-12: for an itemized credit
@@ -284,6 +301,9 @@ func RecordEntry(ctx context.Context, q *store.Queries, accountID, by int64, in 
 	var lines []line
 	if itemized {
 		lines = linesFrom(in.LineItems, &errs)
+		if err := linkItems(ctx, q, in.ShopID, lines, &errs); err != nil {
+			return Recorded{}, err
+		}
 	}
 	amount, amountOK := money.ParseCents(in.Amount)
 	if itemized && len(lines) > 0 {
@@ -321,9 +341,13 @@ func RecordEntry(ctx context.Context, q *store.Queries, accountID, by int64, in 
 	}
 
 	for _, l := range lines {
-		if err := q.InsertLineItem(ctx, store.InsertLineItemParams{TransactionID: id, Name: l.name, Quantity: l.quantity, UnitPriceCents: l.unitPrice}); err != nil {
+		if err := q.InsertLineItem(ctx, store.InsertLineItemParams{TransactionID: id, Name: l.name, Quantity: l.quantity, UnitPriceCents: l.unitPrice, MenuItemID: l.itemID}); err != nil {
 			return Recorded{}, err
 		}
+	}
+	low, err := takeStock(ctx, q, by, stockRef{reason: StockCredit, transactionID: &id}, lines)
+	if err != nil {
+		return Recorded{}, err
 	}
 	if err := q.RecomputeBalance(ctx, accountID); err != nil {
 		return Recorded{}, err
@@ -332,7 +356,7 @@ func RecordEntry(ctx context.Context, q *store.Queries, accountID, by int64, in 
 		return Recorded{}, err
 	}
 	entry, err := TransactionByID(ctx, q, id)
-	return Recorded{Entry: entry}, err
+	return Recorded{Entry: entry, Low: low}, err
 }
 
 // AttachScreenshot keeps the photo the shop took of the customer's payment
@@ -418,6 +442,9 @@ func CrossOutTransaction(ctx context.Context, q *store.Queries, t Entry, by int6
 		return false, err
 	}
 	if err := q.RecomputeBalance(ctx, t.AccountID); err != nil {
+		return false, err
+	}
+	if err := putBackEntry(ctx, q, t.ID, by); err != nil {
 		return false, err
 	}
 	return true, Audit(ctx, q, TransactionRecordType, t.ID, "crossed_out", &by, map[string]any{"amount_cents": t.AmountCents, "kind": KindKey(t.Kind)})

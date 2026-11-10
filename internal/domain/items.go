@@ -30,12 +30,32 @@ type MenuItemDTO struct {
 	Available  bool    `json:"available"`
 	Position   int32   `json:"position"`
 	ImageURL   *string `json:"image_url"` // a photo of it, when the shop added one
+	// Inventory, for the shop only: never on the customer's view (menuFor).
+	Stock      *int32  `json:"stock"`        // on the shelf; null when not counted
+	LowStockAt *int32  `json:"low_stock_at"` // the owner's warning level
+	Low        bool    `json:"low"`          // counted, and at the warning level or out
+	SoldOut    bool    `json:"sold_out"`     // counted, and none left
+	CostCents  *int64  `json:"cost_cents"`   // latest buying price of one
+	Cost       *string `json:"cost"`
 }
 
 // MenuItemView: images maps item ids to their photo's URL (ItemImageURLs).
 func MenuItemView(m store.MenuItem, images map[int64]string) MenuItemDTO {
-	return MenuItemDTO{ID: m.ID, Name: m.Name, Category: m.Category, PriceCents: m.PriceCents,
-		Price: money.MajorUnits(m.PriceCents), Available: m.Available, Position: m.Position, ImageURL: optionalURL(images, m.ID)}
+	dto := MenuItemDTO{ID: m.ID, Name: m.Name, Category: m.Category, PriceCents: m.PriceCents,
+		Price: money.MajorUnits(m.PriceCents), Available: m.Available, Position: m.Position, ImageURL: optionalURL(images, m.ID),
+		Stock: m.Stock, LowStockAt: m.LowStockAt, SoldOut: SoldOut(m), CostCents: m.CostCents}
+	if m.Stock != nil {
+		warn := int32(0)
+		if m.LowStockAt != nil {
+			warn = *m.LowStockAt
+		}
+		dto.Low = *m.Stock <= warn
+	}
+	if m.CostCents != nil {
+		cost := money.MajorUnits(*m.CostCents)
+		dto.Cost = &cost
+	}
+	return dto
 }
 
 // ------------------------------------------------------------ item images
@@ -145,6 +165,10 @@ type MenuItemInput struct {
 	Price     string `json:"price"`
 	Available bool   `json:"available"`
 	Position  *int32 `json:"position"`
+	// Counting stock, from the item form; absent (the in-stock switch on the
+	// list) leaves it as it is.
+	Counting *StockSettings `json:"counting"`
+	By       int64          `json:"-"` // who saved it, for the stock history
 }
 
 func validateMenuItem(ctx context.Context, q *store.Queries, shopID int64, exceptID *int64, in MenuItemInput) (int64, error) {
@@ -193,15 +217,33 @@ func SaveMenuItem(ctx context.Context, q *store.Queries, shopID int64, item *sto
 		id, err := q.CreateMenuItem(ctx, store.CreateMenuItemParams{
 			ShopID: shopID, Name: name, Category: util.Presence(in.Category), PriceCents: price, Available: in.Available, Position: position,
 		})
-		return id, name, err
+		if err != nil {
+			return 0, "", err
+		}
+		return id, name, saveCounting(ctx, q, shopID, id, in)
 	}
 	position := item.Position
 	if in.Position != nil {
 		position = *in.Position
 	}
-	return item.ID, name, q.UpdateMenuItem(ctx, store.UpdateMenuItemParams{
+	err = q.UpdateMenuItem(ctx, store.UpdateMenuItemParams{
 		ID: item.ID, Name: name, Category: util.Presence(in.Category), PriceCents: price, Available: in.Available, Position: position,
 	})
+	if err != nil {
+		return 0, "", err
+	}
+	return item.ID, name, saveCounting(ctx, q, shopID, item.ID, in)
+}
+
+func saveCounting(ctx context.Context, q *store.Queries, shopID, id int64, in MenuItemInput) error {
+	if in.Counting == nil {
+		return nil
+	}
+	item, err := q.MenuItemForUpdate(ctx, store.MenuItemForUpdateParams{ShopID: shopID, ID: id})
+	if err != nil {
+		return err
+	}
+	return saveStockSettings(ctx, q, item, *in.Counting, in.By)
 }
 
 // DestroyMenuItem: credits already recorded keep their own copy of the name

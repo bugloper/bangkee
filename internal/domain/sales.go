@@ -37,13 +37,17 @@ type SaleInput struct {
 }
 
 // RecordSale records a sale for the shop. Duplicate: the offline queue replayed
-// one already recorded, and nothing changed.
-func RecordSale(ctx context.Context, q *store.Queries, shopID, by int64, in SaleInput, now time.Time) (id int64, amount int64, duplicate bool, err error) {
+// one already recorded, and nothing changed. Low: items the sale took to
+// their warning level.
+func RecordSale(ctx context.Context, q *store.Queries, shopID, by int64, in SaleInput, now time.Time) (id int64, amount int64, duplicate bool, low []LowStock, err error) {
 	var errs apperr.Errors
 	var lines []line
 	if in.Itemized {
 		lines = linesFrom(in.LineItems, &errs)
 		errs.Check(len(lines) > 0, "Add at least one item")
+		if err := linkItems(ctx, q, shopID, lines, &errs); err != nil {
+			return 0, 0, false, nil, err
+		}
 	}
 	amount, amountOK := money.ParseCents(in.Amount)
 	if in.Itemized && len(lines) > 0 {
@@ -57,7 +61,7 @@ func RecordSale(ctx context.Context, q *store.Queries, shopID, by int64, in Sale
 	occurredAt, timeOK := util.ParseTime(in.OccurredAt)
 	errs.Check(timeOK, "Occurred at is not a valid date")
 	if err := errs.Err(); err != nil {
-		return 0, 0, false, err
+		return 0, 0, false, nil, err
 	}
 	at := now
 	if occurredAt != nil {
@@ -67,9 +71,9 @@ func RecordSale(ctx context.Context, q *store.Queries, shopID, by int64, in Sale
 		// Only one of this shop's own customers can be named on its sale.
 		if _, err := q.AccountInShop(ctx, store.AccountInShopParams{ID: *in.AccountID, ShopID: shopID}); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
-				return 0, 0, false, apperr.NewRule("That customer is not in your book.")
+				return 0, 0, false, nil, apperr.NewRule("That customer is not in your book.")
 			}
-			return 0, 0, false, err
+			return 0, 0, false, nil, err
 		}
 	}
 	id, err = q.InsertSale(ctx, store.InsertSaleParams{
@@ -77,17 +81,20 @@ func RecordSale(ctx context.Context, q *store.Queries, shopID, by int64, in Sale
 		Description: util.Presence(in.Description), Itemized: in.Itemized, OccurredAt: at, IdempotencyKey: util.Presence(in.IdempotencyKey),
 	})
 	if err != nil {
-		return 0, 0, false, err
+		return 0, 0, false, nil, err
 	}
 	if id == 0 {
-		return 0, amount, true, nil
+		return 0, amount, true, nil, nil
 	}
 	for _, l := range lines {
-		if err := q.InsertSaleItem(ctx, store.InsertSaleItemParams{SaleID: id, Name: l.name, Quantity: l.quantity, UnitPriceCents: l.unitPrice}); err != nil {
-			return 0, 0, false, err
+		if err := q.InsertSaleItem(ctx, store.InsertSaleItemParams{SaleID: id, Name: l.name, Quantity: l.quantity, UnitPriceCents: l.unitPrice, MenuItemID: l.itemID}); err != nil {
+			return 0, 0, false, nil, err
 		}
 	}
-	return id, amount, false, Audit(ctx, q, SaleRecordType, id, "recorded", &by, map[string]any{"amount_cents": amount, "payment_method": in.PaymentMethod})
+	if low, err = takeStock(ctx, q, by, stockRef{reason: StockSale, saleID: &id}, lines); err != nil {
+		return 0, 0, false, nil, err
+	}
+	return id, amount, false, low, Audit(ctx, q, SaleRecordType, id, "recorded", &by, map[string]any{"amount_cents": amount, "payment_method": in.PaymentMethod})
 }
 
 // CrossOutSale takes a sale out of the takings; it stays on the record.
@@ -98,6 +105,9 @@ func CrossOutSale(ctx context.Context, q *store.Queries, sale store.Sale, by int
 	}
 	if crossed == 0 {
 		return apperr.NewRule("That sale was already crossed out.")
+	}
+	if err := putBackSale(ctx, q, sale.ID, by); err != nil {
+		return err
 	}
 	return Audit(ctx, q, SaleRecordType, sale.ID, "crossed_out", &by, map[string]any{"amount_cents": sale.AmountCents})
 }

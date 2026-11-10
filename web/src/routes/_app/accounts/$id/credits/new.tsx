@@ -9,13 +9,14 @@ import { AmountField } from "@/components/amount"
 import { AppLink } from "@/components/app-link"
 import { ErrorBox, Field, FormActions, Loading } from "@/components/form"
 import { DateTimeField } from "@/components/date-time-field"
-import { ItemChooser } from "@/components/item-chooser"
+import { ItemChooser, QuantityInput } from "@/components/item-chooser"
 import { Panel } from "@/components/kit"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
+import { countedIDs, pickedCounts } from "@/lib/lines"
 import { majorAmount } from "@/lib/money"
 import { usePage } from "@/lib/page"
 import { offerNotifications } from "@/lib/pwa"
@@ -45,6 +46,7 @@ function NewCredit() {
 
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
+  const [notes, setNotes] = useState("")
   const [occurredAt, setOccurredAt] = useState("")
   const [lines, setLines] = useState([blankLine()])
 
@@ -54,18 +56,16 @@ function NewCredit() {
   // A picked item is a line at its listed price; picking it again adds one
   // more. The empty line the form starts with makes way for it.
   const pick = (item: MenuItem) => {
-    const existing = lines.find((line) => line.name === item.name && line.unit_price === item.price)
+    const existing = lines.find((line) => line.menu_item_id === item.id)
     if (existing) {
       updateLine(existing.key, "quantity", String((parseFloat(existing.quantity) || 0) + 1))
       return
     }
     const kept = lines.filter((line) => line.name || line.unit_price)
-    setLines([...kept, { key: Math.random(), name: item.name, quantity: "1", unit_price: item.price }])
+    setLines([...kept, { key: Math.random(), name: item.name, quantity: "1", unit_price: item.price, menu_item_id: item.id }])
   }
-  const picked: Record<string, number> = {}
-  for (const line of lines) {
-    if (items.some((item) => item.name === line.name && item.price === line.unit_price)) picked[line.name] = parseFloat(line.quantity) || 0
-  }
+  const picked = pickedCounts(lines)
+  const counted = countedIDs(items)
 
   // The line items are the amount (BR-12), so there is no amount field to get wrong.
   const total = lines.reduce((sum, line) => sum + (parseFloat(line.quantity) || 0) * (parseFloat(line.unit_price) || 0), 0)
@@ -78,8 +78,9 @@ function NewCredit() {
           itemized,
           amount: itemized ? undefined : amount,
           description: itemized ? undefined : description,
+          notes: itemized ? notes : undefined,
           occurred_at: fromDatetimeLocal(occurredAt),
-          line_items: itemized ? lines.map(({ name, quantity, unit_price }) => ({ name, quantity, unit_price })) : undefined,
+          line_items: itemized ? lines.map(({ name, quantity, unit_price, menu_item_id }) => ({ name, quantity, unit_price, menu_item_id })) : undefined,
         },
         queueKey: `account:${id}`,
         label: "credit",
@@ -129,7 +130,7 @@ function NewCredit() {
               {lines.map((line) => (
                 <div key={line.key} className="grid grid-cols-[1fr_4.5rem_6rem_2.25rem] items-center gap-2">
                   <Input placeholder="Rice 25 kg" aria-label="Item" value={line.name} onChange={(e) => updateLine(line.key, "name", e.target.value)} />
-                  <Input type="number" step="0.01" inputMode="decimal" placeholder="1" aria-label="Qty" className="tabular" value={line.quantity} onChange={(e) => updateLine(line.key, "quantity", e.target.value)} />
+                  <QuantityInput line={line} whole={counted.has(line.menu_item_id ?? 0)} onChange={(value) => updateLine(line.key, "quantity", value)} />
                   <Input inputMode="decimal" placeholder="Nu." aria-label="Price" className="tabular" value={line.unit_price} onChange={(e) => updateLine(line.key, "unit_price", e.target.value)} />
                   <Button variant="ghost" size="icon" aria-label="Remove item" className="text-muted-foreground" onClick={() => setLines(lines.filter((other) => other.key !== line.key))}>
                     <XIcon />
@@ -144,6 +145,9 @@ function NewCredit() {
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="tabular text-2xl font-semibold tracking-tight text-owed">{majorAmount(total)}</span>
             </div>
+            <Field label="Note" hint="Optional — details such as 2.5 kg of rice" htmlFor="notes" className="mt-4">
+              <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </Field>
           </div>
         ) : (
           <>

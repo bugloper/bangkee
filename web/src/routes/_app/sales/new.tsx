@@ -10,7 +10,7 @@ import { AppLink } from "@/components/app-link"
 import { ChoiceField } from "@/components/choice-field"
 import { DateTimeField } from "@/components/date-time-field"
 import { ErrorBox, Field, FormActions, Segmented } from "@/components/form"
-import { ItemChooser } from "@/components/item-chooser"
+import { ItemChooser, QuantityInput } from "@/components/item-chooser"
 import { Panel } from "@/components/kit"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,7 @@ import { validationErrors } from "@/lib/errors"
 import { flashNotice } from "@/lib/flash"
 import { go } from "@/lib/go"
 import { useCan } from "@/lib/me"
+import { countedIDs, pickedCounts } from "@/lib/lines"
 import { majorAmount } from "@/lib/money"
 import { newKey } from "@/lib/offline-queue"
 import { usePage } from "@/lib/page"
@@ -54,12 +55,12 @@ function NewSale() {
 
   const updateLine = (lineKey: number, field: keyof LineItemInput, value: string) => setLines(lines.map((line) => (line.key === lineKey ? { ...line, [field]: value } : line)))
   const pick = (item: MenuItem) => {
-    const existing = lines.find((line) => line.name === item.name && line.unit_price === item.price)
+    const existing = lines.find((line) => line.menu_item_id === item.id)
     if (existing) return updateLine(existing.key, "quantity", String((parseFloat(existing.quantity) || 0) + 1))
-    setLines([...lines.filter((line) => line.name || line.unit_price), { key: Math.random(), name: item.name, quantity: "1", unit_price: item.price }])
+    setLines([...lines.filter((line) => line.name || line.unit_price), { key: Math.random(), name: item.name, quantity: "1", unit_price: item.price, menu_item_id: item.id }])
   }
-  const picked: Record<string, number> = {}
-  for (const line of lines) if (items.some((item) => item.name === line.name && item.price === line.unit_price)) picked[line.name] = parseFloat(line.quantity) || 0
+  const picked = pickedCounts(lines)
+  const counted = countedIDs(items)
   const total = lines.reduce((sum, line) => sum + (parseFloat(line.quantity) || 0) * (parseFloat(line.unit_price) || 0), 0)
 
   const reset = () => {
@@ -78,8 +79,8 @@ function NewSale() {
         body: {
           amount: itemized ? undefined : amount,
           itemized,
-          line_items: itemized ? lines.map(({ name, quantity, unit_price }) => ({ name, quantity, unit_price })) : undefined,
-          description: itemized ? undefined : description,
+          line_items: itemized ? lines.map(({ name, quantity, unit_price, menu_item_id }) => ({ name, quantity, unit_price, menu_item_id })) : undefined,
+          description,
           payment_method: method,
           account_id: customer ? Number(customer) : undefined,
           occurred_at: fromDatetimeLocal(occurredAt),
@@ -142,16 +143,7 @@ function NewSale() {
               {lines.map((line) => (
                 <div key={line.key} className="grid grid-cols-[1fr_4.5rem_6rem_2.25rem] items-center gap-2">
                   <Input placeholder="Item" aria-label="Item" value={line.name} onChange={(e) => updateLine(line.key, "name", e.target.value)} />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    placeholder="1"
-                    aria-label="Qty"
-                    className="tabular"
-                    value={line.quantity}
-                    onChange={(e) => updateLine(line.key, "quantity", e.target.value)}
-                  />
+                  <QuantityInput line={line} whole={counted.has(line.menu_item_id ?? 0)} onChange={(value) => updateLine(line.key, "quantity", value)} />
                   <Input inputMode="decimal" placeholder="Nu." aria-label="Price" className="tabular" value={line.unit_price} onChange={(e) => updateLine(line.key, "unit_price", e.target.value)} />
                   <Button variant="ghost" size="icon" aria-label="Remove item" className="text-muted-foreground" onClick={() => setLines(lines.filter((other) => other.key !== line.key))}>
                     <XIcon />
@@ -166,6 +158,9 @@ function NewSale() {
               <span className="text-sm text-muted-foreground">Total</span>
               <span className="tabular text-2xl font-semibold tracking-tight text-paid">{majorAmount(total)}</span>
             </div>
+            <Field label="Note" hint="Optional — details such as 2.5 kg of rice" htmlFor="description" className="mt-4">
+              <Input id="description" value={description} onChange={(event) => setDescription(event.target.value)} />
+            </Field>
           </div>
         ) : (
           <>

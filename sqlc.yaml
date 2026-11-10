@@ -20,6 +20,7 @@ sql:
       - migrations/20261109122240_index_transactions_on_created_at.sql
       - migrations/20261109180605_record_reminder_deliveries.sql
       - migrations/20261109190154_create_sales.sql
+      - migrations/20261110013821_add_stock_to_items.sql
     queries: db/queries
     gen:
       go:
