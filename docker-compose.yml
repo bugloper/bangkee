@@ -3,8 +3,9 @@
 # network; nothing here is published on the host. See README "Deploying".
 #
 # Needs a .env beside it with BANGKEE_DOMAIN, SECRET_KEY_BASE and POSTGRES_PASSWORD,
-# and optionally VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY for Web Push, and the
-# three WHATSAPP_* settings for reminders by WhatsApp.
+# and optionally VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY for Web Push, the SMTP_*
+# settings and BANGKEE_MAIL_FROM for email, and the three WHATSAPP_* settings
+# for reminders by WhatsApp.
 services:
   bangkee:
     build: .
@@ -21,6 +22,12 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:hello@bangkee.bt}
+      # Email (password resets, and notifications as email), off unless SMTP_ADDRESS is set.
+      SMTP_ADDRESS: ${SMTP_ADDRESS:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER_NAME: ${SMTP_USER_NAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      BANGKEE_MAIL_FROM: ${BANGKEE_MAIL_FROM:-Bangkee <notifications@bangkee.bt>}
       # Reminders by WhatsApp to customers who have not joined (internal/notify/whatsapp.go):
       # off unless all three are set, from Meta's WhatsApp Business Platform.
       WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
